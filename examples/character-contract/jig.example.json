@@ -1,0 +1,69 @@
+{
+  "name": "standing-character",
+  "palette": {"coat": "#b97846", "cream": "#eee0b5", "vest": "#228b80", "belt": "#674228", "brass": "#bb912d", "patch": "#161820"},
+  "model": {
+    "height_m": 1.2,
+    "height_tolerance": 0.02,
+    "axis_extents_m": {"X": 0.93, "Z": 0.85},
+    "axis_tolerances": {"X": 0.08, "Z": 0.08},
+    "stage_scale": 0.8333333333333334,
+    "join": false,
+    "vertex_colors": true,
+    "max_triangles": 65000,
+    "shots": [
+      {"name": "front", "cam_pos": [0, 0.5, -3], "cam_target": [0, 0.5, 0], "ortho": 1.2},
+      {"name": "side", "cam_pos": [-3, 0.5, 0], "cam_target": [0, 0.5, 0], "ortho": 1.2},
+      {"name": "rear", "cam_pos": [0, 0.5, 3], "cam_target": [0, 0.5, 0], "ortho": 1.2},
+      {"name": "right", "cam_pos": [3, 0.5, 0], "cam_target": [0, 0.5, 0], "ortho": 1.2},
+      {"name": "top", "cam_pos": [0, 3, 0], "cam_target": [0, 0.5, 0], "cam_up": [0, 0, 1], "ortho": 1.2},
+      {"name": "hero", "cam_pos": [-2.4, 1.5, -3.7], "cam_target": [0, 0.5, 0], "ortho": 1.2}
+    ]
+  },
+  "criteria": {
+    "views": {"front": 1, "side": 1, "rear": 1, "right": 1, "top": 1},
+    "outline": {
+      "mode": "standing",
+      "calibration": {
+        "view": "front",
+        "height_px": 462,
+        "origins_px": {"front": [250, 490], "side": [250, 490], "rear": [250, 490], "right": [250, 490]}
+      },
+      "stations": [
+        {"name": "ear", "z_m": 1.16}, {"name": "head", "z_m": 1.02},
+        {"name": "neck", "z_m": 0.84}, {"name": "shoulder", "z_m": 0.75},
+        {"name": "belly", "z_m": 0.60}, {"name": "hip", "z_m": 0.42},
+        {"name": "knee", "z_m": 0.24}, {"name": "ankle", "z_m": 0.12}, {"name": "foot", "z_m": 0.04}
+      ]
+    },
+    "review": {
+      "parts": {
+        "skin": {"nodes": ["Skin"], "smooth_min": 0.8, "max_components": 1},
+        "vest": {"nodes": ["Vest"]}, "belt": {"nodes": ["Belt"]},
+        "buckle": {"nodes": ["Buckle"]}, "patch": {"nodes": ["Patch"]}, "tail": {"nodes": ["Tail"]}
+      },
+      "regions": [
+        {"name": "face", "view": "front", "box": [0.25, 0.05, 0.75, 0.38], "min_iou": 0.65, "min_zone": 0.70},
+        {"name": "paws", "view": "front", "box": [0.12, 0.83, 0.88, 1.0], "min_iou": 0.65},
+        {"name": "tail", "view": "side", "box": [0.55, 0.35, 0.88, 0.75], "min_iou": 0.60},
+        {"name": "vest-back", "view": "rear", "box": [0.35, 0.43, 0.65, 0.70], "min_zone": 0.75}
+      ],
+      "landmarks": [
+        {"part": "patch", "bounds_m": [[-0.25, 0.12, 0.90], [-0.01, 0.30, 1.08]]},
+        {"part": "tail", "bounds_m": [[-0.15, -0.70, 0.25], [0.15, -0.10, 0.90]]}
+      ],
+      "visibility": [
+        {"part": "buckle", "view": "front", "min_fraction": 0.60},
+        {"part": "buckle", "view": "rear", "max_fraction": 0.01},
+        {"part": "belt", "view": "front", "min_fraction": 0.40},
+        {"part": "vest", "view": "rear", "min_fraction": 0.40}
+      ],
+      "clearance": [
+        {"inner": "skin", "outer": "vest", "inner_hit": "last", "min_m": 0.003, "max_m": 0.025,
+         "rays": [{"origin_m": [0, 0, 0.60], "direction": [0, -1, 0]},
+                  {"origin_m": [0, 0, 0.65], "direction": [1, 0, 0]}]},
+        {"inner": "vest", "outer": "belt", "min_m": 0.001, "max_m": 0.015,
+         "rays": [{"origin_m": [0, 0, 0.43], "direction": [1, 0, 0]}]}
+      ]
+    }
+  }
+}

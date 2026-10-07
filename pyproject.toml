@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mesh-jig"
+version = "0.1.0"
+description = "Tools that build, render and measure a Blender model script against reference views, for a coding agent to drive"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+# The silhouette and resemblance thresholds were tuned against these two versions. A different numpy or Pillow can
+# move a number in the fourth decimal; bump them on purpose and rerun the suite.
+dependencies = ["numpy==2.5.0", "Pillow==12.2.0"]
+
+[project.optional-dependencies]
+mcp = ["mcp>=1.2"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+mesh-jig = "mesh_jig.cli:main"
+mesh-jig-mcp = "mesh_jig.mcp_server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "tests"]
+markers = ["blender: runs the real Blender (skipped when it is not installed)"]

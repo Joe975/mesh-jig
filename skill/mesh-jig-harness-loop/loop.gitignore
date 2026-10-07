@@ -1,0 +1,11 @@
+# .gitignore for a harness loop's directory (experiments/<loop name>/): copy this file there under that name.
+# The GLBs, renders and comparison pictures are drawn again by `mesh-jig eval` on an attempt's script.
+**/attempts/*/out/
+**/attempts/*/renders/
+**/attempts/*/preview/
+**/attempts/*/compare/*.png
+# the reference crops are cut again by `mesh-jig sheet`, and the sheet is the seed's
+**/runs/*/refs/
+**/runs/*/sheet.png
+**/incumbent/*/refs/
+__pycache__/
