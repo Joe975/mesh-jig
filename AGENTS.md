@@ -9,5 +9,8 @@ improvement"): read `skill/mesh-jig-keep-going/SKILL.md` as well. `mesh-jig stre
 
 Working on mesh-jig itself: read `CLAUDE.md`.
 
+Keep new runs under ignored `local-work/` or `experiments/`. To publish selected metrics, images or GLBs,
+read `skill/mesh-jig-publish-results/SKILL.md`; raw runs stay private.
+
 Improving mesh-jig by generations until changes stop helping (a goal like "iterate on the harness design until
 three generations in a row show no improvement"): read `skill/mesh-jig-harness-loop/SKILL.md`.

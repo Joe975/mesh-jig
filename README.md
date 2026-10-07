@@ -53,6 +53,7 @@ is a denylist, not a sandbox; run model scripts you trust. See [known gaps](docs
 Use the virtual environment to run `python -m pytest -q`. Tests use synthetic geometry and records;
 Blender integration tests skip when Blender is unavailable.
 
-This repository publishes software, reusable instructions and synthetic tests. Experiment results,
-personal references, prompts, transcripts and generated models stay in private local storage.
+This repository publishes software, reusable instructions, synthetic tests and explicitly selected showcases.
+Keep full experiments, personal references, prompts and transcripts in private local storage. Use the
+[results-sharing skill](skill/mesh-jig-publish-results/SKILL.md) to publish selected metrics, images and GLBs.
 See [publication policy](docs/PUBLICATION.md). Everything published here is MIT; see [LICENSE](LICENSE).

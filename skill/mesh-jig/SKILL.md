@@ -9,6 +9,10 @@ You write the model script. mesh-jig builds it in Blender, checks it against a c
 measures the renders against the reference views. The numbers are deterministic and free, so run them on every
 attempt and let them, not your impression of a picture, decide what to change next.
 
+For a new run, choose an ignored project directory such as `local-work/<run>/` and verify it is not already
+tracked. Keep the complete run private. Use [mesh-jig-publish-results](../mesh-jig-publish-results/SKILL.md)
+to share selected metrics, images or GLBs later; do not commit the raw project to a public repository.
+
 ## The loop
 
 1. `mesh-jig doctor <project>` once. It must find Blender and report no project problems.

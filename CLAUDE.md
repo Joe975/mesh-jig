@@ -9,5 +9,6 @@ the script denylist, model write confinement and legacy scoring behavior unless 
 with regression coverage. No model is called by an evaluation without an explicit backend.
 
 Keep research projects in ignored local-work/ or experiments/ and private version control. Do not commit
-personal reference images, prompts, run records, raw logs or generated models. Before publishing run the
+personal reference images, prompts, run records or raw logs. Publish chosen metrics/images/GLBs only with
+skill/mesh-jig-publish-results/SKILL.md, as a reviewed sealed showcase. Before publishing run the
 privacy gate described in docs/PUBLICATION.md. Never merge private research history into this public branch.

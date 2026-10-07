@@ -20,6 +20,8 @@ skill/mesh-jig-harness-loop/loop.gitignore
 skill/mesh-jig-harness-loop/review.md
 skill/mesh-jig-harness-loop/scripts/generation.py
 skill/mesh-jig-keep-going/SKILL.md
+skill/mesh-jig-publish-results/SKILL.md
+skill/mesh-jig-publish-results/scripts/curate.py
 skill/mesh-jig-reference-sheet/SKILL.md
 skill/mesh-jig-reference-sheet/scripts/audit_sheet.py
 skill/mesh-jig/SKILL.md
@@ -89,6 +91,7 @@ tests/test_reference_sheet_audit.py
 tests/test_references.py
 tests/test_render.py
 tests/test_resemblance.py
+tests/test_result_showcase.py
 tests/test_review_observations.py
 tests/test_script_check.py
 tests/test_silhouette.py

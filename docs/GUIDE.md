@@ -77,3 +77,6 @@ region is an observation, not a passed gate.
 Scores are comparable only under the same criteria and measures. A higher score can accompany a worse
 looking model. Review pictures and gates alongside the numbers. [Known gaps](KNOWN_GAPS.md) documents
 limitations; [publication policy](PUBLICATION.md) explains how to keep research and personal data private.
+
+To share a selected result, use [mesh-jig-publish-results](../skill/mesh-jig-publish-results/SKILL.md).
+It prepares a scoped metrics summary and chosen images/models, leaving the complete run private.

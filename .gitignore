@@ -17,6 +17,7 @@ overnight/
 *.blend
 *.blend1
 *.glb
+!/showcase/*/model-??.glb
 *.jsonl
 *.log
 *.out

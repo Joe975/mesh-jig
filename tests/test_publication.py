@@ -2,9 +2,16 @@
 import importlib.util
 from pathlib import Path
 import subprocess
+import json
+
+from glbkit import cube, write_cubes
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location("publication_guard", ROOT / "tools/check_publication.py")
+SCRIPT = ROOT / "tools/check_publication.py"
+if not SCRIPT.exists():
+    SCRIPT = ROOT / "publication/check_publication.py"
+spec = importlib.util.spec_from_file_location("publication_guard", SCRIPT)
 guard = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(guard)
 
@@ -67,3 +74,52 @@ def test_inventory_cannot_opt_in_binary_results_or_environment_secrets():
         assert guard.forbidden_path(name)
         assert guard.scan(name, b"safe text", {name})
     assert guard.scan("safe.py", b"\0binary", {"safe.py"})
+
+
+def selected_showcase(root):
+    package = root / "showcase/example"
+    report = root.parent / (root.name + "-raw-report.json")
+    report.write_text(json.dumps({"model": "example/model", "cost_usd": .01, "wall_s": 2, "evaluations": 1}))
+    image = root.parent / (root.name + "-image.png")
+    Image.new("RGB", (3, 3), "red").save(image)
+    model = write_cubes(root.parent / (root.name + "-model.glb"), [cube()])
+    guard.curator.prepare(report, package, title="Example", driver="API", scope="One evaluation", cost_kind="reported", images=[image], models=[model])
+    inventory = root / "PUBLIC_FILES.txt"
+    names = set(inventory.read_text().splitlines())
+    names.update("showcase/example/" + p.name for p in package.iterdir())
+    names.add("showcase/example/release.json")
+    inventory.write_text("\n".join(sorted(names)) + "\n")
+    return package
+
+
+def test_only_valid_sealed_selected_images_and_models_can_pass(tmp_path):
+    root = repo(tmp_path)
+    package = selected_showcase(root)
+    assert any("unsealed" in f for f in guard.audit(root, ["HEAD"]))
+    guard.curator.seal(package)
+    assert guard.audit(root, ["HEAD"]) == []
+    commit(root)
+    assert guard.audit(root, ["HEAD"]) == []
+    Image.new("RGB", (3, 3), "blue").save(package / "image-01.png")
+    assert any("altered" in f for f in guard.audit(root, ["HEAD"]))
+
+
+def test_later_sealing_does_not_hide_an_unsealed_historical_commit(tmp_path):
+    root = repo(tmp_path)
+    package = selected_showcase(root)
+    commit(root)
+    guard.curator.seal(package)
+    commit(root)
+    assert any("unsealed" in f for f in guard.audit(root, ["HEAD"]))
+
+
+def test_each_valid_historical_selection_uses_its_own_hashes(tmp_path):
+    root = repo(tmp_path)
+    package = selected_showcase(root)
+    guard.curator.seal(package)
+    commit(root)
+    Image.new("RGB", (3, 3), "blue").save(package / "image-01.png")
+    (package / "release.json").unlink()
+    guard.curator.seal(package)
+    commit(root)
+    assert guard.audit(root, ["HEAD"]) == []
