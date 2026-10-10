@@ -1,0 +1,33 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "mesh-jig agent, the numeric tool loop, against a local server on one RTX 4090",
+  "effort": null,
+  "metrics": {
+    "cache_write_tokens": 0,
+    "cached_prompt_tokens": 4426331,
+    "completion_tokens": 342589,
+    "driver_turns": 91,
+    "evaluations": 5,
+    "model_calls": 91,
+    "prompt_tokens": 4799451,
+    "reasoning_tokens": 0,
+    "runtime_seconds": 5636.9
+  },
+  "model": "qwen3.8-27b",
+  "notes": [
+    "The picture is this attempt from the hero camera. It is the bottom row of the comparison picture in the pirate-cat-opus showcase, under the same reference.",
+    "The model ran on a local card, so there is no API cost to report. This is one run, and the numeric score does not measure finished visual quality."
+  ],
+  "result": {
+    "gates_passed": 13,
+    "gates_total": 19,
+    "numeric_score": 0.5757
+  },
+  "schema_version": 1,
+  "scope": "One run of five evaluated attempts, the sixth trial of a loop that revised the prompt mesh-jig agent opens with. The model is attempt 5 of 5, the best by numeric score.",
+  "title": "Pirate cat: Qwen3.8-27B on a local card"
+}

@@ -20,6 +20,11 @@ showcase/pirate-cat-opus/image-01.png
 showcase/pirate-cat-opus/model-01.glb
 showcase/pirate-cat-opus/release.json
 showcase/pirate-cat-opus/summary.json
+showcase/pirate-cat-qwen-local/README.md
+showcase/pirate-cat-qwen-local/image-01.png
+showcase/pirate-cat-qwen-local/model-01.glb
+showcase/pirate-cat-qwen-local/release.json
+showcase/pirate-cat-qwen-local/summary.json
 skill/mesh-jig-harness-loop/SKILL.md
 skill/mesh-jig-harness-loop/loop.gitignore
 skill/mesh-jig-harness-loop/review.md
