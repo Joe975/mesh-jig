@@ -4,6 +4,10 @@ Tools a coding agent calls to build a Blender model script and measure it agains
 Every attempt is built, checked against its asset contract, rendered from fixed cameras and scored
 deterministically. The result is a GLB for a game engine.
 
+![The pirate cat reference over three runs: Opus 5.5 in Claude Code, GPT-6.1 Sol in Codex, and Qwen3.8-27B on a local card](showcase/pirate-cat-opus/image-01.png)
+
+The top row is the reference sheet. Each row under it is one agent's best attempt at it.
+
 ## Install
 
 Requires Python 3.12+ and Blender. From this checkout, create a virtual environment and install the package:
@@ -39,8 +43,27 @@ mesh-jig eval local-work/my-model --script local-work/my-model/attempts/a00/mode
 mesh-jig view local-work/my-model --open
 ```
 
+Every evaluation leaves pictures beside its numbers: the reference next to the build, and the two outlines
+laid over each other.
+
+![One view of an evaluation: the reference beside the build, and the outline diff](showcase/steampunk-mech-opus/image-02.png)
+
 Read [the guide](docs/GUIDE.md) for the workflow and [JIG.md](docs/JIG.md) for the contract fields.
 The [reference-sheet skill](skill/mesh-jig-reference-sheet/SKILL.md) helps create consistent views.
+
+## What comes out
+
+![The steampunk mech reference over three runs: Opus 5.5 in Claude Code, GPT-6.1 Sol in Codex, and Qwen3.8-27B on a local card](showcase/steampunk-mech-opus/image-01.png)
+
+Three of these models are here as GLBs, each with its run's time and tokens:
+
+- [Opus's pirate cat](showcase/pirate-cat-opus/model-01.glb), attempt 16 of 19 ([the run](showcase/pirate-cat-opus/README.md))
+- [Qwen's pirate cat](showcase/pirate-cat-qwen-local/model-01.glb), from a local card, attempt 5 of 5
+  ([the run](showcase/pirate-cat-qwen-local/README.md))
+- [Opus's steampunk mech](showcase/steampunk-mech-opus/model-01.glb), attempt 10 of 13
+  ([the run](showcase/steampunk-mech-opus/README.md))
+
+Each row is one run with its own driver and prompt, so the pictures are examples and not a ranking.
 
 ## Scores and limits
 

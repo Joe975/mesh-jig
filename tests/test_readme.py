@@ -63,8 +63,11 @@ def test_every_relative_link_resolves(page):
     assert not missing, f"{page.name} links to nothing: {missing}"
 
 
-def test_the_readme_stays_short_and_links_to_the_guide():
+def test_the_readme_stays_short_and_keeps_its_pictures():
     text = README.read_text(encoding="utf-8")
     assert len(text.split()) <= 1200
     assert "](docs/GUIDE.md)" in text
     assert "docs/img/" not in text
+    pictures = re.findall(r"!\[[^\]]*\]\(([^)]+)\)", text)
+    assert len(pictures) == 3
+    assert all(re.fullmatch(r"showcase/[a-z0-9-]+/image-[0-9]{2}\.png", p) for p in pictures)
