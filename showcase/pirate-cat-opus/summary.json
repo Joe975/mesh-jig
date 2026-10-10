@@ -1,0 +1,33 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": 12.316233,
+    "kind": "estimated"
+  },
+  "driver": "Claude Code 2.1.289 with the mesh-jig skill",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": 271665,
+    "driver_turns": 249,
+    "evaluations": 19,
+    "model_calls": null,
+    "prompt_tokens": 19129203,
+    "reasoning_tokens": null,
+    "runtime_seconds": 3415
+  },
+  "model": "claude-opus-5-5",
+  "notes": [
+    "The picture sets this attempt under the reference views and above two other runs on the same reference: GPT-6.1 Sol in Codex and Qwen3.8-27B through mesh-jig agent on a local RTX 4090. Each run had its own driver and prompt, so the rows are examples and not a ranking.",
+    "Cost is the list-price figure Claude Code reported for a run made on a subscription. This is one run, and the numeric score does not measure finished visual quality."
+  ],
+  "result": {
+    "gates_passed": 17,
+    "gates_total": 19,
+    "numeric_score": 0.744
+  },
+  "schema_version": 1,
+  "scope": "One fresh run with no attempt cap, stopped when three evaluated attempts in a row had not beaten the best. The model is attempt 16 of 19, the best by numeric score.",
+  "title": "Pirate cat: Opus 5.5 in Claude Code"
+}

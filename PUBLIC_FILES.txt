@@ -15,6 +15,11 @@ docs/PUBLICATION.md
 examples/character-contract/jig.example.json
 examples/organic/recipe.py
 pyproject.toml
+showcase/pirate-cat-opus/README.md
+showcase/pirate-cat-opus/image-01.png
+showcase/pirate-cat-opus/model-01.glb
+showcase/pirate-cat-opus/release.json
+showcase/pirate-cat-opus/summary.json
 skill/mesh-jig-harness-loop/SKILL.md
 skill/mesh-jig-harness-loop/loop.gitignore
 skill/mesh-jig-harness-loop/review.md
