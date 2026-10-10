@@ -25,6 +25,12 @@ showcase/pirate-cat-qwen-local/image-01.png
 showcase/pirate-cat-qwen-local/model-01.glb
 showcase/pirate-cat-qwen-local/release.json
 showcase/pirate-cat-qwen-local/summary.json
+showcase/steampunk-mech-opus/README.md
+showcase/steampunk-mech-opus/image-01.png
+showcase/steampunk-mech-opus/image-02.png
+showcase/steampunk-mech-opus/model-01.glb
+showcase/steampunk-mech-opus/release.json
+showcase/steampunk-mech-opus/summary.json
 skill/mesh-jig-harness-loop/SKILL.md
 skill/mesh-jig-harness-loop/loop.gitignore
 skill/mesh-jig-harness-loop/review.md
