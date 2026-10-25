@@ -15,6 +15,17 @@ docs/PUBLICATION.md
 examples/character-contract/jig.example.json
 examples/organic/recipe.py
 pyproject.toml
+showcase/bruce-owl-comparison/README.md
+showcase/bruce-owl-comparison/image-01.png
+showcase/bruce-owl-comparison/model-01.glb
+showcase/bruce-owl-comparison/model-02.glb
+showcase/bruce-owl-comparison/model-03.glb
+showcase/bruce-owl-comparison/model-04.glb
+showcase/bruce-owl-comparison/model-05.glb
+showcase/bruce-owl-comparison/model-06.glb
+showcase/bruce-owl-comparison/model-07.glb
+showcase/bruce-owl-comparison/release.json
+showcase/bruce-owl-comparison/summary.json
 showcase/pirate-cat-opus/README.md
 showcase/pirate-cat-opus/image-01.png
 showcase/pirate-cat-opus/model-01.glb

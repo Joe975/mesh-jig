@@ -1,0 +1,54 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex instances and a steered local Qwen builder-reviewer workflow",
+  "effort": "mixed requested assignments",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": null,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "Astra, Sol, requested Luna assignments and local Qwen3.8-27B",
+  "notes": [
+    "Six independent requested Codex assignments are represented by their builders' visual selections, not necessarily their highest numeric score. All use the same frozen input set and 65,000-triangle ceiling.",
+    "model-01.glb: Astra A, medium assignment, iteration 10; selected and numeric-best score 0.7303; 61,708 triangles.",
+    "model-02.glb: Astra B, medium assignment, visual iteration 9 at 0.7312; numeric best iteration 10 at 0.7408; selected mesh has 64,504 triangles.",
+    "model-03.glb: Sol, medium assignment, visual iteration 9 at 0.7277; numeric best iteration 10 at 0.7294; selected mesh has 56,984 triangles.",
+    "model-04.glb: requested Luna low, visual iteration 10 at 0.6410; numeric best iteration 6 at 0.6461; selected mesh has 19,392 triangles.",
+    "model-05.glb: requested Luna medium, visual iteration 4 at 0.6454; numeric best iteration 10 at 0.6455; selected mesh has 16,064 triangles.",
+    "model-06.glb: requested Luna high, visual iteration 8 at 0.5939; numeric best iteration 10 at 0.5963; selected mesh has 19,492 triangles.",
+    "model-07.glb: Qwen3.8-27B, steered run 17 round 5; visually selected score 0.6704; 4,936 triangles; measured height 1.025772 m. The documented night maximum was about 0.715 from run 15 round 2 and looked worse by the coordinating review.",
+    "The six Codex runs retain ten distinct successful model scripts and unchanged common inputs. Their 61 successful ledger rows cover 60 distinct models because low evaluated its final model twice. This count excludes Qwen and failed rows; no cross-workflow evaluation total is claimed.",
+    "Low was initially interrupted after four failed height checks and a later script-truncation build refusal. The parent directed a repair and continuation. Those failures survive in private task history; they are not successful evaluations.",
+    "Medium's builder reports one failed pre-evaluation check. High retains one failed baseline ledger row before repair. Failed rows are excluded from the successful-evaluations total.",
+    "After ignoring numeric literals, low's ten scripts have one executable structure, medium has three, and high has nine. Many low and medium iterations are parameter adjustments, not substantial structural modeling development.",
+    "Reviews include concrete defects corroborated against sampled renders. Several later reviews discuss only selected views; exhaustive per-iteration image inspection was not independently verified.",
+    "Effort labels are requested assignments. The high-run report could not independently substantiate a Luna model or high-effort identity from runtime telemetry; parent-side scheduler evidence is not included here.",
+    "Numeric score is the mean of overlap and resemblance, not finished visual quality. Run bests are reported separately from shown visual choices. No aggregate numeric score is assigned to this mixed showcase.",
+    "Runtime, tokens and monetary cost are unavailable. Subscription-backed work is not represented as an invoiced zero-dollar API charge.",
+    "Models remain static vertex-colored approximations with intersecting parts, regular feather relief and imperfect faces, feet and tails. They are not rigged or production-ready optimized assets.",
+    "Sanitization preserves exact transformed triangles, normals and vertex colors. The sanitized and original hero renders match pixel-for-pixel under identical local camera/lighting settings.",
+    "Only selected normalized images and sanitized meshes are included. Original reference artwork, prompts, raw logs, source scripts, editable scenes, private receipts and identifying paths are omitted.",
+    "Qwen assets are now included. This supersedes the earlier six-model package's unavailable-assets note; that original sealed package is preserved unchanged.",
+    "Qwen was selected visually from a 23-run local exploration including interrupted runs. Its five-round budget, 8,000-triangle ceiling, low-effort builder, high-effort reviewer, steering, keep-better, calibration, palette and evolving brief/harness differ from the Codex workflow. Do not treat these scores as a controlled ranking.",
+    "Rendering uses common cameras, one metric display scale and ground alignment for all seven. Qwen's native GLB is centered near mid-height; the display applies only a vertical translation, never saved into the mesh. Original contracts and recorded scores were not changed or recomputed.",
+    "Earlier unblinded inspection favored Sol among the six Codex selections and low among Luna. These are subjective per-result choices, not a general model ranking. The newly included Qwen model is a smooth low-poly interpretation produced under a much smaller triangle budget."
+  ],
+  "result": {
+    "gates_passed": null,
+    "gates_total": null,
+    "numeric_score": null
+  },
+  "schema_version": 1,
+  "scope": "Seven visual selections; six Codex runs plus a selected Qwen run from a different 23-run exploration.",
+  "title": "Bruce owl - Astra Sol Luna and Qwen selected results"
+}
