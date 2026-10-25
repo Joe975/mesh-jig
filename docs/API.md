@@ -1,24 +1,19 @@
-# Direct API builder and optional judge
+# Run an API builder or judge
 
-This route is separate from [Codex and Claude Code](CLIENTS.md). It does not reuse a coding client's
-subscription or login. Start with [installation](../README.md#install), verify the local
-[smoke project](QUICKSTART.md), then prepare a [real reference project](GUIDE.md#configure-your-own-reference).
-Run from the checkout. Shell examples assume the installed environment; on PowerShell use its explicit
-Python executable as in the README.
+[Install](../README.md#install), check the [smoke example](QUICKSTART.md), then
+[prepare your reference project](GUIDE.md#configure-your-own-reference). Run from the installed checkout;
+use the README's PowerShell command substitutions where needed.
 
 ## Protocol and model
 
-`mesh-jig agent` requires an **OpenAI-compatible Chat Completions** base URL. The client appends
-`/chat/completions`, sends tools and image messages, and reads streamed Chat Completions responses.
-Do not supply a full completion URL or assume a native Messages/Responses endpoint works. Use a model
-and endpoint that accept vision input, function tools and streaming. Provider model identifiers are
-not necessarily Codex/Claude Code model aliases. Check your provider's current model list and compatibility;
-no live provider/model compatibility was certified by this documentation update.
+Supply an **OpenAI-compatible Chat Completions base URL** and a model supporting vision, tools and
+streaming. mesh-jig appends `/chat/completions`; native Messages/Responses endpoints aren't interchangeable.
+The agent has no default model. Use the provider's model ID, which can differ from coding-client aliases.
 
 ## Hosted endpoint
 
-Copy `.env.example` to ignored `.env` in the **directory from which you launch mesh-jig**, then edit it
-locally. Uncomment the settings you use; commented examples do nothing. For example:
+Copy `.env.example` to ignored `.env` in the launch directory. Uncomment the settings and replace
+both placeholders:
 
 ```dotenv
 MESH_JIG_AGENT_URL=https://openrouter.ai/api/v1
@@ -26,56 +21,45 @@ MESH_JIG_AGENT_MODEL=REPLACE_WITH_YOUR_PROVIDER_VISION_TOOL_MODEL_ID
 MESH_JIG_AGENT_KEY=REPLACE_WITH_YOUR_PROVIDER_KEY
 ```
 
-Replace both placeholders before running. Never commit keys or pass them as command-line arguments.
-An explicit environment variable wins over `.env`; `--url` and `--model` override their settings.
-`MESH_JIG_ENV_FILE` can select an absolute env-file path when you launch elsewhere. Without `*_KEY`,
-the URL selects `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, or otherwise
-`OPENAI_API_KEY`. This key lookup is not a native-protocol adapter. The agent has **no default model**.
+Environment variables override `.env`; `--url` and `--model` override their settings.
+`MESH_JIG_ENV_FILE` selects another env file by absolute path. [Fallback keys and defaults](JIG.md#environment)
+are provider-specific. Keep keys out of Git and command arguments. API access/billing is separate from
+coding-client subscriptions.
 
-Once configured, check setup without making a model call, then deliberately start the paid run:
+Check configuration, then start the paid run:
 
 ```sh
 mesh-jig doctor local-work/my-model
 mesh-jig agent local-work/my-model --attempts 5 --max-turns 40 --max-wall 600 --max-cost 1.50
 ```
 
-These are illustrative limits, not a cost estimate. `--max-cost` uses the dollar cost returned by the
-endpoint. If it returns no positive cost, a capped run stops **after its first call**, which may already
-be billed. Calls are charged before their usage is known, so a cap can be exceeded by a call; this is
-not a prepaid or provider-enforced ceiling. Configure provider-side limits where available. Turn and
-wall-time caps do not guarantee any particular dollar spend. The optional `--judge` enables additional
-calls through a separately configured backend.
+These are example limits, not a cost estimate. `--max-cost` uses provider-reported dollars **after**
+each call, so it can overshoot. Without positive reported cost it stops after the first, potentially
+billed call. Use provider-side spending limits where available; turn/time caps don't cap dollars.
 
 ## Local endpoint
 
-Start your own compatible vision/tool model server separately; mesh-jig does not install or launch it.
-Replace the model ID and port with what that existing server actually serves:
+Start your own compatible server, then substitute its loaded model ID and port:
 
 ```sh
 mesh-jig agent local-work/my-model --url http://localhost:1234/v1 --model YOUR_LOADED_MODEL_ID --attempts 5 --max-turns 40 --max-wall 600 --cache off
 ```
 
-Localhost/127.0.0.1 needs no key according to mesh-jig; your server may require one. Clear unwanted
-`MESH_JIG_AGENT_KEY`/provider-key overrides in your own launch environment, or use a clean environment
-if the server rejects them. Do not use a dollar cap with a server that reports no monetary cost; use
-turn/time/attempt limits. An endpoint on another host requires a configured key in mesh-jig. Your local
-compute, server model/context limits and its API compatibility remain your responsibility.
+mesh-jig requires no key for localhost/127.0.0.1; your server may require one. Other hosts need a key.
+Check inherited key settings if the server rejects authentication. Without reported monetary cost,
+use attempt/turn/time limits rather than `--max-cost`.
 
 ## Judge, outputs and recovery
 
-The optional pairwise judge needs vision input and compatible responses. Its settings are independent:
-`MESH_JIG_JUDGE_URL`, `MESH_JIG_JUDGE_MODEL`, `MESH_JIG_JUDGE_KEY`. Its defaults and fallback keys are in
-[the environment table](JIG.md#environment). Keep it disabled for key-free local builds. `doctor` can
-report it unconfigured without failing an otherwise valid local project.
+The optional paid judge uses separate `MESH_JIG_JUDGE_*` settings; `--judge` enables extra calls.
+Check [current provider compatibility and validation limits](GUIDE.md#versions-and-troubleshooting)
+before choosing a backend.
 
-Attempts, comparisons and GLBs are stored [as in the walkthrough](QUICKSTART.md#what-success-looks-like).
-The API runner additionally writes `agent/<timestamp>_<model>/report.json` and `transcript.jsonl` under
-the project, and prints that run directory. Preserve partial projects/reports after interruption. Inspect the ledger before continuing;
-do not re-evaluate a completed attempt to read it. Use `mesh-jig show` instead. A fresh project copied
-from the frozen seed gives the clearest independent run. Raw API records stay private.
+The runner prints its `agent/<timestamp>_<model>/` directory, containing `report.json` and
+`transcript.jsonl`. [Attempt outputs](QUICKSTART.md#what-success-looks-like) stay beside the models.
+Keep raw records private. Preserve interrupted runs; inspect the ledger and use `mesh-jig show`
+to read results without duplicating evaluations. Use a fresh frozen seed for an independent run.
 
-For errors, check model/key/base URL, image/tool/stream support and the server context window. Set
-`--context-tokens` to the endpoint capacity and reserve reply tokens if long runs exceed context.
-`--idle` can be raised for servers that reason silently; it does not fix an incompatible API. Inspect
-provider errors locally without publishing raw transcripts. [CLI help](GUIDE.md#versions-and-troubleshooting)
-lists all budgets and recovery controls. No API calls are made by installation or the smoke example.
+For failures, check the base URL, model, key and image/tool/stream support. Set `--context-tokens`
+to the server's capacity; reserve reply space. Raise `--idle` for silent reasoning, not protocol errors.
+Run `mesh-jig agent --help` for all controls.

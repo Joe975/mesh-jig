@@ -1,38 +1,28 @@
-# Using mesh-jig
+# Build from your references
 
-The [README](../README.md) covers installation and route selection. Run the [synthetic smoke test](QUICKSTART.md)
-first. [JIG.md](JIG.md) documents every project field. [Client setup](CLIENTS.md) covers Codex/Claude Code;
-[API setup](API.md) covers the independent hosted/local runner and judge.
-
-Run relative paths from the checkout with its environment. In PowerShell, replace `python` with
-`.\.venv\Scripts\python.exe` and `mesh-jig` with `.\.venv\Scripts\python.exe -m mesh_jig`.
-In POSIX shells, activate with `. .venv/bin/activate` first.
+[Install](../README.md#install) and run the [smoke test](QUICKSTART.md) first. Stay in the checkout;
+use the README's shell conventions. Choose [Codex/Claude Code](CLIENTS.md) or the [API runner](API.md).
 
 ## Configure your own reference
 
-Create a project under the ignored `local-work/` directory. Supply a sheet with consistent views:
+Supply `concept.png`:
 
 ```
 mesh-jig doctor
 mesh-jig init local-work/my-model --sheet concept.png
 ```
 
-`concept.png` is your own image relative to the launch directory; it is not supplied by the repository.
-`init` copies it into the project. It creates placeholder full-sheet crops and a craft contract with
-top/side/rear scored views. Do not measure those unchanged placeholders as independent reference views.
+`init` copies the image and creates full-sheet placeholder crops with a craft contract.
+Before cutting references, edit `jig.json` and `brief.md`:
 
-Before cutting references, edit `local-work/my-model/jig.json` and its generated `brief.md`:
+1. Set `sheet.crops` boxes `[x0,y0,x1,y1]`. Leave room around each silhouette; exclude labels and
+   shadows. See [reference views and masks](JIG.md#reference-views).
+2. Set dimensions, triangle/colour requirements and cameras. Characters need `height_m` and explicit
+   orthographic `model.shots` instead of craft `length_m`/`forward`. Follow [the organic workflow](ORGANIC.md)
+   and replace template calibration values with measured reference values.
+3. Set scored views, weights and gates. Describe the parts and colours in `brief.md`.
 
-1. Set `sheet.crops`: each view has a pixel box `[x0,y0,x1,y1]`. Keep labels and floor shadows outside
-   the subject; leave space around the entire silhouette. [Reference views](JIG.md#reference-views)
-   explains projection, backgrounds and masks. Inspect the actual image, not just box coordinates.
-2. Set the physical dimensions, triangle/color requirements and cameras for your subject. For an upright
-   character remove the craft's `length_m` and `forward`, supply `height_m` and explicit orthographic
-   `model.shots`, then set `criteria.views` to those reference names. Follow [the organic workflow](ORGANIC.md)
-   and replace every illustrative calibration value in its template with real reference measurements.
-3. State scored views, weights and gates; describe each visible part and color in `brief.md`.
-
-Then cut the configured crops and inspect what the mask actually sees:
+Cut and inspect the configured views:
 
 ```
 mesh-jig sheet local-work/my-model
@@ -44,16 +34,12 @@ mesh-jig doctor local-work/my-model
 mesh-jig brief local-work/my-model
 ```
 
-Inspect every `<view>_seen.png` in `local-work/reference-check/`; fix warnings, labels, clipping or
-shadows before proceeding. Name the extracted palette colors and confirm the brief/criteria output.
-Freeze cameras, dimensions, crops, palette, scored views, limits and brief before comparing attempts.
-Reference artwork can have inconsistent projections; inspect it before optimizing against it.
+Inspect every `<view>_seen.png`, fix clipping/labels/shadows and name the palette colours.
+Freeze the reference, cameras, dimensions, palette, criteria and brief before comparing attempts.
 
 ## Iterate
 
-Follow [client setup](CLIENTS.md) or explicitly ask your coding agent to read
-[mesh-jig](../skill/mesh-jig/SKILL.md). It writes a Blender script with a
-`build()` function inside each candidate's directory. The build runner owns export and rendering:
+Your agent follows the [modelling skill](../skill/mesh-jig/SKILL.md) and writes a `build()` script:
 
 ```
 mesh-jig build local-work/my-model --script local-work/my-model/attempts/a00/model.py
@@ -64,18 +50,13 @@ mesh-jig show local-work/my-model a00
 mesh-jig streak local-work/my-model
 ```
 
-Inspect reference/build comparisons, silhouette overlays and regional closeups. Fix the largest visual
-error, copy the best script into a new attempt and repeat. Preview before evaluating. Failed builds do
-not count as successfully evaluated attempts. Keep old attempts intact so their records remain meaningful.
-
-The GLB is under `attempts/<name>/out/`. Exports use Y up and front along -Z. Follow the script rules
-printed by `brief`; the checker refuses forbidden file access but is not a security sandbox.
+Inspect comparisons, silhouette overlays, regional closeups and gates. Copy the best script to a new
+attempt and fix the largest error. Keep evaluated attempts intact; failed builds aren't successful
+evaluations. GLBs are in `attempts/<name>/out/`, Y up, front along -Z.
 
 ## API agent and judge
 
-Read [API setup](API.md) before these commands: they deliberately make model calls. Configure a
-compatible vision/tool model and provider credentials, or an existing localhost model server.
-The runner does not reuse a coding-client subscription. The judge has separate backend settings.
+Configure [API credentials, compatibility and budgets](API.md) before running these model calls:
 
 ```
 mesh-jig agent local-work/my-model --attempts 5 --max-turns 40 --max-wall 600
@@ -83,59 +64,45 @@ mesh-jig agent local-work/my-model --attempts 30 --patience 3 --max-turns 120 --
 mesh-jig judge local-work/my-model local-work/my-model/attempts/a00 --self-check --samples 8
 ```
 
-API calls can cost money. Set explicit turn, attempt and cost limits appropriate to the provider.
-The evaluator does not call a model unless a backend is requested. Keep raw transcripts private.
-The API guide explains why reported-cost caps can overshoot and cannot work without provider cost data.
-
 ## Versions and troubleshooting
 
-Python must be 3.12+; pinned dependencies are in [pyproject.toml](../pyproject.toml). Blender runs as a
-separate background process; its bundled Python is separate from the checkout's environment. No hosted
-model or GPU is required for deterministic CPU rendering. The software searches Windows, macOS and Linux
-installation locations, but that is not a certification of every platform/Blender release.
+Requires Python 3.12+ and the [pinned dependencies](../pyproject.toml). Blender runs separately with
+its own Python; mesh-jig renders on the CPU. Optional `openvdb` availability varies by Blender build;
+see [script rules](JIG.md#the-script).
 
-This documentation update checks the synthetic example locally on Windows with Python 3.13.3 and Blender
-5.2.1 LTS. The available environment has NumPy 2.4.0/Pillow 12.1.1, which differ from the project's pinned
-2.5.0/12.2.0; no dependency reinstall was performed, so fresh pinned installation remains unverified here.
-POSIX commands are shell-syntax checked when a shell is available; macOS/Linux builds and authenticated
-Codex/Claude Code/API sessions are not exercised by this update. The [script rules](JIG.md#the-script)
-describe optional Blender `openvdb` requirements; avoid assuming it exists in every distribution.
+Validation snapshot, 2026-10-25: the smoke test passed on Windows, Python 3.13.3 and Blender 5.2.1 LTS.
+The available NumPy 2.4.0/Pillow 12.1.1 differ from the pinned 2.5.0/12.2.0. Fresh pinned installation,
+macOS/Linux execution and authenticated client/provider sessions remain unverified. POSIX blocks passed
+shell syntax checks; client setup matched installed help and official docs. Check current provider
+model availability and protocol support yourself.
 
-| Symptom | Check |
+| Problem | Fix |
 |---|---|
-| `mesh-jig` not found | Activate the environment in this terminal, or use its Python with `-m mesh_jig`; install from the checkout, not PyPI. |
-| `No module named mesh_jig` | Use the environment where `pip install -e ".[mcp,dev]"` succeeded; keep the source checkout in place. |
-| Blender missing | Put `blender` on PATH or set `MESH_JIG_BLENDER` to an executable in the process environment, then run `doctor`. |
-| PowerShell activation blocked | Use the README's explicit `.venv` Python commands; no execution-policy change is needed. |
-| No views / bad masks / all views identical | Verify `concept.png`, crop boxes and view names; rerun `sheet`, inspect `refs --out`, and correct shadows/labels/backgrounds. |
-| Character has wrong dimensions/cameras | Replace the craft defaults using the organic workflow before attempting a build. |
-| Script refused or contract failed | Read the full checker/gate output and `brief`; repair the current unevaluated candidate, preserve evaluated attempts. The denylist is not a sandbox. |
-| API model/key/cost/context error | Use [API troubleshooting](API.md#judge-outputs-and-recovery); ordinary local builds need no model key. |
-| MCP server missing or disconnected | Use [client troubleshooting](CLIENTS.md#connection-troubleshooting), absolute server/project paths and the `[mcp]` extra. |
-| Dashboard never returns / port busy | It is a foreground server. Ctrl+C stops it; use `--port 8797` if needed. Start it only when you intend to browse. |
+| Command/module missing | Use the checkout's installed environment or its Python with `-m mesh_jig`. |
+| PowerShell activation blocked | Use explicit `.venv` Python commands from the README. |
+| Blender missing | Put it on PATH or set `MESH_JIG_BLENDER` in the shell/server environment. |
+| Bad/identical reference masks | Fix crops, labels and shadows; rerun `sheet` and inspect `refs --out`. |
+| Wrong character dimensions | Replace craft defaults using the organic workflow. |
+| Script/gate failure | Read `brief` and the full error; repair an unevaluated candidate. The checker isn't a sandbox. |
+| API or MCP failure | Check [API controls](API.md#judge-outputs-and-recovery) or [MCP setup](CLIENTS.md#connection-troubleshooting). |
+| Dashboard blocks / port busy | Ctrl+C stops the server; use `--port 8797`. |
 
-PowerShell Blender override (replace with your installed executable):
+Blender override in PowerShell (use your installed path):
 
 ```powershell
 $env:MESH_JIG_BLENDER = 'C:\Program Files\Blender Foundation\Blender 5.2\blender.exe'
 .\.venv\Scripts\python.exe -m mesh_jig doctor
 ```
 
-POSIX equivalent: `export MESH_JIG_BLENDER=/absolute/path/to/blender`. The API `.env` loader is not used
-by every local build/MCP entry point; set Blender in the shell or server environment. For command-specific
-options, use `mesh-jig --help`, `mesh-jig agent --help` or `mesh-jig view --help`.
+POSIX: `export MESH_JIG_BLENDER=/absolute/path/to/blender`. The API `.env` file isn't loaded by every
+local/MCP entry point. For options, run `mesh-jig --help`, `mesh-jig agent --help` or `mesh-jig view --help`.
 
-## The words
+## Read the scores
 
-Overlap is silhouette intersection over union. Resemblance compares colour zones and edge structure.
-Colour compares local colours in Oklab. Regions measure named crops more closely. The numeric score is
-the mix stated by `criteria.score`, or the legacy equal mix of overlap and resemblance. Asset contract
-checks cover structural requirements; acceptance gates cover explicit quality limits. An unthresholded
-region is an observation, not a passed gate.
+Overlap measures silhouette IoU; resemblance measures colour zones and edges. Colour compares Oklab
+values; regions measure named crops. `criteria.score` defines the mix, defaulting to equal overlap and
+resemblance. Gates are separate: an unthresholded region is an observation, not acceptance.
 
-Scores are comparable only under the same criteria and measures. A higher score can accompany a worse
-looking model. Review pictures and gates alongside the numbers. [Known gaps](KNOWN_GAPS.md) documents
-limitations; [publication policy](PUBLICATION.md) explains how to keep research and personal data private.
-
-To share a selected result, use [mesh-jig-publish-results](../skill/mesh-jig-publish-results/SKILL.md).
-It prepares a scoped metrics summary and chosen images/models, leaving the complete run private.
+Compare scores only under the same criteria and measures, then inspect the images.
+See [known gaps](KNOWN_GAPS.md). Keep raw runs private and share selected outputs through the
+[publication workflow](../skill/mesh-jig-publish-results/SKILL.md).

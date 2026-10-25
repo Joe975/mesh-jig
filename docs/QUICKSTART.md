@@ -1,13 +1,11 @@
-# A key-free first success
+# Test a local build
 
-Finish [installation](../README.md#install) first and stay in the checkout. This supplied colored-box
-script generates its own three reference renders with Blender, then you build and measure the same script.
-It needs no agent, API key, external artwork or downloads. It is a deterministic installation/pipeline
-self-check, not evidence that an AI has learned to model or that a real reference is correctly calibrated.
+[Install](../README.md#install), then run these commands from the checkout. The supplied box generates
+its own reference renders: a pipeline self-check with no agent, key or external artwork.
 
 ## Run it
 
-PowerShell, with no environment activation needed:
+PowerShell:
 
 ```powershell
 .\.venv\Scripts\python.exe examples/smoke/prepare.py local-work/smoke
@@ -31,35 +29,27 @@ mesh-jig eval local-work/smoke --script local-work/smoke/attempts/a00/model.py
 mesh-jig show local-work/smoke a00
 ```
 
-Preparation refuses an existing destination, including a partial project. Choose a new directory and
-substitute it in every command when repeating the check. No previous project is deleted or overwritten.
-It invokes local Blender to build a reference fixture, without adding an evaluation to the ledger.
+Preparation refuses existing destinations, including partial projects. To repeat, choose a new directory
+and substitute it throughout. Preparation builds the reference fixture; it doesn't record an evaluation.
 
 ## What success looks like
 
-The supplied box has blue sides and a gold top, is 1 m tall, 0.6 m wide and 0.4 m deep, and has 12 triangles.
-`doctor` should find Blender and no project problems. Optional backend warnings are expected without keys.
-`eval` should report built, in contract, rendered and measured, with overlap/resemblance/numeric score
-near 1. Generated outputs stay under ignored `local-work/smoke/`:
+Expect a passing contract and score near 1. Unconfigured backend warnings are fine without keys.
+This self-match checks the pipeline, not AI modelling quality. Outputs stay in `local-work/smoke/`:
 
 | Path | Contents |
 |---|---|
-| `jig.json`, `brief.md`, `refs/` | Fixed contract, description and three synthetic reference views |
-| `reference-build/` | Local fixture used to produce those references |
-| `attempts/a00/model.py` | Supplied candidate script |
-| `attempts/a00/out/box.glb` | Exported Y-up GLB |
-| `attempts/a00/eval.json`, `numeric.json` | Full evaluation and numeric results |
-| `attempts/a00/compare/` | Reference/build comparisons and silhouette overlays |
-| `attempts/ledger.md` | Exactly one evaluation row after the commands above |
+| `jig.json`, `brief.md`, `refs/`, `reference-build/` | Contract, description and reference fixture |
+| `attempts/a00/model.py`, `attempts/a00/out/box.glb` | Supplied script and exported GLB |
+| `attempts/a00/eval.json`, `attempts/a00/numeric.json`, `attempts/a00/compare/` | Results and comparison images |
+| `attempts/ledger.md` | One evaluation row |
 
-`preview` measures without a ledger row. `show` reads the recorded evaluation without duplicating it.
-Open the comparisons and inspect the GLB as well as its scores. For a dashboard, run this yourself;
-it starts a local server and stays running until Ctrl+C:
+Inspect the GLB and comparisons. `preview` adds no ledger row; `show` reads results without another
+evaluation. To browse the dashboard (Ctrl+C to stop):
 
 ```sh
 mesh-jig view local-work/smoke --open
 ```
 
-Move on to [your own references](GUIDE.md#configure-your-own-reference), [Codex/Claude Code](CLIENTS.md),
-or a deliberately configured [API run](API.md). Do not treat the synthetic self-match as a useful new
-modeling task for an API agent: its answer is already supplied.
+Next, [prepare your own reference](GUIDE.md#configure-your-own-reference) and choose
+[a coding client](CLIENTS.md) or [API builder](API.md). The smoke example's answer is already supplied.
