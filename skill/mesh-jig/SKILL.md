@@ -145,8 +145,9 @@ colours, and write `brief.md`: one bullet per part a viewer would name, with whe
 to be for the measures to read it.
 
 `init` writes a craft's contract: a nose, a length and the four default cameras. For any other subject (a
-character, a mech, a prop) take out `length_m` and `forward` and give it its own orthographic `shots`, as step 4 of
-`docs/GUIDE.md` in the mesh-jig repo says. The outline table is then read through those cameras.
+character, a mech, a prop) take out `length_m` and `forward` and give it its own orthographic `shots`, as
+[Configure your own reference](../../docs/GUIDE.md#configure-your-own-reference) explains. The outline table
+is then read through those cameras.
 
 What a reference is judged on is written beside it, in `jig.json`'s `criteria` block, never assumed from the kind
 of subject:

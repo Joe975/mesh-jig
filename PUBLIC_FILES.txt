@@ -1,3 +1,5 @@
+.agents/skills/mesh-jig/SKILL.md
+.claude/skills/mesh-jig/SKILL.md
 .env.example
 .gitattributes
 .gitignore
@@ -6,14 +8,19 @@ CLAUDE.md
 LICENSE
 PUBLIC_FILES.txt
 README.md
+docs/API.md
+docs/CLIENTS.md
 docs/GUIDE.md
 docs/JIG.md
 docs/KNOWN_GAPS.md
 docs/LESSONS.md
 docs/ORGANIC.md
 docs/PUBLICATION.md
+docs/QUICKSTART.md
 examples/character-contract/jig.example.json
 examples/organic/recipe.py
+examples/smoke/model.py
+examples/smoke/prepare.py
 pyproject.toml
 showcase/bruce-owl-comparison/README.md
 showcase/bruce-owl-comparison/image-01.png
@@ -122,6 +129,7 @@ tests/test_result_showcase.py
 tests/test_review_observations.py
 tests/test_script_check.py
 tests/test_silhouette.py
+tests/test_smoke_example.py
 tests/test_texel_bake.py
 tests/test_texel_gutter.py
 tests/test_viewer.py

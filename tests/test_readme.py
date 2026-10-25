@@ -10,6 +10,7 @@ from mesh_jig import cli
 
 README = Path(__file__).resolve().parents[1] / "README.md"
 GUIDE = README.parent / "docs" / "GUIDE.md"
+EXTRA_GUIDES = [README.parent / "docs" / name for name in ("CLIENTS.md", "API.md", "QUICKSTART.md")]
 
 
 def code_lines(text: str) -> list[str]:
@@ -24,10 +25,18 @@ def code_lines(text: str) -> list[str]:
 
 
 def commands(text: str) -> list[str]:
-    return [c for c in code_lines(text) if c.startswith("mesh-jig ")]
+    found = []
+    for command in code_lines(text):
+        if " -m mesh_jig " in command:
+            command = "mesh-jig " + command.split(" -m mesh_jig ", 1)[1]
+        if command.startswith("mesh-jig "):
+            found.append(command)
+    return found
 
 
-@pytest.mark.parametrize("page, fewest", [(README, 8), (GUIDE, 15)], ids=["README.md", "docs/GUIDE.md"])
+@pytest.mark.parametrize("page, fewest", [(README, 8), (GUIDE, 15),
+                                         (EXTRA_GUIDES[1], 3), (EXTRA_GUIDES[2], 12)],
+                         ids=["README.md", "docs/GUIDE.md", "docs/API.md", "docs/QUICKSTART.md"])
 def test_every_mesh_jig_command_a_page_hands_over_parses(page, fewest):
     found = commands(page.read_text(encoding="utf-8"))
     assert len(found) >= fewest                 # the walk through is there, not an empty file
@@ -54,13 +63,29 @@ def test_nothing_tells_anyone_to_install_from_pypi():
     assert not wrong, f"these name a PyPI install that does not exist: {wrong}"
 
 
-@pytest.mark.parametrize("page", [README, GUIDE], ids=["README.md", "docs/GUIDE.md"])
+@pytest.mark.parametrize("page", [README, GUIDE, *EXTRA_GUIDES,
+                                  README.parent / ".agents/skills/mesh-jig/SKILL.md",
+                                  README.parent / ".claude/skills/mesh-jig/SKILL.md"])
 def test_every_relative_link_resolves(page):
     text = page.read_text(encoding="utf-8")
     targets = [t for t in re.findall(r"\]\(([^)]+)\)", text) if not t.startswith(("http", "#"))]
     assert targets
     missing = [t for t in targets if not (page.parent / t.split("#")[0]).exists()]
     assert not missing, f"{page.name} links to nothing: {missing}"
+
+
+def test_local_documentation_anchors_resolve():
+    """Catch renamed sections as well as missing files on the new reader routes."""
+    for page in [README, GUIDE, *EXTRA_GUIDES]:
+        for target in re.findall(r"\]\(([^)]+)\)", page.read_text(encoding="utf-8")):
+            if target.startswith("http") or "#" not in target:
+                continue
+            name, anchor = target.split("#", 1)
+            destination = page.parent / name if name else page
+            text = destination.read_text(encoding="utf-8")
+            headings = re.findall(r"^#+\s+(.+)$", text, re.M)
+            slugs = {re.sub(r"[^\w\- ]", "", heading.lower()).replace(" ", "-") for heading in headings}
+            assert anchor in slugs, f"{page.name}: missing anchor {target}"
 
 
 def test_the_readme_stays_short_and_keeps_its_pictures():
