@@ -60,6 +60,9 @@ The runner prints its `agent/<timestamp>_<model>/` directory, containing `report
 Keep raw records private. Preserve interrupted runs; inspect the ledger and use `mesh-jig show`
 to read results without duplicating evaluations. Use a fresh frozen seed for an independent run.
 
+The agent can call [checkpoint](SELECTIONS.md) to freeze a sourced visual choice separately from
+its numerical best. The checkpoint tool makes no model calls and consumes no evaluation budget.
+
 For failures, check the base URL, model, key and image/tool/stream support. Set `--context-tokens`
 to the server's capacity; reserve reply space. Raise `--idle` for silent reasoning, not protocol errors.
 Run `mesh-jig agent --help` for all controls.

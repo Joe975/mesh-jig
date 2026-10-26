@@ -32,7 +32,7 @@ import sys
 from pathlib import Path
 
 from . import __version__, agent, brief as brief_mod, build, criteria, evaluate, glb, judge as judge_mod, llm, paint
-from . import palette, project, references, render, sheet, silhouette, streak, viewer
+from . import palette, project, references, render, selection, sheet, silhouette, streak, viewer
 
 PREVIEW_DIR = "preview"
 
@@ -80,6 +80,22 @@ def cmd_streak(a) -> int:
     proj = project.load(a.project)
     v = streak.verdict(proj.root, a.patience, a.margin, a.max_attempts)
     print(json.dumps(v, indent=1) if a.json else streak.text(v))
+    return 0
+
+
+def cmd_checkpoint(a) -> int:
+    proj = project.load(a.project)
+    if a.verify:
+        if any((a.visual_attempt, a.visual_source, a.reason, a.review_file, a.before, a.through, a.views)):
+            raise ValueError("--verify reads an existing checkpoint; omit creation options")
+        record = selection.verify(proj.root / selection.DIRECTORY / selection._name(a.name))
+    else:
+        record = selection.create(proj, a.name, visual_attempt=a.visual_attempt, visual_source=a.visual_source,
+                                  reason=a.reason, review_file=a.review_file, before=a.before,
+                                  through=a.through, views=a.views)
+    print(json.dumps({"checkpoint": str(proj.root / selection.DIRECTORY / a.name),
+                      "selections": record["selections"], "successful_count": record["scope"]["successful_count"],
+                      "visual_choice": record["visual_choice"], "warnings": record["warnings"]}, indent=2))
     return 0
 
 
@@ -460,6 +476,19 @@ def parser() -> argparse.ArgumentParser:
     s.add_argument("--max-attempts", type=int, default=0, help="a ceiling on evaluated attempts (default none)")
     s.add_argument("--json", action="store_true", help="the verdict as a record")
     s.set_defaults(fn=cmd_streak)
+
+    s = subs.add_parser("checkpoint", help="freeze latest, numeric best and an explicit visual choice; compose saved renders")
+    s.add_argument("project", type=Path)
+    s.add_argument("name", help="new checkpoint directory name, such as round-05")
+    s.add_argument("--visual-attempt", default="", help="successful attempt directory name chosen after inspecting its renders")
+    s.add_argument("--visual-source", choices=selection.SOURCES, default="", help="who made the visual choice")
+    s.add_argument("--reason", default="", help="why that visual choice was made; required with --visual-attempt")
+    s.add_argument("--review-file", default="", help="optional existing evidence file relative to the project")
+    s.add_argument("--before", default="", help="earlier checkpoint name for a before/after sheet")
+    s.add_argument("--through", default="", help="include successes up to this attempt in evaluation order")
+    s.add_argument("--views", nargs="+", help="saved views to show (default hero/front/side where available)")
+    s.add_argument("--verify", action="store_true", help="verify the frozen copies without creating or changing files")
+    s.set_defaults(fn=cmd_checkpoint)
 
     s = subs.add_parser("palette", help="read a palette off the reference views")
     s.add_argument("project", type=Path)

@@ -6,8 +6,8 @@ description: Build a low-poly 3D model as a Blender Python script and measure it
 # mesh-jig
 
 You write the model script. mesh-jig builds it in Blender, checks it against a contract, renders it on the CPU and
-measures the renders against the reference views. The numbers are deterministic and free, so run them on every
-attempt and let them, not your impression of a picture, decide what to change next.
+measures the renders against the reference views. The numbers are deterministic and free. Use them to locate
+errors, then inspect the images before choosing the final model.
 
 For a new run, choose an ignored project directory such as `local-work/<run>/` and verify it is not already
 tracked. Keep the complete run private. Use [mesh-jig-publish-results](../mesh-jig-publish-results/SKILL.md)
@@ -42,6 +42,15 @@ to share selected metrics, images or GLBs later; do not commit the raw project t
 
 Start with a baseline attempt that only gets the overall proportions right: the brief's HOW THIS PROJECT IS
 MEASURED section names the numbers that give them, and says what to work on after that.
+
+## Keep the selections
+
+After inspecting saved renders, optionally record latest, numeric best and your visual choice with
+`mesh-jig checkpoint <project> round-05 --visual-attempt <attempt-name> --visual-source self-review --reason
+"<visible reason>"`. It copies selected artifacts and makes a sheet without new evaluations or model calls.
+Leave visual options out if no choice was made. Use `--before round-05` on a later checkpoint for a comparison.
+Read [selection checkpoints](../../docs/SELECTIONS.md) for the format, evidence and verification options.
+Keep these raw snapshots private. A checkpoint does not change the task's attempt budget or stopping rule.
 
 ## Reading the numbers
 

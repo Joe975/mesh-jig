@@ -91,7 +91,7 @@ def test_the_server_registers_every_tool_and_returns_images_as_content(proj):
     server = mcp_server.serve()
     tools = asyncio.run(server.list_tools())
     listed = {t.name: t for t in getattr(tools, "tools", tools)}
-    assert set(listed) == {"brief", "evaluate", "build", "preview", "paint", "judge"}
+    assert set(listed) == {"brief", "evaluate", "build", "preview", "paint", "judge", "checkpoint"}
     schema = getattr(listed["evaluate"], "input_schema", None) or listed["evaluate"].inputSchema     # mcp 2.x / 1.x
     assert set(schema["required"]) == {"project", "script"}
     assert "Read a project before writing anything" in listed["brief"].description

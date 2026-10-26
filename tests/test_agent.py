@@ -519,12 +519,13 @@ def test_a_models_reasoning_blocks_go_back_with_the_tool_results(proj):
 def test_the_offered_tools_are_the_mcp_tools_minus_the_bound_project():
     plain = {t["function"]["name"]: t["function"] for t in agent.tool_schemas()}
     assert set(plain) == {"evaluate", "build", "preview", "paint", "read_file", "write_file", "edit_file", "list_dir",
-                          "view_image", "done", "copy_attempt", "search_file"}
+                          "view_image", "done", "copy_attempt", "search_file", "checkpoint"}
     assert "name" not in plain["evaluate"]["parameters"]["properties"]      # an attempt is named by its directory
     assert all("project" not in f["parameters"]["properties"] for f in plain.values())
     ev = plain["evaluate"]["parameters"]
     assert ev["required"] == ["script"] and "judge_against" not in ev["properties"]
     assert plain["preview"]["parameters"]["properties"]["views"] == {"type": "array", "items": {"type": "string"}}
+    assert plain["checkpoint"]["parameters"]["required"] == ["name"]
     judged = {t["function"]["name"]: t["function"] for t in agent.tool_schemas(judge=True)}
     assert "judge" in judged and "judge_against" in judged["evaluate"]["parameters"]["properties"]
     assert judged["evaluate"]["parameters"]["properties"]["samples"] == {"type": "integer"}

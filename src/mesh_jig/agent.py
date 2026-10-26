@@ -59,8 +59,8 @@ DROPPED = "(picture dropped to save context; view_image the path above to see it
 
 # Every str parameter of every MCP tool is one of these: a path is confined, a text is passed through. A parameter in
 # neither makes `tool_schemas` raise, so a new one cannot skip confinement.
-PATH_ARGS = {"script", "attempt", "attempt_a", "attempt_b", "paint_plan", "atlas", "plan", "out", "judge_against"}
-TEXT_ARGS = {"note", "name", "views", "samples"}
+PATH_ARGS = {"script", "attempt", "attempt_a", "attempt_b", "paint_plan", "atlas", "plan", "out", "judge_against", "review_file"}
+TEXT_ARGS = {"note", "name", "views", "samples", "visual_attempt", "visual_source", "reason", "before", "through"}
 JUDGE_ARGS = {"judge_against", "samples"}            # evaluate's judge parameters: offered only with judge on
 HIDDEN_ARGS = {"evaluate": {"name"}}
 BOUND = "project"
@@ -357,7 +357,7 @@ class Tools:
             if k not in params or k == BOUND or (not self.judge and k in JUDGE_ARGS) or k in HIDDEN_ARGS.get(name, ()):
                 raise Rejected(f"{name} takes no {k!r} argument here")
             if k in PATH_ARGS and v not in ("", None):
-                v = str(in_attempt(self.root, str(v), file=k in ("script", "paint_plan", "atlas", "plan", "out")))
+                v = str(in_attempt(self.root, str(v), file=k in ("script", "paint_plan", "atlas", "plan", "out", "review_file")))
             kw[k] = v
         if name == "evaluate":
             if self.rep.evaluations >= self.budget:

@@ -3,7 +3,7 @@ built in the same turn it built it.
 
     mesh-jig-mcp                      # stdio; needs the `mcp` extra: pip install -e ".[mcp]" in the checkout
 
-Tools: brief, evaluate, build, preview, paint, judge. Each is a plain function below (`TOOLS`) that returns text and
+Tools: brief, evaluate, build, preview, paint, judge, checkpoint. Each is a plain function below (`TOOLS`) that returns text and
 `Picture`s; `serve` registers them and turns the pictures into image content. They run on the machine the server
 runs on, so every path is a local path.
 """
@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from . import __version__, brief as brief_mod, build as build_mod, evaluate as evaluate_mod, glb, judge as judge_mod, llm, paint as paint_mod
-from . import project as project_mod, render, silhouette
+from . import project as project_mod, render, selection, silhouette
 
 INSTRUCTIONS = (
     "mesh-jig builds, renders and measures a Blender model script against reference views. Call `brief` first: it "
@@ -173,7 +173,27 @@ def judge(project: str, attempt_a: str, attempt_b: str = "", samples: int = 16) 
     return [text + f"\n-> {out / 'pairwise.json'}"]
 
 
-TOOLS = (brief, evaluate, build, preview, paint, judge)
+def checkpoint(project: str, name: str, visual_attempt: str = "", visual_source: str = "", reason: str = "",
+               review_file: str = "", before: str = "", through: str = "", views: list[str] | None = None) -> list:
+    """Freeze latest, numeric best and an explicit visual choice, then show a sheet of existing renders. No model
+    calls or evaluations. Leave visual_attempt empty to record no visual choice; it is never inferred from score.
+
+    project: project directory. name: new checkpoint name. visual_attempt: successful attempt directory name.
+    visual_source: human, self-review, reviewer or pairwise. reason: required with a visual choice. review_file:
+    optional evidence file relative to the project. before: previous checkpoint name for a before/after sheet.
+    through: optional last successful attempt in scope. views: saved camera names, not new renders.
+    Checkpoints are write-once private working artifacts; choose a new name to record a changed choice."""
+    proj = project_mod.load(project)
+    record = selection.create(proj, name, visual_attempt=visual_attempt, visual_source=visual_source,
+                              reason=reason, review_file=review_file, before=before, through=through, views=views)
+    directory = proj.root / selection.DIRECTORY / name
+    return [json.dumps({"checkpoint": str(directory), "selections": record["selections"],
+                        "successful_count": record["scope"]["successful_count"],
+                        "visual_choice": record["visual_choice"], "warnings": record["warnings"]}, indent=2),
+            Picture(str(directory / "comparison.png"), "selection checkpoint; numeric fit and visual choice are separate")]
+
+
+TOOLS = (brief, evaluate, build, preview, paint, judge, checkpoint)
 
 
 def guarded(fn):

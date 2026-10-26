@@ -10,7 +10,7 @@ from mesh_jig import cli
 
 README = Path(__file__).resolve().parents[1] / "README.md"
 GUIDE = README.parent / "docs" / "GUIDE.md"
-EXTRA_GUIDES = [README.parent / "docs" / name for name in ("CLIENTS.md", "API.md", "QUICKSTART.md")]
+EXTRA_GUIDES = [README.parent / "docs" / name for name in ("CLIENTS.md", "API.md", "QUICKSTART.md", "SELECTIONS.md")]
 
 
 def code_lines(text: str) -> list[str]:
@@ -35,8 +35,8 @@ def commands(text: str) -> list[str]:
 
 
 @pytest.mark.parametrize("page, fewest", [(README, 8), (GUIDE, 15),
-                                         (EXTRA_GUIDES[1], 3), (EXTRA_GUIDES[2], 12)],
-                         ids=["README.md", "docs/GUIDE.md", "docs/API.md", "docs/QUICKSTART.md"])
+                                         (EXTRA_GUIDES[1], 3), (EXTRA_GUIDES[2], 12), (EXTRA_GUIDES[3], 3)],
+                         ids=["README.md", "docs/GUIDE.md", "docs/API.md", "docs/QUICKSTART.md", "docs/SELECTIONS.md"])
 def test_every_mesh_jig_command_a_page_hands_over_parses(page, fewest):
     found = commands(page.read_text(encoding="utf-8"))
     assert len(found) >= fewest                 # the walk through is there, not an empty file

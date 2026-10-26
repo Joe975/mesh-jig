@@ -17,6 +17,7 @@ docs/LESSONS.md
 docs/ORGANIC.md
 docs/PUBLICATION.md
 docs/QUICKSTART.md
+docs/SELECTIONS.md
 examples/character-contract/jig.example.json
 examples/organic/recipe.py
 examples/smoke/model.py
@@ -85,6 +86,7 @@ src/mesh_jig/resemblance.py
 src/mesh_jig/review.py
 src/mesh_jig/scoring.py
 src/mesh_jig/script_check.py
+src/mesh_jig/selection.py
 src/mesh_jig/sheet.py
 src/mesh_jig/silhouette.py
 src/mesh_jig/standing.py
@@ -128,6 +130,7 @@ tests/test_resemblance.py
 tests/test_result_showcase.py
 tests/test_review_observations.py
 tests/test_script_check.py
+tests/test_selection.py
 tests/test_silhouette.py
 tests/test_smoke_example.py
 tests/test_texel_bake.py

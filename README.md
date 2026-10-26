@@ -81,6 +81,9 @@ mesh-jig view local-work/my-model --open
 
 The dashboard runs until Ctrl+C.
 
+Use [selection checkpoints](docs/SELECTIONS.md) to keep latest, numeric best and an explicit visual
+choice separately, with a comparison sheet made from saved renders.
+
 ![One view of an evaluation: the reference beside the build, and the outline diff](showcase/steampunk-mech-opus/image-02.png)
 
 ## See the models
