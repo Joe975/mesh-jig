@@ -17,11 +17,12 @@ def test_every_file_the_page_names_is_published_and_deployed():
         assert (ROOT / repo_path).is_file(), name
 
 
-def test_every_viewer_starts_on_the_front_and_loads_lazily():
-    """mesh-jig models face Blender +Y, which is glTF -Z; model-viewer's default camera looks at +Z, the back."""
+def test_every_viewer_starts_on_the_front_loads_lazily_and_takes_touch_drags():
+    """mesh-jig models face Blender +Y, which is glTF -Z; model-viewer's default camera looks at +Z, the back.
+    With touch-action pan-y a vertical swipe scrolled the page instead of turning the model."""
     viewers = re.findall(r"<model-viewer[^>]*>", PAGE.read_text(encoding="utf-8"))
     assert viewers
-    assert all('camera-orbit="180deg' in v and 'loading="lazy"' in v for v in viewers)
+    assert all('camera-orbit="180deg' in v and 'loading="lazy"' in v and 'touch-action="none"' in v for v in viewers)
 
 
 def test_the_page_stays_light():
