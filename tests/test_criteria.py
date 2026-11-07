@@ -138,6 +138,7 @@ def test_a_project_that_states_no_views_is_told_it_is_on_the_fallback_and_how_to
     out = capsys.readouterr().out
     assert "CRITERIA (what this reference is judged on" in out
     assert f"To state them: `mesh-jig criteria {proj.root} --write`" in out
+    assert "are for the project's owner: a builder handed a project it may not change builds on" in out
 
     assert cli.main(["criteria", str(proj.root)]) == 0
     out = capsys.readouterr().out
@@ -174,7 +175,8 @@ def test_the_criteria_command_refuses_a_project_with_problems(tmp_path, capsys):
 def test_init_states_the_views_its_craft_is_scored_on(tmp_path):
     sheet.init(tmp_path / "rover", length_m=0.5)
     proj = project.load(tmp_path / "rover")
-    assert proj.data["criteria"] == {"views": {"top": 1, "side": 1, "rear": 1}}
+    assert proj.data["criteria"] == {"views": {"top": 1, "side": 1, "rear": 1}, "light": "camera"}
+    assert proj.spec["light"] == "camera", "a new project is drawn under the camera lights, whatever its subject"
     assert proj.scoring_weights == {"top": 1.0, "side": 1.0, "rear": 1.0}
 
 
@@ -184,6 +186,7 @@ def test_the_light_a_build_is_drawn_under_is_a_criterion_of_the_reference(tmp_pa
     data = criteria.rewrite(character(tmp_path))
     plain = project.Project(tmp_path, data)
     assert plain.spec.get("light") is None and "- light:" not in brief.reading_facts(plain)
+    assert "- light: stage [NOT STATED:" in brief.criteria_facts(plain), "an unstated light is marked as such"
     lit = project.Project(tmp_path, dict(data, criteria=dict(data["criteria"], light="camera")))
     assert lit.problems() == [] and lit.spec["light"] == "camera"
     assert "lights that turn with its camera" in brief.reading_facts(lit)

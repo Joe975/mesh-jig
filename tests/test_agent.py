@@ -135,10 +135,12 @@ def test_write_file_without_text_writes_nothing_and_content_is_accepted(proj):
     ([{"old": "x", "new": "y"}], "matches 2 places"),
     ([{"old": "", "new": "y"}], "is empty"),
     ([], "non-empty list"),
+    ([{"old": "a"}], "nothing changed"),                          # a missing `new` is not a deletion
+    ([{"old": "a", "new2": ""}], "not new2"),
 ])
 def test_an_edit_must_name_one_place(edits, message):
     with pytest.raises(ValueError, match=message):
-        agent.edit_text("x\nx\n", edits)
+        agent.edit_text("x\nx\na\n", edits)
     assert agent.edit_text("a\nb\nc\n", [{"old": "c", "new": "C"}, {"old": "a\n", "new": ""}]) == ("b\nC\n", [3, 1])
 
 
@@ -357,10 +359,10 @@ def test_the_command_hands_the_rule_to_the_run(proj, capsys, monkeypatch):
     monkeypatch.setattr(llm, "resolve_backend", lambda **kw: llm.Backend("openai-compatible", "http://x/v1", "m", "k"))
     monkeypatch.setattr(agent, "chat_for", lambda *args, **kw: None)
     monkeypatch.setattr(agent, "run", lambda *args, **kw: given.update(kw) or agent.Report(model="m", done=True))
-    assert cli.main(["agent", str(proj.root), "--attempts", "60", "--patience", "5"]) == 0
+    assert cli.main(["agent", str(proj.root), "--workflow", "numeric", "--attempts", "60", "--patience", "5"]) == 0
     assert (given["attempts"], given["patience"], given["margin"]) == (60, 5, 0.002)
     assert "up to 60 attempts, until 5 in a row have not gained more than 0.002" in capsys.readouterr().out
-    assert cli.main(["agent", str(proj.root)]) == 0 and (given["attempts"], given["patience"]) == (5, 0)
+    assert cli.main(["agent", str(proj.root), "--workflow", "numeric"]) == 0 and (given["attempts"], given["patience"]) == (5, 0)
 
 
 def test_the_projects_own_path_comes_off_a_tool_result_before_it_is_clipped(proj, monkeypatch):
@@ -558,6 +560,18 @@ def test_the_agent_backend_has_its_own_variables_and_no_default_model():
     assert llm.effort_extra(direct, "low") == {"reasoning_effort": "low"} and llm.effort_extra(direct, None) == {}
 
 
+def test_a_pinned_provider_reaches_openrouter_requests_and_nothing_else():
+    env = {"OPENROUTER_API_KEY": "k"}
+    router = llm.resolve_backend(env, load_file=False, prefix=llm.AGENT_PREFIX, model="m", provider="deepinfra/fp8")
+    assert llm.shape_payload(router, [], None, 10)["provider"] == {"order": ["deepinfra/fp8"], "allow_fallbacks": False}
+    assert "via deepinfra/fp8 only" in router.describe()
+    plain = llm.resolve_backend(env, load_file=False, prefix=llm.AGENT_PREFIX, model="m")
+    assert "provider" not in llm.shape_payload(plain, [], None, 10), "unset, OpenRouter balances as it does"
+    with pytest.raises(llm.LLMError, match="OpenRouter"):
+        llm.resolve_backend({}, load_file=False, prefix=llm.AGENT_PREFIX, model="m",
+                            url="http://localhost:1234/v1", provider="deepinfra/fp8")
+
+
 def test_no_thinking_is_an_explicit_effort_not_an_omitted_default():
     args = cli.parser().parse_args(["agent", "p", "--model", "m", "--effort", "none"])
     assert args.effort == "none"
@@ -637,13 +651,13 @@ def test_agent_command_sends_resolved_capacity_to_the_real_chat_payload(proj, mo
                 "usage": {}}
 
     monkeypatch.setattr(llm, "chat_stream", fake_stream)
-    assert cli.main(["agent", str(proj.root)]) == 0
+    assert cli.main(["agent", str(proj.root), "--workflow", "numeric"]) == 0
     assert limits == [(backend, None)]
     assert payloads[0]["max_tokens"] == 262144
 
 
 def test_the_command_refuses_to_start_without_a_model(proj, capsys):
-    assert cli.main(["agent", str(proj.root)]) == 2
+    assert cli.main(["agent", str(proj.root), "--workflow", "numeric"]) == 2
     assert "needs a model" in capsys.readouterr().err
     assert not (Path(proj.root) / agent.RUNS_DIR).exists()
 
@@ -652,7 +666,7 @@ def test_the_command_ends_by_saying_how_to_see_the_results(proj, capsys, monkeyp
     monkeypatch.setattr(llm, "resolve_backend", lambda **kw: llm.Backend("openai-compatible", "http://x/v1", "m", "k"))
     monkeypatch.setattr(agent, "chat_for", lambda *args, **kw: None)
     monkeypatch.setattr(agent, "run", lambda *args, **kw: agent.Report(model="m", done=True, evaluations=1))
-    assert cli.main(["agent", str(proj.root)]) == 0
+    assert cli.main(["agent", str(proj.root), "--workflow", "numeric"]) == 0
     last = capsys.readouterr().out.strip().splitlines()[-1]
     where = f'"{proj.root}"' if " " in str(proj.root) else proj.root
     assert last.endswith(f"mesh-jig view {where} --open")

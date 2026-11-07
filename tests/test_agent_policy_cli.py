@@ -18,7 +18,7 @@ def test_context_reply_reserve_caps_output_and_passes_policy_to_loop(proj, monke
         return agent.Report(done=True)
     monkeypatch.setattr(agent, "chat_for", chat)
     monkeypatch.setattr(agent, "run", run)
-    assert cli.main(["agent", str(proj.root), "--context-tokens", "65536", "--reply-reserve", "4096",
+    assert cli.main(["agent", str(proj.root), "--workflow", "numeric", "--context-tokens", "65536", "--reply-reserve", "4096",
                      "--max-tokens", "20000", "--max-previews", "3", "--allow-pending-candidates"]) == 0
     assert chat_args["max_tokens"] == 4096
     assert run_args["context_tokens"] == 65536 and run_args["reply_reserve"] == 4096
@@ -36,4 +36,4 @@ def test_invalid_policy_stops_before_resolving_a_backend(proj, monkeypatch, flag
     def unexpected(**kwargs):
         pytest.fail("invalid policy reached backend lookup")
     monkeypatch.setattr(llm, "resolve_backend", unexpected)
-    assert cli.main(["agent", str(proj.root), *flags]) == 2
+    assert cli.main(["agent", str(proj.root), "--workflow", "numeric", *flags]) == 2

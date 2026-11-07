@@ -6,8 +6,8 @@ description: Build a low-poly 3D model as a Blender Python script and measure it
 # mesh-jig
 
 You write the model script. mesh-jig builds it in Blender, checks it against a contract, renders it on the CPU and
-measures the renders against the reference views. The numbers are deterministic and free. Use them to locate
-errors, then inspect the images before choosing the final model.
+measures the renders against the reference views. The numbers are deterministic and free, so run them on every
+attempt. Use visual critique to decide what to change; use numbers to diagnose defects, not choose a visual winner.
 
 For a new run, choose an ignored project directory such as `local-work/<run>/` and verify it is not already
 tracked. Keep the complete run private. Use [mesh-jig-publish-results](../mesh-jig-publish-results/SKILL.md)
@@ -15,21 +15,31 @@ to share selected metrics, images or GLBs later; do not commit the raw project t
 
 ## The loop
 
-1. `mesh-jig doctor <project>` once. It must find Blender and report no project problems.
+Make and change files with your file tools (write, edit), not shell heredocs, `sed -i` or `python -c`, and run
+each `mesh-jig` command on its own rather than chained with others: a sandboxed run may allow nothing more, and
+a denied command is not a sign that the next one will be.
+
+1. `mesh-jig doctor <project>` once. It must find Blender and report no project problems (its warnings about the
+   reference pictures are not problems: build on).
 2. `mesh-jig brief <project>` and read all of it: the brief, the script rules, the contract, the reference's outline
    table when the project has one, the colour zone maps, and how this project is measured. Open every reference
-   view it lists.
+   view it lists. The brief is long: run it on its own, not beside `doctor` or a `cat`, and if your shell tool cuts
+   long output, save it to a file in the project and read that.
 3. Write `<project>/attempts/<name>/model.py`. One idea per attempt, named for what it changes. Never edit an old
-   attempt: copy it to a new directory, so the ledger stays true.
-4. Look before you measure. `mesh-jig build <project> --script <project>/attempts/<name>/model.py`, then
-   `mesh-jig preview <project> <project>/attempts/<name>`. A preview is free: it draws and measures the build as an
-   evaluation would and prints the same overlap, colour zones, resemblance and numeric score, how your colours
-   read, and where the build stands against your best measured attempt. It adds nothing to the ledger and is not
-   an attempt, so an attempt that is not evaluated yet may be edited, built and previewed as often as it helps.
-   When a task gives you a fixed number of attempts, this is how each one is made to count.
-5. `mesh-jig eval <project> --script <project>/attempts/<name>/model.py --note "<what you changed>"` once the
-   preview is ahead of your best attempt. This is the attempt: it writes the ledger line and gives what a preview
-   does not, the outline table and the gates.
+   attempt, so the ledger stays true: start each new one with `mesh-jig new <project> <name> --from <attempt>`,
+   which copies the script (and any atlas plan) into `attempts/<name>/`, then read and change the copy. The first
+   has nothing to copy: `mesh-jig new <project> a01-baseline` makes its directory and you write `model.py` there
+   (an upright character can start from `mesh-jig docs recipe`).
+4. Build a complete candidate. Optional `mesh-jig build` and `mesh-jig preview` can help repair it, but do not
+   repeat previews until its numeric score beats the previous attempt. A preview has no outline table: for a free
+   draft that has one, `mesh-jig eval ... --no-ledger --short` measures it all and adds nothing to the ledger. `build` is quick and prints the triangle
+   count against the ceiling and the nodes holding the most: run it before `eval` when near the ceiling, and before
+   the first `eval` of a script you have changed a lot, since an `eval` that fails the build or the contract still
+   leaves a FAILED line in the ledger. It also names any vertex colour far from every palette colour (faces a paint
+   step missed).
+5. `mesh-jig eval <project> --script <project>/attempts/<name>/model.py --note "<what you changed>"` on every
+   completed candidate, including numeric regressions. Repair failed hard build/contract checks. Preserve every
+   evaluated attempt and its ledger entry.
 6. Read the output, all of it: do not cut it with `head`, `tail` or `grep`. Its first lines are the verdict (the
    numbers, each gate that FAILED and what it needed, where the attempt stands against your best one and which
    views moved); the views, the colours and every row of the outline table follow. Open the `*_vs_reference.png`
@@ -37,11 +47,24 @@ to share selected metrics, images or GLBs later; do not commit the raw project t
    remove body here). When the project marks regions it also names `region_*.png` close-ups: each marked region
    cut from the reference and from your build and enlarged, side by side. A face or a small part is read there,
    not in the whole view, and a preview draws them too. To read an evaluation again run
-   `mesh-jig show <project> <attempt>`, never `eval` a second time: that adds a second line to the ledger.
-7. Fix the largest error first and go to 3.
+   `mesh-jig show <project> <attempt>`, never `eval` a second time: that adds a second line to the ledger. The
+   whole output is also written to `attempts/<name>/feedback.txt`: when your shell cuts long output, read that file
+   in parts rather than piping `eval` through `head`. `eval --short` prints only the verdict block (the numbers,
+   each gate, where it stands and which score terms moved) and leaves the rest to that file; read the rest when
+   the verdict does not say what to change.
+7. Obtain a fresh visual critique from the brief, references, comparison views and close-ups, without builder
+   reasoning or numeric scores. Use a separate reviewer when available; label self-review honestly when it is
+   not. Save the critique in the attempt's `review.md`: up to five concrete fixes and features to preserve.
+   Fix the largest visible mismatch first and go to 3. Do not restart the model without a structural reason.
 
-Start with a baseline attempt that only gets the overall proportions right: the brief's HOW THIS PROJECT IS
-MEASURED section names the numbers that give them, and says what to work on after that.
+Start with a baseline that gets the overall proportions right. Use five evaluated attempts unless the user
+specifies another budget or stopping rule. Report the visual choice with reasons, highest numeric score and
+latest candidate separately. Do not discard a visually useful result because its numeric score fell.
+
+For a user-authorized API run, `mesh-jig agent <project>` implements this loop with five iterations by default.
+Choose the provider/model explicitly; `--max-cost` supports known direct Anthropic 5.5 models. The command calls
+paid APIs: do not start one merely because you are using this skill. `--checks builder|both` are experimental
+numeric-feedback variants; `--workflow numeric` retains the older measurement-led tool loop.
 
 ## Keep the selections
 
@@ -70,9 +93,9 @@ go by it.
 - **resemblance**: zones plus edges in place.
 - **regions**: each region the project marks (a face, a paw), read on its own and finer than the whole view. The
   `REGIONS` line lists them weakest first.
-- **numeric score**: the one number to rank attempts on. It is the mean of overlap and resemblance unless the
+- **numeric score**: the number to rank measured agreement on, not visual quality. It is the mean of overlap and resemblance unless the
   project states its own mix, and then the brief's HOW THIS PROJECT IS MEASURED section and the first line of
-  every evaluation say what it is made of. Work on what the score is made of, in proportion.
+  every evaluation say what it is made of. Investigate disagreement with the images instead of optimizing it blindly.
 - **gates**: limits a project may set on a measure, a marked region or a named part. They are counted on the first
   line and are not in the score. A FAILED line says what the gate read and what it needed. An attempt that scores
   higher and fails a gate your best one passes is a trade, not a gain: the `standing` line says when that happened.
@@ -104,7 +127,9 @@ command running, or there is nobody to answer, put the command in the report for
   exporter, `bpy.app`, `bpy.utils`, and nothing in Blender, `numpy` or `openvdb` that reads or writes a file (a
   `bpy.data` collection's `load`, an image's `save`, a `filepath`). No picture is read into the model: its shape
   and colour come from the script. The runner refuses the script.
-- Blender metres, +Z up, centred on the origin. A craft's nose points along **+Y** and it mirrors across X = 0;
+- Blender metres, +Z up. Follow the brief's placement instructions: for a calibrated standing model,
+  preserve its fixed ground origin and do not recenter its bounding box; without standing calibration, keep it
+  centred on the origin. A craft's nose points along **+Y** and it mirrors across X = 0;
   for anything else the brief says which way the model faces and where each camera stands.
 - Colour is a `CORNER` `FLOAT_COLOR` attribute, one palette colour per face, in **linear** RGBA (the palette in
   `jig.json` is sRGB hex: convert it).
@@ -128,7 +153,7 @@ model, so look at the paint as often as at the shape.
 `mesh-jig eval ... --judge --against <another attempt directory>` also asks a vision model which of the two is
 closer to the reference. It costs money and takes a minute.
 
-- Ask only after the numbers have moved, and always against your last judged attempt or the baseline.
+- Use only when the task authorizes paid pairwise judging, against your last judged attempt or the baseline.
 - Only a DECISIVE verdict is a result. "Not decisive" means the judge can't tell them apart: don't re-ask until it
   says yes.
 - Read its reasons. They say what a viewer sees that the numbers don't.
@@ -147,16 +172,18 @@ mesh-jig init <dir> --length <metres> --sheet <image>
 Then look at the sheet, set one crop box per view in `jig.json` (`sheet.crops`: hero, top, side, rear; `mask` out
 any title text), run `mesh-jig sheet <dir>`, then `mesh-jig refs <dir> --out <another dir>` and fix the crops until
 it prints no `!` line (a view touching the picture's edge, a label or shadow taken as subject) and each
-`<view>_seen.png` shows the subject and nothing else. Its camera lines say which way each view must face. Run
+`<view>_seen.png` shows the subject and nothing else. Its camera lines say which way each view must face. With
+`model.height_m` set it also writes `<view>_ruled.png`: the view with lines at round Blender coordinates, to read
+where a part of the reference sits in the numbers your script writes. Run
 `mesh-jig palette <dir> --write` and rename the
 colours, and write `brief.md`: one bullet per part a viewer would name, with where it sits and its colour.
 `docs/JIG.md` in the mesh-jig repo documents every field, and its Reference views section lists what a view has
 to be for the measures to read it.
 
-`init` writes a craft's contract: a nose, a length and the four default cameras. For any other subject (a
-character, a mech, a prop) take out `length_m` and `forward` and give it its own orthographic `shots`, as
-[Configure your own reference](../../docs/GUIDE.md#configure-your-own-reference) explains. The outline table
-is then read through those cameras.
+`init` writes a craft's contract: a nose, a length and the four default cameras. For anything upright (a
+character, a mech, a figure) give `init --height <metres>` instead of `--length`: it writes a standing contract with
+six views (front, side, rear, right, hero, top), and `mesh-jig refs` then prints the calibration to copy into
+`criteria.outline` (step 4 of `docs/GUIDE.md` in the mesh-jig repo). The outline table is then read through those cameras.
 
 What a reference is judged on is written beside it, in `jig.json`'s `criteria` block, never assumed from the kind
 of subject:
@@ -174,6 +201,9 @@ the subject. `mesh-jig criteria <dir>` reads back what is in force, where it is 
 change them while attempts are being compared. `docs/JIG.md`, Criteria, has each key.
 
 ## Standing/organic models (opt-in)
+
+The three files linked below live in the mesh-jig checkout, which a copy of this skill may not sit beside:
+`mesh-jig docs organic`, `mesh-jig docs contract` and `mesh-jig docs recipe` print them wherever it runs.
 
 Read [the organic workflow](../../docs/ORGANIC.md) before building an upright character: it has the steps for
 measuring a calibration and a region box from the reference's pixels with `mesh-jig refs` (`--region VIEW X0 Y0 X1
@@ -196,3 +226,9 @@ intrusion and hidden belt/buckle. Probe concave fits using the appropriate first
 between loft stations. A garment can pass ring endpoints and still cross skin between rings; reserve neighboring
 loft envelopes and inspect the imported CPU render. These checks cover declared probes/regions, not every pose
 or every triangle. Keep evidence, configuration and fit decisions in versioned project files.
+
+When the brief names a TARGET (the project's `target`, or `--target quest` / `--target pcvr` on your commands), its
+triangle ceiling is the contract's and every evaluation ends with a MESH READINESS block: checks that hold or do
+not (buried triangles, pieces, open edges, slivers, symmetry, materials). They do not fail a build or move the
+score. Read them as you read a failed gate: a model that matches the reference and holds them is worth more to
+the stages after this one than one that only matches. Pass the same `--target` on every command of a run.

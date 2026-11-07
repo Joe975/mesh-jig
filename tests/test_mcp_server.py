@@ -30,6 +30,10 @@ def proj(tmp_path, monkeypatch):
         glb.write_report(out, spec)
         return ""
     monkeypatch.setattr(build, "build_variants", built)
+    real_locked = evaluate._evaluate_locked
+    monkeypatch.setattr(evaluate, "_evaluate_locked",
+                        lambda *a, **kw: real_locked(*a, **{**kw, "build_fn": fake_build(),
+                                                            "render_fn": quick_render}))
     real = evaluate.evaluate
     monkeypatch.setattr(evaluate, "evaluate",
                         lambda *a, **kw: real(*a, **{**kw, "build_fn": fake_build(), "render_fn": quick_render}))

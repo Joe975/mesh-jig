@@ -70,9 +70,44 @@ def write_refs(project: Project) -> list[Path]:
     return written
 
 
-def template(name: str, length_m: float, sheet_file: str = "", sheet_size: tuple[int, int] | None = None) -> dict:
+STANDING_VIEWS = ("front", "side", "rear", "right", "hero", "top")
+# the pirate cat's cameras, in stage units (stage_scale makes the subject one unit tall): the front looks at the
+# model's +Y face, the side at its anatomical left (-X), the top down with the front toward the picture's bottom
+STANDING_SHOTS = [
+    {"name": "front", "cam_pos": [0, 0, -3], "cam_target": [0, 0, 0], "ortho": 1.12},
+    {"name": "side", "cam_pos": [-3, 0, 0], "cam_target": [0, 0, 0], "ortho": 1.12},
+    {"name": "rear", "cam_pos": [0, 0, 3], "cam_target": [0, 0, 0], "ortho": 1.12},
+    {"name": "right", "cam_pos": [3, 0, 0], "cam_target": [0, 0, 0], "ortho": 1.12},
+    {"name": "hero", "cam_pos": [-2.4, 1.35, -3.7], "cam_target": [0, 0, 0], "ortho": 1.12},
+    {"name": "top", "cam_pos": [0, 3, 0], "cam_up": [0, 0, 1], "cam_target": [0, 0, 0], "ortho": 1.12},
+]
+
+
+def template(name: str, length_m: float, sheet_file: str = "", sheet_size: tuple[int, int] | None = None,
+             height_m: float | None = None) -> dict:
     """A jig.json to start from: a vertex-colour contract for a craft `length_m` long, nose along -Z, scored on its
-    top, side and rear views. The views are stated in `criteria`, so whoever changes the subject sees them to change."""
+    top, side and rear views, under the lights that turn with each camera. The views and the light are stated in
+    `criteria`, so whoever changes the subject sees them to change.
+
+    With `height_m`, a standing subject's instead (a character, a mech, a figure): held to that height, centred at
+    mid-height, its objects kept apart, the six cameras of STANDING_SHOTS scaled to it, scored on the five
+    orthographic views, and the outline's ground at its feet; `mesh-jig refs` then prints the calibration to add."""
+    if height_m is not None:
+        if not height_m > 0:
+            raise ValueError("--height must be a positive number of metres")
+        data = {
+            "name": name, "brief": "brief.md", "refs": "refs", "palette": {},
+            "model": {"script": "model.py", "glb": f"{name}.glb", "join": False, "height_m": height_m,
+                      "height_tolerance": 0.05, "stage_scale": round(1 / height_m, 6), "max_triangles": 10000,
+                      "min_triangles": 100, "single_mesh": False, "vertex_colors": True, "min_colors": 3,
+                      "shots": [dict(s) for s in STANDING_SHOTS]},
+            "criteria": {"views": {v: 1 for v in STANDING_VIEWS if v != "hero"}, "light": "camera"},
+        }
+        if sheet_file:
+            w, h = sheet_size or (0, 0)
+            data["sheet"] = {"source": sheet_file, "mask_sample_x": 8,
+                             "crops": {v: {"box": [0, 0, w, h]} for v in STANDING_VIEWS}}
+        return data
     data: dict = {
         "name": name,
         "brief": "brief.md",
@@ -81,7 +116,7 @@ def template(name: str, length_m: float, sheet_file: str = "", sheet_size: tuple
         "model": {"script": "model.py", "glb": f"{name}.glb", "join": True, "length_m": length_m,
                   "length_tolerance": 0.05, "forward": "-Z", "max_triangles": 1500, "min_triangles": 100,
                   "single_mesh": True, "vertex_colors": True, "min_colors": 2},
-        "criteria": {"views": {"top": 1, "side": 1, "rear": 1}},
+        "criteria": {"views": {"top": 1, "side": 1, "rear": 1}, "light": "camera"},
     }
     if sheet_file:
         w, h = sheet_size or (0, 0)
@@ -90,7 +125,8 @@ def template(name: str, length_m: float, sheet_file: str = "", sheet_size: tuple
     return data
 
 
-def init(root: str | Path, *, name: str = "", length_m: float = 1.0, sheet: str | Path | None = None) -> list[Path]:
+def init(root: str | Path, *, name: str = "", length_m: float = 1.0, sheet: str | Path | None = None,
+         height_m: float | None = None) -> list[Path]:
     """Write jig.json, brief.md and refs/ into `root` (created). Refuses to overwrite a jig.json. With `sheet`, the
     image is copied in and a `sheet` block with one full-frame box per view is written for you to tighten."""
     root = Path(root)
@@ -109,7 +145,7 @@ def init(root: str | Path, *, name: str = "", length_m: float = 1.0, sheet: str 
         shutil.copyfile(src, root / sheet_file)
         size = Image.open(root / sheet_file).size
         written.append(root / sheet_file)
-    jig.write_text(json.dumps(template(name, length_m, sheet_file, size), indent=2) + "\n", encoding="utf-8")
+    jig.write_text(json.dumps(template(name, length_m, sheet_file, size, height_m), indent=2) + "\n", encoding="utf-8")
     written.append(jig)
     brief = root / "brief.md"
     if not brief.exists():

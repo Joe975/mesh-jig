@@ -65,6 +65,7 @@ def test_an_attempt_is_read_from_its_own_directory_after_the_project_was_copied(
     alpha = next(p for p in same["projects"] if p["attempts"])
     by_name = {a["name"]: a for a in alpha["attempts"]}
     assert list(by_name) == ["a01", "a02", "a03"] and alpha["best"] == "a01"
+    assert alpha["latest"] == "a02", "a failed build is not the latest evaluated candidate"
     a01 = by_name["a01"]
     assert a01["ok"] and a01["note"] == "the right shape" and a01["numeric"]["numeric_score"] > 0.9
     assert a01["numeric"]["numeric_score"] > by_name["a02"]["numeric"]["numeric_score"]
@@ -866,3 +867,80 @@ def test_the_skills_and_the_mcp_server_have_a_builder_ask_whether_to_open_the_pa
     asks = re.compile(r"\bask the user whether[^.]*`mesh-jig view <project> --open`", re.I)
     for other in ((skills / "mesh-jig-keep-going" / "SKILL.md").read_text(encoding="utf-8"), mcp_server.INSTRUCTIONS):
         assert asks.search(" ".join(other.split())) and "background" in other
+
+
+@needs_node
+def test_visual_results_expose_numeric_best_latest_and_saved_review(scan, tmp_path):
+    root = scan / "alpha"
+    report_path = next((root / "agent").glob("*/report.json"))
+    report = json.loads(report_path.read_text())
+    report.update(workflow="visual-gauntlet", checks="none", latest={"name": "a02", "numeric_score": .5})
+    report_path.write_text(json.dumps(report))
+    review = root / "attempts" / "a02" / "review.md"
+    review.write_text("Narrow the body; preserve the nose.")
+    index = viewer.build_index([scan])
+    alpha = next(p for r in index["references"] for p in r["projects"] if p["label"] == "alpha")
+    assert alpha["attempts"][1]["review"] == "attempts/a02/review.md"
+    assert viewer.safe_file({alpha["id"]: root}, alpha["id"], "attempts/a02/review.md") == review
+    (tmp_path / "index.json").write_text(json.dumps(index))
+    tail = r"""
+import {readFileSync} from "node:fs";
+data = JSON.parse(readFileSync(process.argv[2], "utf8"));
+const ref = data.references.find(r => r.projects.some(p => p.label === "alpha"));
+state.ref = ref.key;
+for (const p of ref.projects) state.groups.add(p.group);
+console.log(agentRuns(ref));
+"""
+    script = tmp_path / "visual.mjs"
+    script.write_text(NO_PAGE + page_script() + tail, encoding="utf-8")
+    done = subprocess.run([shutil.which("node"), str(script), str(tmp_path / "index.json")], capture_output=True, text=True)
+    assert done.returncode == 0, done.stderr
+    assert 'data-pick="' + alpha["id"] + '/a01"' in done.stdout
+    assert 'data-pick="' + alpha["id"] + '/a02"' in done.stdout
+    assert "Highest numeric score: a01" in done.stdout and "Latest: a02" in done.stdout
+    assert "Visual iterations complete." in done.stdout
+    out = tmp_path / "export"
+    viewer.export([scan], out)
+    assert any(p.read_text() == review.read_text() for p in out.rglob("review.md"))
+
+
+@needs_node
+def test_an_attempts_mesh_reading_is_in_the_list_and_its_checks_under_the_picked_attempt(scan, tmp_path):
+    from mesh_jig import evaluate
+    from test_evaluate import quick_render
+    root = scan / "alpha"
+    made = root / "attempts" / "a04" / "ship.py"
+    made.parent.mkdir()
+    made.write_text("def build():\n    pass\n")
+    rec = evaluate.evaluate(project.load(root, "quest"), made, made.parent, log=lambda *_: None, render_fn=quick_render,
+                            build_fn=fake_build())
+    index = viewer.build_index([scan])
+    alpha = next(p for r in index["references"] for p in r["projects"] if p["label"] == "alpha")
+    ready = {a["name"]: a["ready"] for a in alpha["attempts"]}
+    triangles = rec["readiness"]["cost"]["triangles"]
+    assert ready["a01"] == {"target": None, "passed": None, "of": None, "triangles": triangles}      # built for no target
+    assert ready["a03"] is None                                                                      # never built
+    assert ready["a04"] == {"target": "quest", "passed": rec["readiness"]["passed"], "of": 7, "triangles": triangles}
+    (tmp_path / "index.json").write_text(json.dumps(index))
+    (tmp_path / "reading.json").write_text(json.dumps([rec["readiness"], evaluate.read(root / "attempts" / "a01")["readiness"]]))
+    tail = r"""
+import {readFileSync} from "node:fs";
+data = JSON.parse(readFileSync(process.argv[2], "utf8"));
+const [aimed, plain] = JSON.parse(readFileSync(process.argv[3], "utf8"));
+const ref = data.references.find(r => r.projects.some(p => p.label === "alpha"));
+state.ref = ref.key; state.every = true;
+for (const p of ref.projects) state.groups.add(p.group);
+console.log(JSON.stringify({list: attempts(ref), aimed: meshReady(aimed), plain: meshReady(plain), none: meshReady(undefined)}));
+"""
+    script = tmp_path / "ready.mjs"
+    script.write_text(NO_PAGE + page_script() + tail, encoding="utf-8")
+    done = subprocess.run([shutil.which("node"), str(script), str(tmp_path / "index.json"), str(tmp_path / "reading.json")],
+                          capture_output=True, text=True)
+    assert done.returncode == 0, done.stderr
+    got = json.loads(done.stdout)
+    assert 'data-sort="triangles"' in got["list"] and 'data-sort="ready"' in got["list"]
+    assert f"{rec['readiness']['passed']} of 7</span>" in got["list"] and f">{triangles}</td>" in got["list"]
+    assert "Mesh readiness for quest" in got["aimed"] and f"{rec['readiness']['passed']} of 7 checks hold" in got["aimed"]
+    assert got["aimed"].count('<span class="name">') == 7 and "a build over it fails" in got["aimed"]
+    assert f"{triangles} triangles" in got["aimed"] and "No UVs" in got["aimed"]
+    assert "No target is set" in got["plain"] and 'class="checks"' not in got["plain"] and got["none"] == ""

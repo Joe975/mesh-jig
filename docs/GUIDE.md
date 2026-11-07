@@ -60,9 +60,26 @@ Configure [API credentials, compatibility and budgets](API.md) before running th
 
 ```
 mesh-jig agent local-work/my-model --attempts 5 --max-turns 40 --max-wall 600
-mesh-jig agent local-work/my-model --attempts 30 --patience 3 --max-turns 120 --max-wall 1800
+mesh-jig agent local-work/my-model --workflow numeric --attempts 30 --patience 3 --max-turns 120 --max-wall 1800
 mesh-jig judge local-work/my-model local-work/my-model/attempts/a00 --self-check --samples 8
 ```
+
+The default is visual review: a builder and a fresh reviewer for five iterations ([GAUNTLET.md](GAUNTLET.md)).
+`--workflow numeric` is the legacy tool loop; `--patience`, `--judge`, `--context-tokens` and preview
+options need it.
+
+## After modelling
+
+Read what a built model costs an engine, and what a rig or texture would find in it. `--target quest` or
+`pcvr` (or a project's own `targets` in [jig.json](JIG.md)) sets the triangle ceiling and the limits:
+
+```
+mesh-jig ready local-work/my-model a00 --target quest
+```
+
+[Rigging](RIGGING.md) adds a skeleton and clips to a frozen GLB without re-exporting its geometry, by
+hand or with `mesh-jig agent <rig dir> --workflow rig`. [Sounds](SOUND.md) are synthesised by a script and
+timed to a rigged clip's footfalls, takeoff and landing, with `--workflow sound` for an API author.
 
 ## Versions and troubleshooting
 

@@ -136,7 +136,7 @@ def measure(references: dict[str, str | Path], spec: dict, stations: int = STATI
     return out
 
 
-def from_mesh(tris: np.ndarray, reference: dict) -> dict:
+def from_mesh(tris: np.ndarray, reference: dict, names: list[str] | None = None) -> dict:
     """Triangles in model axes and millimetres ((T, 3, 3), as `profile.glb_triangles` gives them) read as `measure`
     reads a view: at each station a section of the surface one reference pixel thick, its ends across in millimetres
     from the centre of the mesh's bounding box. `scale_mm` is what one reference unit is on this model."""
@@ -156,11 +156,24 @@ def from_mesh(tris: np.ndarray, reference: dict) -> dict:
         for r in table["rows"]:
             at = centre[along] + r["f"] * extent[along]
             sel = profile.section(tris, along, at, table["half"] * extent[along])
-            rows.append({"at_mm": round(float(r["f"] * extent[along]), 1),
-                         "min_mm": round(float(sel[:, across].min() - centre[across]), 3) if len(sel) else None,
-                         "max_mm": round(float(sel[:, across].max() - centre[across]), 3) if len(sel) else None})
+            row = {"at_mm": round(float(r["f"] * extent[along]), 1),
+                   "min_mm": round(float(sel[:, across].min() - centre[across]), 3) if len(sel) else None,
+                   "max_mm": round(float(sel[:, across].max() - centre[across]), 3) if len(sel) else None}
+            if len(sel):
+                # where each end is set, so an error can be put to a part: two builders could not tell which
+                for end, k in (("min", int(sel[:, across].argmin())), ("max", int(sel[:, across].argmax()))):
+                    row[f"{end}_at"] = [round(float(v - c), 0) + 0.0 for v, c in zip(sel[k], centre)]
+                    if names is not None and len(set(names)) > 1:
+                        row[f"{end}_by"] = _owner(tris, names, sel[k])
+            rows.append(row)
         out["views"][view] = {"along": table["along"], "across": table["across"], "rows": rows}
     return out
+
+
+def _owner(tris: np.ndarray, names: list[str], point: np.ndarray) -> str:
+    """The node of the triangle nearest a point of a section."""
+    centroid = tris.mean(axis=1)
+    return names[int(np.linalg.norm(centroid - point, axis=1).argmin())]
 
 
 def compare(reference: dict, mesh: dict) -> dict:
@@ -174,7 +187,13 @@ def compare(reference: dict, mesh: dict) -> dict:
         for r, m in zip(table["rows"], mesh["views"][view]["rows"]):
             name = f"{table['along'].lower()}{m['at_mm']:+.0f}"
             has_r, has_m = r["min"] is not None, m["min_mm"] is not None
-            d = {"name": name, "min_mm": None, "max_mm": None, "width_mm": None}
+            # the station as the brief names it, in its own unit: builders matched z-1841 to the brief's z-454 by hand
+            k = reference.get("unit_mm") or 1000.0
+            d = {"name": name, "brief_name": f"{table['along'].lower()}{r['f'] * reference['extents'][table['along']] * k:+.0f}",
+                 "min_mm": None, "max_mm": None, "width_mm": None}
+            for key in ("min_at", "max_at", "min_by", "max_by"):
+                if key in m:
+                    d[key] = m[key]
             if has_r and has_m:
                 d["min_mm"] = round(m["min_mm"] - r["min"] * scale, 1)
                 d["max_mm"] = round(m["max_mm"] - r["max"] * scale, 1)
@@ -225,23 +244,47 @@ def text(reference: dict) -> str:
 
 def compare_text(diff: dict) -> str:
     """The differences as the agent reads them: + means the model reaches further out at that end."""
+    # a project that states no size is read in thousandths in the brief: the errors are said in them too, beside
+    # the millimetres, so a row can be read against the brief's own table
+    per = None if diff.get("declared") else 1000.0 / diff["scale_mm"]
+
     def cell(row) -> str:
         if row["min_mm"] is None:
             return "none"
-        return f"{-row['min_mm']:+.0f}/{row['max_mm']:+.0f}"
+        said = f"{-row['min_mm']:+.0f}/{row['max_mm']:+.0f}"
+        if per:
+            said += f" ({-row['min_mm'] * per:+.0f}/{row['max_mm'] * per:+.0f})"
+        return said
+
+    def station(row) -> str:
+        return f"{row['brief_name']} ({row['name']} mm)" if per and row.get("brief_name") else row["name"]
     lines = [
         "YOUR MODEL AGAINST THE REFERENCE OUTLINES (millimetres"
         + ("" if diff.get("declared") else f" on your model's own scale: the reference is sized to your extent along "
            f"the unit axis, {diff['scale_mm']:.0f} mm") + "; + means your model reaches FURTHER OUT at that end, - "
-        f"that it falls short; measured from your GLB, not judged). Mean absolute error {diff['mae_mm']} mm; overall "
+        f"that it falls short; measured from your GLB, not judged" + ("; each station is named as in the brief's "
+        "table, and in brackets its errors are in the brief's thousandths" if not diff.get("declared") else "")
+        + f"). Mean absolute error {diff['mae_mm']} mm; overall "
         "extents " + ", ".join(f"{a} {v:+.0f}" for a, v in diff["overall"].items()) + ":"]
     for view, table in diff["views"].items():
         a, c = table["along"], table["across"]
         lines.append(f"- {view} view, stations along {a}, error at the -{c} end/the +{c} end:")
-        lines.append("    " + "  ".join(f"{r['name']}:{cell(r)}" for r in table["rows"]))
+        lines.append("    " + "  ".join(f"{station(r)}:{cell(r)}" for r in table["rows"]))
     for label, names in (("the reference has body and yours has none", diff["missing_stations"]),
                          ("yours has body and the reference has none", diff["extra_stations"])):
         if names:
             lines.append(f"- stations where {label}: {', '.join(names)}")
+    worst = sorted(((abs(r[f"{end}_mm"]), view, r, end, t) for view, t in diff["views"].items() for r in t["rows"]
+                    for end in ("min", "max") if r.get(f"{end}_mm") is not None and r.get(f"{end}_at")),
+                   key=lambda w: -w[0])[:3]
+    if worst:
+        said = []
+        for err, view, r, end, t in worst:
+            sign = -r["min_mm"] if end == "min" else r["max_mm"]
+            x, y, z = r[f"{end}_at"]
+            by = f" in {r[f'{end}_by']}" if r.get(f"{end}_by") else ""
+            said.append(f"{view} {station(r)} {'-' if end == 'min' else '+'}{t['across']} end {sign:+.0f} mm, set by "
+                        f"your surface at ({x:+.0f}, {y:+.0f}, {z:+.0f}) mm from your box's centre{by}")
+        lines.append("- the furthest-off ends: " + "; ".join(said))
     lines.append("Close the biggest of these and the outline matches the reference.")
     return "\n".join(lines)

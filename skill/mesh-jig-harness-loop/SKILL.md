@@ -17,7 +17,7 @@ Use the mesh-jig-harness-loop skill. Iterate on the harness design to improve th
 generations in a row show no improvement.
 
 Seed: local-work/my-seed
-Builder: mesh-jig agent, anthropic/claude-sonnet-5.5, low effort, five attempts
+Builder: mesh-jig agent --workflow numeric, anthropic/claude-sonnet-5.5, low effort, five attempts
 Runs a side: 3
 Stop early at: 12 generations or $40
 ```
@@ -71,14 +71,31 @@ views if the seed holds a sheet, record what it ran on, start the builder, and w
 ```text
 mesh-jig sheet <run>
 git rev-parse --short HEAD > <run>/harness-commit.txt
-mesh-jig agent <run> --model <model> --attempts 5 --effort low --max-cost 1.50
+mesh-jig agent <run> --workflow numeric --model <model> --attempts 5 --effort low --max-cost 1.50
 ```
+
+This command keeps the historical numeric baseline explicit. To test the new default, choose `--workflow visual`
+and its supported provider/budget settings; freeze that choice across the comparison.
 
 `mesh-jig agent` reads the working tree, so the change only has to be saved. A coding agent as the builder gets the
 committed `skill/mesh-jig/SKILL.md` as its only skill, in a directory outside the repo, with nothing of the
 person's own setup. Save its exact prompt in the private experiment directory. Commit the change before those runs. Runs of one generation may go two to
 four at a time. A run that died (no measured attempt) is run again under a new name, and the record says so; a run
 that built badly is a result and stays.
+
+For `mesh-jig agent` as the builder, `scripts/run_side.py` does all of that for one side and writes
+`summary.json` (each run's scores, wall time, largest prompt and reply, which runs died and what stands in for them):
+
+```text
+python skill/mesh-jig-harness-loop/scripts/run_side.py experiments/<loop>/g03/runs --seed <seed> --count 3 -- --model <model> --attempts 5 --effort low
+```
+
+What follows `--` goes to `mesh-jig agent <run>` unchanged. It keeps two builders going (`--at-a-time`) and starts
+one no sooner than ten minutes after another that is still going (`--stagger`, in seconds: 0 for a hosted model).
+For a local server add `--server-url http://localhost:<port> --server-command <file>`: it asks `/health` before
+each start and starts the server from the command line in that file when there is no answer. Keep the file out of
+the tracked tree, since it names your machine's paths. `--monitor 60` logs the card's and the host's memory and
+the server's largest context each minute. Start it once a side, in the background, and wait for it to end.
 
 ## One generation
 

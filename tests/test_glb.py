@@ -122,3 +122,41 @@ def test_textured_contract_passes_a_bound_atlas_and_names_each_breach(tmp_path):
     assert glb.atlas_name({"atlas": "skin.png"}) == "skin.png" and glb.atlas_name({}) == "atlas.png"
     assert glb.texture_mode({}) == "vertex" and glb.texture_mode({"textured": True}) == "atlas"
     assert glb.texture_mode({"textured": True, "texture_mode": "multiply"}) == "multiply"
+
+
+def test_a_build_over_the_ceiling_says_where_the_triangles_are(tmp_path):
+    p = write_glb(tmp_path / "a.glb", [("Hull", box((0.06, 0.02, 0.08)), (0, 0, 0)),
+                                       ("Fin", box((0.01, 0.01, 0.01)), (0, 0.02, 0.03)),
+                                       ("Gun", box((0.01, 0.01, 0.02)), (0, 0, -0.03))])
+    s = glb.stats(p)
+    assert s["node_triangles"] == [["Hull", 12], ["Fin", 12], ["Gun", 12]]
+    issues = glb.check(s, {"max_triangles": 30})
+    assert "a.glb: 36 triangles > budget 30 (6 over); by node: Hull 12, Fin 12, Gun 12" in issues
+    # one mesh, or a record from before node_triangles: nothing to name
+    assert glb.by_node(glb.stats(ship(tmp_path / "one.glb"))) == ""
+    assert glb.by_node({"triangles": 36}) == ""
+    many = {"node_triangles": [[f"N{i}", i + 1] for i in range(10)]}
+    assert glb.by_node(many, top=3) == "; by node: N9 10, N8 9, N7 8, 7 more"
+
+
+def test_an_extent_outside_the_contract_names_the_parts_at_either_end(tmp_path):
+    p = write_glb(tmp_path / "a.glb", [("Body", box((0.2, 1.0, 0.2), (0, 0.5, 0)), (0, 0, 0)),
+                                       ("Hat", box((0.2, 0.2, 0.2), (0, 1.2, 0)), (0, 0, 0))])
+    s = glb.stats(p)
+    assert s["node_bounds"][1] == ["Hat", [-0.1, 1.1, -0.1], [0.1, 1.3, 0.1]]
+    issue = glb.check(s, {"height_m": 1.0})[0]
+    assert issue.startswith("a.glb: extent along Y is 1.3000 m, contract 1.0000 m")
+    assert issue.endswith("; lowest Body +0.000, Hat +1.100, highest Hat +1.300, Body +1.000 m (glTF Y is up: Blender's Z)")
+    assert glb.reaching({}, 1) == ""
+
+
+def test_vertex_colours_far_from_the_palette_are_named(tmp_path):
+    s = glb.stats(ship(tmp_path / "ship_gun.glb"))
+    assert s["colors"] and len(s["colors"]) == s["distinct_colors"]
+    srgb = lambda c: "#" + "".join(f"{round(255 * (v / 12.92 if v <= 0.0031308 else 1.055 * v ** (1 / 2.4) - 0.055)):02x}"  # noqa: E731
+                                   for v in c)
+    palette = {f"c{i}": srgb(c) for i, c in enumerate(s["colors"])}
+    assert glb.off_palette(s, palette) == []
+    first = dict(list(palette.items())[1:])                              # leave the first colour out of the palette
+    assert glb.off_palette(s, first) == [tuple(s["colors"][0])]
+    assert glb.off_palette(s, {}) == []

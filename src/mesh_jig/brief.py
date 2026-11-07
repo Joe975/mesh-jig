@@ -8,16 +8,27 @@ check.
 from __future__ import annotations
 
 from . import criteria, glb, outline, profile, render, silhouette
+from . import target as target_mod
 from .project import Project
 
 BLENDER_GOTCHAS = """\
 - Blender API slips that have failed builds before:
-  - the Bevel modifier's clamp is `mod.use_clamp_overlap` (there is no `clamp_overlap`);
+  - the clamp is named differently in the two bevels: the Bevel modifier's is `mod.use_clamp_overlap`, the bmesh
+    operator's is `bmesh.ops.bevel(..., clamp_overlap=True)`;
   - vectors take ONE sequence: `Vector((x, y, z))`, not `Vector(x, y, z)`; a float property (width, radius, offset)
     takes one float, never a tuple;
   - `def build():` must be at the top level of the script (not inside an if or another function);
   - bmesh.ops that remove or rebuild geometry (delete, dissolve, extrude) invalidate BMFace / BMVert references taken
-    before them ("BMesh data of type BMFace has been removed"): use the faces the op returns, or re-read bm.faces.
+    before them ("BMesh data of type BMFace has been removed"): use the faces the op returns, or re-read bm.faces;
+  - with several primitives in one bmesh, move each by the vertices its op returned
+    (`res = bmesh.ops.create_cone(...)`, then `bmesh.ops.transform(bm, matrix=m, verts=res["verts"])`): a loop over
+    `bm.verts` moves every primitive made before it again (ear tufts placed twice ended 0.45 m above the head);
+  - there is no `bmesh.ops.create_torus`: build a ring as a grid of vertices, its circle in the plane ACROSS its axis
+    (with unit vectors t1, t2 perpendicular to the axis n: centre + (t1*cos a + t2*sin a) * R, then the tube around
+    that circle), and quads between neighbouring vertices;
+  - build a transform from 4x4 pieces only: `Matrix.Rotation(a, 4, "X")`, `Matrix.Identity(4)`,
+    `quat.to_matrix().to_4x4()`; a 3x3 (`Matrix.Identity(3)`, `quat.to_matrix()`) in a 4x4 product fails with
+    "matrix1 number of columns and the matrix2 number of rows must be the same".
 - A failed build prints JIG_BUILD_ERROR and a traceback naming `File "<script>", line N`."""
 
 
@@ -69,6 +80,12 @@ def model_facts(spec: dict) -> str:
     files = glb.expected_files(spec)
     length = spec.get("length_m")
     custom = [s.get("name", "") for s in spec.get("shots") or []]
+    standing_profile = spec.get("profile") or {}
+    placement = "Centre the model on the origin."
+    if standing_profile.get("mode") == "standing":
+        placement = (f"Use the standing profile's fixed ground origin {standing_profile.get('origin_m', [0, 0, 0])} "
+                     "m in Blender axes; station heights and signed endpoints are relative to it. "
+                     "Do not recenter the model's bounding box.")
     lines = [
         "HOW A MODEL IS BUILT HERE (identical for every attempt):",
         f"- You write ONE Blender Python script, {glb.script_name(spec)}, in the attempt directory. It defines `def build():` "
@@ -84,9 +101,9 @@ def model_facts(spec: dict) -> str:
          f"{', '.join(files.values())}.") if variants != [""] else f"- Output: {', '.join(files.values())}.",
         "- The runner bakes modifiers and joins every mesh object into ONE mesh." if spec.get("join") else "",
         ("- Blender units are metres. Blender +Z is up and the NOSE POINTS ALONG BLENDER +Y (the export maps Blender +Y "
-         "to glTF -Z, the GLB's forward). Mirror left/right across Blender X = 0. Centre the model on the origin.") if craft else
+         "to glTF -Z, the GLB's forward). Mirror left/right across Blender X = 0. " + placement) if craft else
         ("- Blender units are metres and Blender +Z is up. The export maps Blender +Y to glTF -Z and Blender -Y to "
-         "glTF +Z; the brief says which way the model faces. Centre the model on the origin."),
+         "glTF +Z; the brief says which way the model faces. " + placement),
         (f"- {'Length nose-to-tail' if craft else 'Depth front to back'} along Blender Y: {length} m (tolerance "
          f"{spec.get('length_tolerance', 0.05):.0%}).") if length else "",
         (f"- {'Wingspan' if craft else 'Width'} across Blender X: {spec['span_m']} m (tolerance "
@@ -111,6 +128,7 @@ def model_facts(spec: dict) -> str:
         "leave zero-area faces.",
         BLENDER_GOTCHAS,
         atlas_facts(spec),
+        target_mod.facts(spec["target"]) if spec.get("target") else "",
     ]
     if custom:
         lines.append("- Every build is drawn on a plain light ground from fixed cameras: " + ", ".join(custom) + ". A render "
@@ -208,6 +226,18 @@ OUTLINE_READING = {
 }
 
 
+def hull_line(project: Project) -> str:
+    """What one shape carved from all the orthographic outlines reaches in each view (`hull.reach`): builders who
+    blamed a view for disagreeing with the others stopped working on it, and the outlines rarely do."""
+    from . import hull
+    got = hull.reach(project.references, project.spec)
+    if not got:
+        return ""
+    return ("- what the outlines allow: one shape carved from all the orthographic reference outlines at once reaches "
+            "overlap " + ", ".join(f"{v} {x:.2f}" for v, x in got.items()) + ". The views agree on the outline that "
+            "far: a view that stays well under its figure is the build's to close, not a reference that disagrees.")
+
+
 def reading_facts(project: Project) -> str:
     """What the numbers of THIS project are: which views count, which outline table it has and how a row of its
     feedback reads, whether colour zones are measured, and what a baseline should get right first. The skill and the
@@ -233,6 +263,7 @@ def reading_facts(project: Project) -> str:
            f"{'does' if len(looked) == 1 else 'do'} not count." if looked else "")
         + (" These are the fallback views: jig.json states no `criteria.views`." if weights is None else ""),
         "- overlap: silhouette IoU per view. A \"too flat or too wide\" line names a proportion problem.",
+        hull_line(project),
         ("- zones: the share of cells whose palette colour matches the reference's. Low zones with high overlap: the "
          "shape is right and the paint is in the wrong place." if project.zones else
          "- zones: not measured (there is no palette). Resemblance is edges in place alone."),
@@ -253,6 +284,11 @@ def reading_facts(project: Project) -> str:
          "that looks straight at a camera is drawn in exactly the colour it stores, so a part painted its palette "
          "colour reads as that colour in every view: never lighten or darken a paint to suit a render.")
         if project.spec.get("light") == "camera" else "",
+        lit_reading(project),
+        ("- colour: zones, colour and each region's colour are read from an unlit drawing of your build, so each "
+         "pixel is the colour its surface stores, whatever the light and whichever way the face turns. The light "
+         "changes only how the pictures look and where the edges of form show. Paint each part its palette colour.")
+        if project.spec.get("colour_from") == "albedo" else "",
         ("- gates this reference sets (each is reported as passed or FAILED beside the score; a failed gate does not "
          "fail the attempt): " + ", ".join(limits) + ".") if limits else "",
         (f"- Start with a baseline that only gets {first} right, then work part by part"
@@ -327,6 +363,12 @@ def criteria_facts(project: Project) -> str:
         lines.append("- WARNING: no explicit quality acceptance limits; a measured numeric score does not establish acceptance.")
     if spec.get("light") is not None:
         lines.append(f"- light: {spec['light']}" + where("light"))
+    else:
+        lines.append('- light: stage [NOT STATED: two fixed lights set for a craft seen from above, which darken a face '
+                     'toward the front or side camera; `criteria.light: "camera"` draws a face that looks at a camera '
+                     'in the colour it stores, in every view]')
+    if spec.get("colour_from") is not None:
+        lines.append(f"- colour from: {spec['colour_from']}" + where("colour_from"))
     mix = project.score_mix
     lines.append(f"- score: {criteria.score_text(mix)}" + where("score") if mix else
                  "- score: overlap and resemblance in equal parts [NOT STATED: `criteria.score` takes "
@@ -350,9 +392,14 @@ def text(project: Project) -> str:
         import json
         parts.append("REGIONS / PARTS / VISIBILITY / CLEARANCE (fixed review contract; Blender metres):\n" +
                      json.dumps(project.review, indent=2))
+        from . import articulation
+        if articulation.brief_text(project.review):
+            parts.append(articulation.brief_text(project.review))
     if project.palette:
         parts.append("PALETTE (sRGB hex; convert to linear for vertex colours): "
                      + ", ".join(f"{k} {v}" for k, v in project.palette.items()))
+        if project.spec.get("vertex_colors"):
+            parts.append(linear_palette(project.palette))
     prof = project.reference_profile()
     if prof:
         parts.append(profile.text(prof))
@@ -393,3 +440,59 @@ def text(project: Project) -> str:
         "- the numbers are deterministic and free: run eval on every attempt. Ask the judge only once the numbers have\n"
         "  moved (--judge --against <another attempt>), and treat only a DECISIVE verdict as a result.")
     return "\n\n".join(parts)
+
+
+def lit_reading(project: Project) -> str:
+    """What each palette colour reads as on a face turned to each scored camera, under the project's light: under
+    the stage light brass on a side-facing panel reads as copper, and three builders found that out by spending
+    attempts (one, seven single-colour previews). '' when every colour reads as itself, or there is no palette."""
+    import numpy as np
+    from . import render
+    zones = project.zones
+    if not zones:
+        return ""
+    names = [z[1] for z in zones]
+    rgb = np.asarray([z[2] for z in zones], float)
+    scored, _ = scored_views(project)
+    shots = {s["name"]: s for s in render.shots_for(project.spec)}
+    said = []
+    for view in scored:
+        shot = shots.get(view)
+        if not shot:
+            continue
+        eye, basis, _ = render.camera(shot)
+        r, u, f = basis
+        at = np.asarray(shot.get("cam_target", (0, 0, 0)), float)
+        quad = np.array([at - r * .2 - u * .2, at + r * .2 - u * .2, at + r * .2 + u * .2, at - r * .2 + u * .2])
+        tris = np.stack([quad[[0, 1, 2]], quad[[0, 2, 3]]])
+        normal = np.broadcast_to(-f, (2, 3, 3)).copy()
+        changed = []
+        for name, colour in zip(names, rgb):
+            linear = render.srgb_to_linear(colour / 255.0)
+            mesh = render.Mesh(tris, np.broadcast_to(linear, (2, 3, 3)).copy(), normal)
+            img = np.asarray(render.render(mesh, shot, width=64, height=64, spec=project.spec), float)[32, 32, :3]
+            seen = names[int(((rgb - img) ** 2).sum(axis=1).argmin())]
+            if seen != name:
+                changed.append(f"{name} reads {seen}")
+        if changed:
+            said.append(f"{view}: " + ", ".join(changed))
+    if not said:
+        return ""
+    return ("- paint under this light: on a face turned to a scored camera, these palette colours read as another "
+            "(paint the one you want it to read as, or light the project with `criteria.light: \"camera\"`): "
+            + "; ".join(said) + ".")
+
+
+def linear_palette(palette: dict[str, str]) -> str:
+    """The palette as the linear (r, g, b, 1.0) a FLOAT_COLOR attribute stores, ready to paste: builders that read
+    the hex themselves have slipped (`int("9a")`, a character off) and lost an attempt to it."""
+    import numpy as np
+
+    from .palette import hex_rgb
+    rows = []
+    for name, value in palette.items():
+        linear = render.srgb_to_linear(np.array(hex_rgb(value), dtype=float) / 255.0)
+        rows.append(f"    {name!r}: ({', '.join(f'{c:.4f}' for c in linear)}, 1.0),")
+    return ("PALETTE AS LINEAR VERTEX COLOURS (already converted: paste it as it is and paint "
+            "`attr.data[li].color = PALETTE[name]` on a FLOAT_COLOR attribute):\nPALETTE = {\n"
+            + "\n".join(rows) + "\n}")

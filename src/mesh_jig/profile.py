@@ -178,6 +178,23 @@ def glb_triangles(path: str | Path) -> np.ndarray:
     return np.concatenate(out) if out else np.zeros((0, 3, 3))
 
 
+def glb_node_names(path: str | Path) -> list[str]:
+    """The node each of `glb_triangles`' triangles is in, in the same order."""
+    gltf, blob = glb.read_glb(path)
+    out = []
+    for ni, _ in glb.mesh_nodes(gltf):
+        node = gltf["nodes"][ni]
+        mesh = gltf["meshes"][node["mesh"]]
+        name = node.get("name") or mesh.get("name") or f"node{ni}"
+        for prim in mesh.get("primitives", []):
+            if prim.get("mode", 4) != 4:
+                continue
+            n = (gltf["accessors"][prim["indices"]]["count"] if "indices" in prim
+                 else gltf["accessors"][prim["attributes"]["POSITION"]]["count"])
+            out += [name] * (n // 3)
+    return out
+
+
 def compare(reference: dict, mesh: dict) -> dict:
     """Per-station differences (mesh minus reference, millimetres) plus the mean absolute error of each table."""
     out: dict = {"overall": {k: round(mesh[k] - reference[k], 1) for k in ("length_mm", "span_mm", "height_mm")}}
@@ -207,7 +224,7 @@ def glb_diff(reference: dict, path: str | Path) -> dict:
         return standing.compare(reference, standing.from_mesh(glb_triangles(path), reference))
     try:
         if reference.get("mode") == outline.MODE:
-            return outline.compare(reference, outline.from_mesh(glb_triangles(path), reference))
+            return outline.compare(reference, outline.from_mesh(glb_triangles(path), reference, glb_node_names(path)))
         mesh = profile_from_mesh(glb_triangles(path), reference["length_mm"], reference["stations"])
         return compare(reference, mesh)
     except (ValueError, KeyError, IndexError, OSError):

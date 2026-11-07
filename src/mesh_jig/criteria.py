@@ -6,6 +6,7 @@
       "gates":   {"outline_mm_max": 12, "zones_min": 0.5, "resemblance_min": 0.6},   limits on the measures
       "review":  {"parts": {...}, "regions": [...], ...}, named regions, parts and probes, each a gate
       "light":   "camera",                                how the build is lit when it is drawn: see mesh_jig.render
+      "colour_from": "albedo",                            colour read from the build's stored paint, not its lit render
       "score":   {"overlap": 1, "colour": 1, "edges": 1, "regions": 1}       what the numeric score is a weighted mean of
     }
 
@@ -29,14 +30,17 @@ import math
 
 from . import scoring
 
-KEYS = ("views", "outline", "gates", "review", "light", "score")
+KEYS = ("views", "outline", "gates", "review", "light", "colour_from", "score")
 # what a score may be a weighted mean of -> the field of an evaluation's `numeric` record that holds it
 SCORE_TERMS = {"overlap": "ortho_iou", "zones": "zone", "colour": "colour", "edges": "edges", "regions": "regions"}
-LIGHTS = ("stage", "camera")        # render.LIGHT_MODES; "stage" is what a project that states none is drawn under
+LIGHTS = ("stage", "camera")        # render.LIGHT_MODES; "stage" is what a project that states none is drawn under,
+                                    # so no recorded number moves; `sheet.template` states "camera" for a new one
+COLOUR_FROM = ("render", "albedo")  # render.COLOUR_SOURCES; "render" is what a project that states none is read from
 # the gate as the block names it (after the ledger's column) -> the `model` field every tool reads
 GATES = {"outline_mm_max": "profile_mae_max", "zones_min": "placement_min", "resemblance_min": "resemblance_min"}
 # where each criterion was stated before the block, for the messages
-OLDER = {"views": "scoring", "outline": "model.profile", "review": "review", "light": "model.light"}
+OLDER = {"views": "scoring", "outline": "model.profile", "review": "review", "light": "model.light",
+         "colour_from": "model.colour_from"}
 
 
 def score_text(mix: dict) -> str:
@@ -104,6 +108,13 @@ def fold(data: dict) -> tuple[dict, list[str]]:
             problems.append(f"criteria.light must be one of {', '.join(LIGHTS)}")
         elif model is not None:
             model["light"] = block["light"]
+    if "colour_from" in block:
+        if model is not None and model.get("colour_from") is not None:
+            twice("colour_from", OLDER["colour_from"])
+        if block["colour_from"] not in COLOUR_FROM:
+            problems.append(f"criteria.colour_from must be one of {', '.join(COLOUR_FROM)}")
+        elif model is not None:
+            model["colour_from"] = block["colour_from"]
     gates = block.get("gates")
     if gates is not None and not isinstance(gates, dict):
         problems.append(f"criteria.gates must be an object with any of {', '.join(GATES)}")
@@ -137,6 +148,10 @@ def sources(data: dict) -> dict[str, str]:
         out["light"] = "criteria.light"
     elif model.get("light") is not None:
         out["light"] = OLDER["light"]
+    if "colour_from" in block:
+        out["colour_from"] = "criteria.colour_from"
+    elif model.get("colour_from") is not None:
+        out["colour_from"] = OLDER["colour_from"]
     if "score" in block:
         out["score"] = "criteria.score"
     if block.get("gates"):
@@ -175,6 +190,8 @@ def block(data: dict) -> dict:
         out["review"] = folded["review"]
     if model.get("light") is not None:
         out["light"] = model["light"]
+    if model.get("colour_from") is not None:
+        out["colour_from"] = model["colour_from"]
     if folded.get("score"):
         out["score"] = {term: int(w) if w == int(w) else w for term, w in folded["score"].items()}
     return out
@@ -189,7 +206,7 @@ def rewrite(data: dict, fallback_views: list[str] | tuple[str, ...] = ()) -> dic
     out = {k: v for k, v in data.items() if k not in ("criteria", "scoring", "review", "score")}
     if isinstance(out.get("model"), dict):
         out["model"] = {k: v for k, v in out["model"].items()
-                        if k not in ("profile", "light") and k not in GATES.values()}
+                        if k not in ("profile", "light", "colour_from") and k not in GATES.values()}
     if stated:
         out["criteria"] = stated
     return out

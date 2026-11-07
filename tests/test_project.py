@@ -170,3 +170,19 @@ def test_the_cli_starts_a_project_reads_it_back_and_reports_bad_requests(tmp_pat
     assert cli.main(["eval", str(root), "--script", str(root / "x.py"), "--judge", "--against", str(root)]) == 2
     assert "needs an API key" in capsys.readouterr().err
     assert cli.main(["judge", str(root), str(root)]) == 2
+
+
+def test_init_with_a_height_writes_a_standing_subjects_contract(tmp_path):
+    """The owl's contract took the guide's step 4 by hand: out with the craft's length, in with six cameras."""
+    src = make_sheet(tmp_path / "concept.png")
+    sheet.init(tmp_path / "owl", height_m=0.5, sheet=src)
+    proj = project.load(tmp_path / "owl")
+    assert "length_m" not in proj.spec and "forward" not in proj.spec
+    assert proj.spec["height_m"] == 0.5 and proj.spec["stage_scale"] == 2.0 and proj.spec["join"] is False
+    assert [s["name"] for s in proj.spec["shots"]] == list(sheet.STANDING_VIEWS)
+    assert proj.scoring_weights == {"front": 1.0, "side": 1.0, "rear": 1.0, "right": 1.0, "top": 1.0}
+    assert list(proj.data["sheet"]["crops"]) == list(sheet.STANDING_VIEWS)
+    assert len(sheet.write_refs(proj)) == 6
+    assert project.load(tmp_path / "owl").problems() == [], "cut, it is a project every tool reads"
+    with pytest.raises(ValueError, match="positive"):
+        sheet.init(tmp_path / "flat", height_m=0)

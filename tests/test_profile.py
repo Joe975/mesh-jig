@@ -138,3 +138,17 @@ def test_a_palette_is_read_off_the_reference_views(tmp_path):
     blank = tmp_path / "blank.png"
     Image.new("RGB", (50, 50), PAPER).save(blank)
     assert palette.suggest({"top": str(blank)}) == {}
+
+
+def test_a_second_hue_with_a_tenth_of_the_pixels_is_not_lost_to_the_shades_of_the_first(tmp_path):
+    """A painted sheet shades one paint into several: the palette keeps the blue wing tips, not two browns."""
+    im = Image.new("RGB", (260, 120), PAPER)
+    for k, shade in enumerate([(120, 60, 35), (150, 80, 50), (175, 100, 65)]):   # one brown, lit three ways
+        im.paste(shade, (20 + 70 * k, 20, 90 + 70 * k, 100))
+    im.paste((60, 80, 110), (230, 20, 253, 100))                                # a slate blue, a tenth of the body
+    im.save(tmp_path / "side.png")
+    found = palette.suggest({"side": str(tmp_path / "side.png")}, colors=2)
+    blue = palette.lab(np.array(palette.hex_rgb(found["c2"]), dtype=float))
+    assert np.linalg.norm(blue - palette.lab(np.array([60.0, 80.0, 110.0]))) < 3, found
+    brown = np.array(palette.hex_rgb(found["c1"]))
+    assert abs(brown - np.array([148, 80, 50])).max() <= 4, "the shades merge into their mean"

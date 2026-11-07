@@ -21,25 +21,196 @@ the attempt directory (`portable`), so a record names no machine and survives a 
 
 from __future__ import annotations
 
+import errno
+import hashlib
 import json
 import os
+import shutil
+import stat
 import statistics
 import time
+import uuid
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable
 
-from . import build, criteria, glb, harness, judge as judge_mod, paint, profile, render, resemblance, silhouette, review
+from . import build, comparison_context, criteria, glb, harness, judge as judge_mod, paint, profile, readiness, render, resemblance
+from . import references, review, silhouette
 from .project import Project
 
 EVAL_FILE = "eval.json"
 NUMERIC_FILE = "numeric.json"
 ORTHO_VIEWS = silhouette.ORTHO_VIEWS
 PATH_FIELDS = ("script", "against")                     # a path each
-PATH_MAPS = ("renders", "compare", "overlays", "closeups")      # view -> path; a close-up is region -> path
+PATH_MAPS = ("renders", "compare", "ruled", "overlays", "closeups", "zone_maps")    # view -> path; a close-up is region -> path
 TEXT_FIELDS = ("error", "pairwise_error")               # what a build or a judge said, which can name a path
-LEDGER_HEAD = ("| attempt | build | outline mm | overlap | resemblance | zones | numeric | gates | judge | note |\n"
-               "|---|---|---|---|---|---|---|---|---|---|\n")
+LEDGER_HEAD = ("| attempt | build | outline mm | overlap | resemblance | zones | numeric | gates | triangles | judge "
+               "| note |\n|---|---|---|---|---|---|---|---|---|---|---|\n")
+# Keep this as a module constant so lock timeout tests can shorten it without changing append_ledger's API.
+_LEDGER_LOCK_TIMEOUT_SECONDS = 10.0
+_LEDGER_LOCK_RETRY_SECONDS = 0.05
 VIEW_MOVE = 0.005       # `standing_lines` names a view whose overlap or zones moved by this much against another attempt
+FAILURE_SNAPSHOTS = "failed-evaluations"
+_SNAPSHOT_ROOTS = ("out", "renders", "compare")
+_SNAPSHOT_FILES = (NUMERIC_FILE, "resemblance.json", "silhouette.json")
+
+
+def _linkish(path: Path, info=None) -> bool:
+    """True for symlinks and Windows junction/reparse-point paths."""
+    info = info or path.lstat()
+    attrs = getattr(info, "st_file_attributes", 0)
+    return path.is_symlink() or bool(attrs & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
+
+
+def _snapshot_files(attempt: Path, excluded: list[str] | None = None) -> list[tuple[Path, str]]:
+    """Enumerate only evaluator-owned output roots and known measurement files, without following symlinks."""
+    found: list[tuple[Path, str]] = []
+    for name in _SNAPSHOT_ROOTS:
+        root = attempt / name
+        try:
+            root_stat = root.lstat()
+        except FileNotFoundError:
+            continue
+        if _linkish(root, root_stat):
+            if excluded is not None:
+                excluded.append(name)
+            continue
+        if not root.is_dir():
+            raise OSError(f"owned output root {name} is not a directory")
+        stack = [(root, name)]
+        while stack:
+            directory, relative = stack.pop()
+            try:
+                entries = list(os.scandir(directory))
+            except OSError as error:
+                raise OSError(f"could not inventory owned output directory {relative}: {error}") from error
+            for entry in entries:
+                path = Path(entry.path)
+                rel = f"{relative}/{entry.name}"
+                try:
+                    entry_stat = entry.stat(follow_symlinks=False)
+                    if entry.is_symlink() or bool(getattr(entry_stat, "st_file_attributes", 0) &
+                                                   getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)):
+                        if excluded is not None:
+                            excluded.append(rel)
+                        continue
+                    if entry.is_dir(follow_symlinks=False):
+                        stack.append((path, rel))
+                    elif entry.is_file(follow_symlinks=False):
+                        found.append((path, rel))
+                except OSError as error:
+                    raise OSError(f"could not inspect owned output {rel}: {error}") from error
+    for name in _SNAPSHOT_FILES:
+        path = attempt / name
+        try:
+            info = path.lstat()
+            if _linkish(path, info):
+                if excluded is not None:
+                    excluded.append(name)
+            elif path.is_file():
+                found.append((path, name))
+        except FileNotFoundError:
+            continue
+        except OSError as error:
+            raise OSError(f"could not inspect owned output {name}: {error}") from error
+    return sorted(found, key=lambda item: item[1])
+
+
+def _snapshot_hashes(attempt: Path) -> tuple[dict[str, str], str | None]:
+    """Hash the known owned outputs at evaluation entry to distinguish old bytes from later changes."""
+    hashes = {}
+    try:
+        files = _snapshot_files(attempt)
+    except OSError as error:
+        return {}, f"{type(error).__name__}: {error}"
+    for path, relative in files:
+        try:
+            hashes[relative] = hashlib.sha256(path.read_bytes()).hexdigest()
+        except OSError as error:
+            return hashes, f"{type(error).__name__}: could not hash {relative}: {error}"
+    return hashes, None
+
+
+def _long_windows_path(path: Path) -> Path:
+    """Use the Win32 extended-length spelling for snapshot paths near MAX_PATH."""
+    if os.name != "nt" or str(path).startswith("\\\\?\\") or len(str(path)) < 240:
+        return path
+    absolute = os.path.abspath(path)
+    if absolute.startswith("\\\\"):
+        return Path("\\\\?\\UNC\\" + absolute[2:])
+    return Path("\\\\?\\" + absolute)
+
+
+def _preserve_failed_evaluation(attempt: Path, root: Path, rec: dict, source_bytes: bytes | None,
+                                source_error: str | None, initial_hashes: dict[str, str],
+                                inventory_error: str | None = None) -> dict:
+    """Publish a complete immutable snapshot, atomically exposing it only after every file is written."""
+    snapshots = _long_windows_path(attempt / FAILURE_SNAPSHOTS)
+    try:
+        existing = snapshots.lstat()
+    except FileNotFoundError:
+        existing = None
+    if existing is not None and (_linkish(snapshots, existing) or not snapshots.is_dir()):
+        raise OSError("failed-evaluations exists but is not a plain directory")
+    snapshots.mkdir(exist_ok=True)
+    snapshot_name = f"{time.strftime('%Y%m%dT%H%M%S')}-{uuid.uuid4().hex}"
+    staging = snapshots / f".incomplete-{uuid.uuid4().hex}"
+    final = snapshots / snapshot_name
+    for candidate in (staging, final):
+        try:
+            candidate.lstat()
+        except FileNotFoundError:
+            continue
+        raise FileExistsError(f"snapshot path already exists: {candidate.name}")
+    staging.mkdir()
+    artifact_rows = []
+    excluded_symlinks = []
+    try:
+        if source_bytes is not None:
+            source_target = staging / "source.py"
+            source_target.write_bytes(source_bytes)
+            source_hash = hashlib.sha256(source_bytes).hexdigest()
+        else:
+            source_hash = None
+        for source, relative in _snapshot_files(attempt, excluded_symlinks):
+            target = staging / "artifacts" / Path(relative)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                data = source.read_bytes()
+            except OSError as error:
+                raise OSError(f"could not snapshot observed artifact {relative}: {error}") from error
+            digest = hashlib.sha256(data).hexdigest()
+            target.write_bytes(data)
+            artifact_rows.append({"path": f"artifacts/{relative}", "observed_path": relative,
+                                  "sha256": digest, "bytes": len(data), "status": "observed",
+                                  "entry_hash_known": inventory_error is None,
+                                  "changed_since_entry": (initial_hashes.get(relative) != digest
+                                                          if inventory_error is None else None)})
+        # No artifact is certified as produced: a failed call may observe stale files from an earlier evaluation.
+        rec["failure_preservation"] = {"status": "preserved", "snapshot": f"{FAILURE_SNAPSHOTS}/{snapshot_name}"}
+        snapshot_rec = portable(rec, attempt, root)
+        eval_bytes = json.dumps(snapshot_rec, indent=1).encode("utf-8")
+        (staging / EVAL_FILE).write_bytes(eval_bytes)
+        manifest = {"schema": 1, "evaluation": rec.get("name"), "stage": rec.get("stage"),
+                    "evaluation_record": {"path": EVAL_FILE, "sha256": hashlib.sha256(eval_bytes).hexdigest(),
+                                           "bytes": len(eval_bytes)},
+                    "source": {"path": "source.py" if source_bytes is not None else None,
+                               "sha256": source_hash, "bytes": len(source_bytes) if source_bytes is not None else None,
+                               "error": source_error},
+                    "outputs": {"semantics": "observed state at failure; changed_since_entry is not certification",
+                                "certified_produced_by_failing_call": [], "files": artifact_rows,
+                                "excluded_symlinks": sorted(excluded_symlinks),
+                                "entry_inventory_error": (portable({"error": inventory_error}, attempt, root)["error"]
+                                                          if inventory_error else None)}}
+        manifest_bytes = json.dumps(manifest, indent=1).encode("utf-8")
+        (staging / "manifest.json").write_bytes(manifest_bytes)
+        os.replace(staging, final)
+        return {"status": "preserved", "snapshot": f"{FAILURE_SNAPSHOTS}/{snapshot_name}",
+                "manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest()}
+    except BaseException:
+        # A staging directory is private and never looks like a completed snapshot.
+        shutil.rmtree(staging, ignore_errors=True)
+        raise
 
 
 def _stored(path: str, attempt: Path, root: Path) -> str:
@@ -72,6 +243,16 @@ def portable(rec: dict, attempt: str | Path, root: str | Path) -> dict:
                 text = text.replace(spelt + "\\", "").replace(spelt + "/", "").replace(spelt, ".")
         if text:
             out[key] = text
+    preservation = out.get("failure_preservation")
+    if isinstance(preservation, dict) and preservation.get("error"):
+        preservation = dict(preservation)
+        out["failure_preservation"] = preservation
+        text = preservation["error"]
+        for base in (attempt, root):
+            base = Path(base).resolve()
+            for spelt in (str(base), base.as_posix()):
+                text = text.replace(spelt + "\\", "").replace(spelt + "/", "").replace(spelt, ".")
+        preservation["error"] = text
     return out
 
 
@@ -201,6 +382,13 @@ def gate_tally(rec: dict) -> str:
     return f"{total - len(failed)}/{total}" + (f" ({', '.join(failed)})" if failed else "")
 
 
+def triangles_text(rec: dict) -> str:
+    """The triangles a measured build used, against the ceiling when there is one; '-' for a record without them."""
+    reading = rec.get("readiness") or {}
+    used, cap = (reading.get("cost") or {}).get("triangles"), reading.get("max_triangles")
+    return "-" if used is None else f"{used}/{cap}" if cap else str(used)
+
+
 def ledger_line(rec: dict) -> str:
     """One line per attempt, the table an agent reads back: name, verdict, the numbers, the gates, the judge if
     asked. The score is not a mean over the gates, so the line says them beside it."""
@@ -210,22 +398,95 @@ def ledger_line(rec: dict) -> str:
     verdict = "-" if not pw else f"{pw['win_rate']:.2f}{' decisive' if pw['decisive'] else ''} vs {rec.get('against_name', '?')}"
     status = "ok" if rec.get("ok") else f"FAILED {rec.get('stage', '')}"
     return (f"| {rec.get('name', '')} | {status} | {f('mae_mm', 2)} | {f('ortho_iou')} | {f('resemblance')} | {f('zone', 2)} | "
-            f"{f('numeric_score', 4)} | {gate_tally(rec)} | {verdict} | {(rec.get('note') or '').replace('|', '/')} |")
+            f"{f('numeric_score', 4)} | {gate_tally(rec)} | {triangles_text(rec)} | {verdict} | {(rec.get('note') or '').replace('|', '/')} |")
 
 
 def append_ledger(path: Path, rec: dict) -> None:
     """Append the attempt's line. A ledger begun under other columns gets the header again first, so no row sits
-    under a header it does not fit."""
+    under a header it does not fit. Cooperating writers serialize only this read/header/append section."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    text = path.read_text(encoding="utf-8") if path.is_file() else ""
-    heads = [line for line in text.splitlines() if line.startswith("| attempt |")]
-    with open(path, "a", encoding="utf-8") as f:
-        if not text.strip():
-            f.write("# Attempts (mesh-jig eval)\n\n" + LEDGER_HEAD)
-        elif not heads or heads[-1] != LEDGER_HEAD.splitlines()[0]:
-            f.write(("" if text.endswith("\n") else "\n") + "\n" + LEDGER_HEAD)
-        f.write(ledger_line(rec) + "\n")
+    with _ledger_writer_ownership(path):
+        text = path.read_text(encoding="utf-8") if path.is_file() else ""
+        heads = [line for line in text.splitlines() if line.startswith("| attempt |")]
+        with open(path, "a", encoding="utf-8") as f:
+            if not text.strip():
+                f.write("# Attempts (mesh-jig eval)\n\n" + LEDGER_HEAD)
+            elif not heads or heads[-1] != LEDGER_HEAD.splitlines()[0]:
+                f.write(("" if text.endswith("\n") else "\n") + "\n" + LEDGER_HEAD)
+            f.write(ledger_line(rec) + "\n")
+
+
+@contextmanager
+def _ledger_writer_ownership(path: Path):
+    """Serialize cooperating writers without locking ledger bytes against unlocked readers.
+
+    Windows uses a named mutex derived from the normalized absolute ledger path, avoiding a sidecar filename and
+    its path-length limit. Other platforms use advisory flock on the ledger itself; ordinary readers do not take
+    that lock. Both ownership mechanisms are released by the OS after process exit.
+    """
+    if os.name == "nt":
+        import ctypes
+
+        key = os.path.normcase(os.path.realpath(path))
+        name = "Local\\mesh-jig-ledger-" + hashlib.sha256(key.encode("utf-8")).hexdigest()
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        create_mutex = kernel32.CreateMutexW
+        create_mutex.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_wchar_p]
+        create_mutex.restype = ctypes.c_void_p
+        wait = kernel32.WaitForSingleObject
+        wait.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+        wait.restype = ctypes.c_uint32
+        release = kernel32.ReleaseMutex
+        release.argtypes = [ctypes.c_void_p]
+        release.restype = ctypes.c_int
+        close = kernel32.CloseHandle
+        close.argtypes = [ctypes.c_void_p]
+        close.restype = ctypes.c_int
+        handle = create_mutex(None, 0, name)
+        if not handle:
+            raise OSError(ctypes.get_last_error(), "CreateMutexW failed")
+        owned = False
+        try:
+            timeout_ms = max(0, int(_LEDGER_LOCK_TIMEOUT_SECONDS * 1000))
+            result = wait(handle, timeout_ms)
+            if result == 0x102:  # WAIT_TIMEOUT
+                raise TimeoutError("ledger busy; wait and retry append")
+            if result not in (0, 0x80):  # WAIT_OBJECT_0, WAIT_ABANDONED
+                raise OSError(ctypes.get_last_error(), "WaitForSingleObject failed")
+            owned = True
+            try:
+                yield
+            finally:
+                if owned and not release(handle):
+                    raise OSError(ctypes.get_last_error(), "ReleaseMutex failed")
+        finally:
+            close(handle)
+    else:
+        import fcntl
+
+        with open(path, "a", encoding="utf-8") as lock_file:
+            _acquire_posix_ledger_lock(lock_file, fcntl)
+            try:
+                yield
+            finally:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+
+
+def _acquire_posix_ledger_lock(lock_file, fcntl) -> None:
+    """Acquire flock within a finite deadline; only contention errors are retried."""
+    deadline = time.monotonic() + _LEDGER_LOCK_TIMEOUT_SECONDS
+    while True:
+        try:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return
+        except OSError as exc:
+            if exc.errno not in (errno.EACCES, errno.EAGAIN):
+                raise
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("ledger busy; wait and retry append") from None
+        time.sleep(min(_LEDGER_LOCK_RETRY_SECONDS, remaining))
 
 
 def renders_of(attempt: str | Path) -> dict[str, str]:
@@ -249,10 +510,106 @@ def pairwise(project: Project, a: dict[str, str], b: dict[str, str], out_dir: Pa
     return rec
 
 
+@contextmanager
+def _evaluation_ownership(out_dir: str | Path):
+    """Exclusively own one attempt output directory for the duration of an evaluation.
+
+    A fixed, short sidecar inside the output directory keeps ownership stable across processes and temporary
+    directory settings. Creating the output directory and this sidecar are the only filesystem changes before the
+    lock is acquired. The OS releases the advisory lock when a process exits.
+    """
+    output = Path(out_dir).resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    lock_path = output / ".mjlock"
+    lock_file = open(lock_path, "a+b")
+    try:
+        lock_file.seek(0, os.SEEK_END)
+        if lock_file.tell() == 0:
+            lock_file.write(b"\0")
+            lock_file.flush()
+        lock_file.seek(0)
+        if os.name == "nt":
+            import ctypes
+            import msvcrt
+
+            class Overlapped(ctypes.Structure):
+                _fields_ = [("Internal", ctypes.c_void_p), ("InternalHigh", ctypes.c_void_p),
+                            ("Offset", ctypes.c_uint32), ("OffsetHigh", ctypes.c_uint32),
+                            ("hEvent", ctypes.c_void_p)]
+
+            kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            lock_file_ex = kernel32.LockFileEx
+            lock_file_ex.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32,
+                                     ctypes.c_uint32, ctypes.POINTER(Overlapped)]
+            lock_file_ex.restype = ctypes.c_int
+            unlock_file_ex = kernel32.UnlockFileEx
+            unlock_file_ex.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32,
+                                       ctypes.POINTER(Overlapped)]
+            unlock_file_ex.restype = ctypes.c_int
+            handle, overlapped = msvcrt.get_osfhandle(lock_file.fileno()), Overlapped()
+            if not lock_file_ex(handle, 0x00000003, 0, 1, 0, ctypes.byref(overlapped)):
+                error = ctypes.get_last_error()
+                if error == 33:  # ERROR_LOCK_VIOLATION
+                    raise ValueError(f"an evaluation is already running for {output}; wait for that command to finish")
+                raise OSError(error, "LockFileEx failed")
+
+            def unlock():
+                if not unlock_file_ex(handle, 0, 1, 0, ctypes.byref(overlapped)):
+                    raise OSError(ctypes.get_last_error(), "UnlockFileEx failed")
+        else:
+            import fcntl
+            try:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError as error:
+                if error.errno not in (errno.EACCES, errno.EAGAIN):
+                    raise
+                raise ValueError(f"an evaluation is already running for {output}; wait for that command to finish") \
+                    from error
+            unlock = lambda: fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+        try:
+            yield
+        finally:
+            unlock()
+    finally:
+        lock_file.close()
+
+
+@contextmanager
+def _owned_evaluation(project: Project, script: str | Path, out_dir: str | Path, *,
+                      atlas: str | Path | None = None, paint_plan: str | Path | None = None,
+                      name: str = "", note: str = "", against: str | Path | None = None,
+                      against_name: str = "", backend=None, samples: int = 16,
+                      build_fn: Callable = build.build_variants, render_fn: Callable = render.render_views,
+                      pairwise_fn: Callable | None = None, log=print,
+                      postprocess: Callable[[dict], None] | None = None):
+    """Own one evaluation and its caller's immediate output-dependent post-processing as one operation."""
+    with _evaluation_ownership(out_dir):
+        rec = _evaluate_locked(project, script, out_dir, atlas=atlas, paint_plan=paint_plan, name=name, note=note,
+                               against=against, against_name=against_name, backend=backend, samples=samples,
+                               build_fn=build_fn, render_fn=render_fn, pairwise_fn=pairwise_fn, log=log)
+        if postprocess is not None:
+            postprocess(rec)
+        yield rec
+
+
 def evaluate(project: Project, script: str | Path, out_dir: str | Path, *, atlas: str | Path | None = None,
              paint_plan: str | Path | None = None, name: str = "", note: str = "", against: str | Path | None = None,
              against_name: str = "", backend=None, samples: int = 16, build_fn: Callable = build.build_variants,
-             render_fn: Callable = render.render_views, pairwise_fn: Callable | None = None, log=print) -> dict:
+             render_fn: Callable = render.render_views, pairwise_fn: Callable | None = None, log=print,
+             _postprocess: Callable[[dict], None] | None = None) -> dict:
+    """Build, render and measure while owning this output directory against another live evaluation."""
+    with _owned_evaluation(project, script, out_dir, atlas=atlas, paint_plan=paint_plan, name=name, note=note,
+                           against=against, against_name=against_name, backend=backend, samples=samples,
+                           build_fn=build_fn, render_fn=render_fn, pairwise_fn=pairwise_fn, log=log,
+                           postprocess=_postprocess) as rec:
+        return rec
+
+
+def _evaluate_locked(project: Project, script: str | Path, out_dir: str | Path, *, atlas: str | Path | None = None,
+                     paint_plan: str | Path | None = None, name: str = "", note: str = "",
+                     against: str | Path | None = None, against_name: str = "", backend=None, samples: int = 16,
+                     build_fn: Callable = build.build_variants, render_fn: Callable = render.render_views,
+                     pairwise_fn: Callable | None = None, log=print) -> dict:
     """Build, render, measure; judge pairwise against another attempt's renders when given a backend. The record,
     also written to out_dir/eval.json with its paths relative to out_dir (`portable`)."""
     out_dir = Path(out_dir)
@@ -260,10 +617,30 @@ def evaluate(project: Project, script: str | Path, out_dir: str | Path, *, atlas
     spec = project.spec
     rec: dict = {"name": name or out_dir.name, "script": str(script), "note": note, "ok": False, "stage": "",
                  "started": time.strftime("%Y-%m-%d %H:%M:%S"), "harness": harness.version()}
+    try:
+        source_bytes = Path(script).read_bytes()
+        source_error = None
+    except OSError as error:
+        source_bytes, source_error = None, f"source unreadable at evaluation entry ({type(error).__name__})"
+    initial_hashes, inventory_error = _snapshot_hashes(out_dir)
+    try:
+        rec[comparison_context.FIELD] = comparison_context.signature(project)
+    except (OSError, ValueError, TypeError):
+        # If source inputs cannot be read or canonicalized, leave explicit invalid
+        # provenance so this evaluation cannot silently join a legacy bucket.
+        rec[comparison_context.FIELD] = {"schema": 0}
     t0 = time.time()
 
     def finish() -> dict:
         rec["wall_s"] = round(time.time() - t0, 1)
+        if not rec.get("ok"):
+            try:
+                rec["failure_preservation"] = _preserve_failed_evaluation(
+                    out_dir, project.root, rec, source_bytes, source_error, initial_hashes, inventory_error)
+            except Exception as error:
+                # Keep and write the original failed evaluation. Preservation failure is reported on it.
+                detail = portable({"error": f"{type(error).__name__}: {error}"}, out_dir, project.root)["error"]
+                rec["failure_preservation"] = {"status": "failed", "error": detail[:1000]}
         (out_dir / EVAL_FILE).write_text(json.dumps(portable(rec, out_dir, project.root), indent=1), encoding="utf-8")
         return rec
 
@@ -306,21 +683,32 @@ def evaluate(project: Project, script: str | Path, out_dir: str | Path, *, atlas
     missing = sorted(set(weights or {}) - set(views))
     if missing:
         return fail("measure", f"selected scoring views were not rendered: {missing}")
+    paints = {k: v for k, v in (shot.get("albedo") or {}).items() if k in views}
     sil = silhouette.measure_views(views, refs, compare_dir, weights=weights)
-    res = resemblance.measure_views(views, refs, project.zones, out_dir, weights=weights)
+    res = resemblance.measure_views(views, refs, project.zones, out_dir, weights=weights, colours=paints)
     judged = built / glb.judged_glb(spec)
     profile_diff = profile.glb_diff(project.reference_profile(), judged) if judged.is_file() else {}
-    marked = review.regions(views, refs, (project.review or {}).get("regions") or [], project.zones)
+    marked = review.regions(views, refs, (project.review or {}).get("regions") or [], project.zones, paints)
     numeric = numeric_measures(sil, res, profile_diff, weights, mix=project.score_mix,
                                regions=review.regions_score(marked))
     (out_dir / NUMERIC_FILE).write_text(json.dumps(numeric, indent=1), encoding="utf-8")
     rec.update({"ok": True, "stage": "measured", "renders": shot["renders"], "cropped": shot.get("cropped") or [],
                 "compare": render.write_comparisons(views, refs, compare_dir),
+                "ruled": references.write_ruled_pairs(project, views, compare_dir),
                 "overlays": {v: str(compare_dir / f"{silhouette.OVERLAY_PREFIX}{v}.png") for v in sil["views"]},
                 "numeric": numeric, "silhouette": sil["views"], "resemblance": res["views"],
                 "profile_diff": profile_diff, "gates": gates(spec, numeric)})
+    if paints:
+        rec["albedo"] = paints
     if project.zones:
-        rec["zone_reading"] = {v: zone_reading(views[v], refs[v], project.zones) for v in sorted(views)}
+        rec["zone_reading"] = {v: zone_reading(views[v], refs[v], project.zones, paints.get(v)) for v in sorted(views)}
+        rec["zone_maps"] = {v: zone_picture(views[v], refs[v], project.zones,
+                                            compare_dir / f"{ZONES_PREFIX}{v}.png", paints.get(v)) for v in sorted(views)}
+        # and each marked region with a zone limit, cut to its box: the face gates were read off the whole view
+        rec["zone_maps"].update({
+            r["name"]: zone_picture(views[r["view"]], refs[r["view"]], project.zones,
+                                    compare_dir / f"{ZONES_PREFIX}region_{r['name']}.png", paints.get(r["view"]), r["box"])
+            for r in (project.review or {}).get("regions") or [] if "min_zone" in r and r["view"] in views})
     if weights is not None:
         rec["scoring"] = {"weights": weights, "weak_overlap_views": sil["weak_views"],
                           "weak_resemblance_views": res["weak_views"]}
@@ -333,6 +721,12 @@ def evaluate(project: Project, script: str | Path, out_dir: str | Path, *, atlas
         rec["closeups"] = review.closeups(views, refs, project.review.get("regions") or [], compare_dir)
         rec["gates"].extend({"name": c["name"], "passed": c["passed"], "message": str(c)}
                             for c in rec["review"]["checks"] if not review.is_observation(c))
+    if judged.is_file():
+        rec["readiness"] = readiness.measure(judged, spec)
+        # nodes no scored camera sees much of: what the pictures show as missing, and why
+        rec["hidden"] = review.hidden(judged, spec, [v for v in (weights or ORTHO_VIEWS) if v in views])
+        rec["floating"] = review.floating(judged, spec)      # and nodes that touch no other: a tail off its body
+        rec["flipped"] = review.flipped(judged, spec, [v for v in (weights or ORTHO_VIEWS) if v in views])  # holes
     log(f"[{rec['name']}] measured: {numbers_text(numeric)}")
 
     if against is not None and backend is not None:
@@ -371,8 +765,11 @@ def preview(project: Project, attempt: str | Path, views: list[str] | None = Non
     weights = project.scoring_weights
     whole = all(v in paired for v in brief.scored_views(project)[0])
     sil = silhouette.measure_views(paired, refs, out, weights=weights if whole else None)
-    res = resemblance.measure_views(paired, refs, project.zones, None, weights=weights if whole else None)
-    marked = [c for c in review.regions(paired, refs, (project.review or {}).get("regions") or [], project.zones)
+    paints = {k: v for k, v in (shot.get("albedo") or {}).items() if k in paired}
+    res = resemblance.measure_views(paired, refs, project.zones, None, weights=weights if whole else None,
+                                    colours=paints)
+    marked = [c for c in review.regions(paired, refs, (project.review or {}).get("regions") or [], project.zones,
+                                        paints)
               if "error" not in c]              # a region whose view was not drawn is not read, not failed
     rec: dict = {"ok": True, "name": attempt.name, "renders": shot["renders"], "cropped": shot.get("cropped") or [],
                  "compare": render.write_comparisons(paired, refs, out),
@@ -380,8 +777,14 @@ def preview(project: Project, attempt: str | Path, views: list[str] | None = Non
                  "silhouette": sil["views"], "resemblance": res["views"], "gates": [], "regions": marked,
                  "numeric": numeric_measures(sil, res, {}, weights, mix=project.score_mix,
                                              regions=review.regions_score(marked)) if whole and paired else {}}
+    if rec["numeric"].get("numeric_score") is not None:
+        try:
+            rec[comparison_context.FIELD] = comparison_context.signature(project)
+        except (OSError, ValueError, TypeError):
+            rec[comparison_context.FIELD] = {"schema": 0}
     if project.zones:
-        rec["zone_reading"] = {v: zone_reading(paired[v], refs[v], project.zones) for v in sorted(paired)}
+        rec["zone_reading"] = {v: zone_reading(paired[v], refs[v], project.zones, paints.get(v))
+                               for v in sorted(paired)}
     if weights is not None and whole:
         rec["scoring"] = {"weights": weights, "weak_overlap_views": sil["weak_views"],
                           "weak_resemblance_views": res["weak_views"]}
@@ -407,7 +810,7 @@ def preview_text(project: Project, attempt: str | Path, rec: dict) -> str:
                  f"{numbers_text(numeric)}. An evaluation of this build gives these numbers, and the outline table "
                  "and the gates besides."]
         stands = standing(project, attempt, rec)
-        lines += standing_lines(rec, stands, scored) if stands and stands.get("best") else []
+        lines += standing_lines(rec, stands, scored) if stands and (stands.get("best") or stands.get("excluded_incompatible")) else []
     else:
         lines = [f"[{rec['name']}] a free look, not an attempt: not every scored view was drawn, so there is no "
                  "score. Leave `views` out to have one."]
@@ -418,12 +821,15 @@ def preview_text(project: Project, attempt: str | Path, rec: dict) -> str:
     return "\n".join(lines)
 
 
-def zone_reading(render_path, reference, zones) -> dict | None:
+def zone_reading(render_path, reference, zones, colour=None) -> dict | None:
     """How a render's cells read as palette colours against the reference's, over the cells the zone score counts
     (inside both silhouettes): the share of each colour on each side, and for each reference colour what the render
     shows there. It is `resemblance`'s own classification (`normalised`, `zone_letters`) reported, not a new measure:
-    the zone score alone says how many cells disagree, never which paint reads as which colour."""
+    the zone score alone says how many cells disagree, never which paint reads as which colour. `colour` is the
+    render's unlit pass, read in its place under `colour_from: "albedo"`."""
     ra, ma = resemblance.normalised(render_path)
+    if colour is not None:
+        ra = resemblance.normalised_colour(render_path, colour)
     rb, mb = resemblance.normalised(reference)
     mine, ref = resemblance.zone_letters(ra, ma, zones), resemblance.zone_letters(rb, mb, zones)
     both = (mine >= 0) & (ref >= 0)
@@ -439,6 +845,51 @@ def zone_reading(render_path, reference, zones) -> dict | None:
 
     return {"cells": cells, "reference": shares(ref, both), "yours": shares(mine, both),
             "read_as": {name: shares(mine, both & (ref == k)) for k, name in enumerate(names) if (both & (ref == k)).any()}}
+
+
+ZONES_PREFIX = "zones_"
+ZONE_CELL_PX = 6
+
+
+def zone_picture(render_path, reference, zones, out_path, colour=None, box=None) -> str:
+    """zones_<view>.png: the reference's cells in their palette colours, the build's, and where they disagree (red
+    where both have a colour and differ, grey where only one side has the body), on the canvas the zone score reads.
+    Builders asked where colour went wrong when the number only said how much. `box` (a region's, normalised on
+    the whole-subject canvas) cuts it to that region and draws its cells larger: a face is a dozen cells of a view."""
+    import numpy as np
+    from PIL import Image, ImageDraw
+    ra, ma = resemblance.normalised(render_path)
+    if colour is not None:
+        ra = resemblance.normalised_colour(render_path, colour)
+    rb, mb = resemblance.normalised(reference)
+    mine, ref = resemblance.zone_letters(ra, ma, zones), resemblance.zone_letters(rb, mb, zones)
+    from .palette import zone_rgb
+    palette = np.clip(np.asarray(zone_rgb(zones), float), 0, 255).astype(np.uint8)
+    if box is not None:
+        n = ref.shape[0]
+        x0, y0, x1, y1 = (int(round(v * n)) for v in box)
+        ref, mine = ref[y0:max(y1, y0 + 1), x0:max(x1, x0 + 1)], mine[y0:max(y1, y0 + 1), x0:max(x1, x0 + 1)]
+    h, w = ref.shape
+
+    def paint(letters):
+        img = np.full((h, w, 3), 255, np.uint8)
+        img[letters >= 0] = palette[letters[letters >= 0]]
+        return img
+    diff = np.full((h, w, 3), 255, np.uint8)
+    diff[(ref >= 0) & (mine >= 0)] = (225, 225, 225)
+    diff[(ref >= 0) ^ (mine >= 0)] = (150, 150, 150)
+    diff[(ref >= 0) & (mine >= 0) & (ref != mine)] = (220, 30, 30)
+    k, label = (ZONE_CELL_PX if box is None else max(ZONE_CELL_PX, 240 // max(h, w))), 18
+    sheet = Image.new("RGB", (3 * w * k + 2 * 8, h * k + label), "white")
+    d = ImageDraw.Draw(sheet)
+    for i, (img, title) in enumerate(((paint(ref), "REFERENCE zones"), (paint(mine), "YOUR BUILD zones"),
+                                      (diff, "DISAGREE: red differ, grey one side only"))):
+        x = i * (w * k + 8)
+        sheet.paste(Image.fromarray(img).resize((w * k, h * k), Image.NEAREST), (x, label))
+        d.text((x + 2, 2), title, fill=(0, 0, 0))
+    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+    sheet.save(out_path)
+    return str(out_path)
 
 
 def zone_reading_lines(readings: dict, scored: list[str], least: float = 0.05) -> list[str]:
@@ -484,7 +935,7 @@ def standing(project: Project, attempt: str | Path, rec: dict) -> dict | None:
     if not rec.get("ok") or (rec.get("numeric") or {}).get("numeric_score") is None:
         return None
     here = Path(attempt).resolve()
-    others = []
+    others, excluded = [], 0
     for f in project.attempts_dir.glob(f"*/{EVAL_FILE}"):
         if f.parent.resolve() == here:
             continue
@@ -492,8 +943,13 @@ def standing(project: Project, attempt: str | Path, rec: dict) -> dict | None:
             other = json.loads(f.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             continue
+        if not isinstance(other, dict):
+            continue
         score = (other.get("numeric") or {}).get("numeric_score")
         if other.get("ok") and score is not None:
+            if not comparison_context.compatible(rec, other):
+                excluded += 1
+                continue
             others.append((-float(score), str(other.get("started") or ""), f.parent.name, other))
     others.sort(key=lambda o: o[:3])                    # highest first; of two that tie, the one measured first
 
@@ -501,11 +957,43 @@ def standing(project: Project, attempt: str | Path, rec: dict) -> dict | None:
         r = o[3]
         sil, res = r.get("silhouette") or {}, r.get("resemblance") or {}
         return {"name": o[2], "score": -o[0], "failed": failed_gates(r), "gates": len(acceptance_gates(r)),
+                "arms_clear": readiness.arms_clear(r.get("readiness") or {}), "numeric": r.get("numeric") or {},
                 "views": {v: {"iou": (sil.get(v) or {}).get("iou"), "zone": (res.get(v) or {}).get("zone")}
                           for v in dict.fromkeys(list(sil) + list(res))}}
     passing = [o for o in others if acceptance_gates(o[3]) and not failed_gates(o[3])]
-    return {"others": len(others), "best": entry(others[0]) if others else None,
-            "clean": entry(passing[0]) if passing else None}
+    result = {"others": len(others), "best": entry(others[0]) if others else None,
+              "clean": entry(passing[0]) if passing else None}
+    kind, _ = comparison_context.classify(rec)
+    if kind == "legacy":
+        result["provenance_note"] = "historical full evaluation provenance unavailable for legacy records."
+    elif kind == "invalid":
+        result["provenance_note"] = "comparisons unavailable: this record has invalid or unsupported provenance."
+    if excluded:
+        result["excluded_incompatible"] = excluded
+        result["compatibility_note"] = _compatibility_note(rec, excluded)
+    return result
+
+
+def _compatibility_note(rec: dict, excluded: int) -> str:
+    kind, _ = comparison_context.classify(rec)
+    if kind == "legacy":
+        return f"{excluded} measured attempt{'s' if excluded != 1 else ''} excluded: readiness target/cap provenance differs or is unknown."
+    if kind == "invalid":
+        return f"{excluded} measured attempt{'s' if excluded != 1 else ''} excluded: comparison provenance is invalid or uses an unsupported schema."
+    return f"{excluded} measured attempt{'s' if excluded != 1 else ''} excluded: evaluation contexts differ; legacy provenance is unavailable."
+
+
+def term_lines(n: dict, was: dict, name: str) -> str:
+    """Each term of the score against the best attempt's: a score that barely moves is often two terms trading,
+    and a builder was told only the total and the views."""
+    mix = n.get("mix") or {"overlap": 1, "resemblance": 1}
+    fields = {**criteria.SCORE_TERMS, "resemblance": "resemblance"}
+    said = []
+    for term in mix:
+        key = fields.get(term)
+        if key and n.get(key) is not None and was.get(key) is not None:
+            said.append(f"{term} {n[key]:.3f} (was {was[key]:.3f}, {n[key] - was[key]:+.3f})")
+    return f"  the score's terms against {name}: " + "; ".join(said) if said else ""
 
 
 def standing_lines(rec: dict, st: dict | None, scored: list[str]) -> list[str]:
@@ -517,7 +1005,17 @@ def standing_lines(rec: dict, st: dict | None, scored: list[str]) -> list[str]:
         return []
     best = st.get("best")
     if not best:
-        return ["standing: the first measured attempt here."]
+        if comparison_context.classify(rec)[0] == "invalid":
+            label = "standing: comparison unavailable for this record."
+        else:
+            label = ("standing: no compatible measured attempts in the history." if st.get("excluded_incompatible")
+                     else "standing: the first measured attempt here.")
+        lines = [label]
+        if st.get("excluded_incompatible"):
+            lines.append("  " + st["compatibility_note"])
+        if st.get("provenance_note"):
+            lines.append("  " + st["provenance_note"])
+        return lines
     score = rec["numeric"]["numeric_score"]
     gap = round(score - best["score"], 4)
     total = st["others"] + 1
@@ -534,10 +1032,20 @@ def standing_lines(rec: dict, st: dict | None, scored: list[str]) -> list[str]:
             line += f" It fails {', '.join(broke)}, which {best['name']} passes."
         if mended:
             line += f" It passes {', '.join(mended)}, which {best['name']} fails."
+    arms, was = readiness.arms_clear(rec.get("readiness") or {}), best.get("arms_clear")
+    if arms == 0 and was:
+        line += f" No arm hangs clear of the body, where {best['name']}'s hang clear for {was:.2f} m."
     clean = st.get("clean")
     if mine and clean and clean["name"] != best["name"]:
         line += f" The highest attempt that passes every gate is {clean['name']} ({clean['score']:.4f})."
     lines = [line]
+    if st.get("excluded_incompatible"):
+        lines.append("  " + st["compatibility_note"])
+    if st.get("provenance_note"):
+        lines.append("  " + st["provenance_note"])
+    terms = term_lines(rec.get("numeric") or {}, best.get("numeric") or {}, best["name"])
+    if terms:
+        lines.append(terms)
     sil, res = rec.get("silhouette") or {}, rec.get("resemblance") or {}
     moved, held = [], False
     for view in scored:
@@ -595,8 +1103,18 @@ def region_lines(rec: dict) -> list[str]:
                      + (f", edges in place {c['edges']:.2f}" if c.get("edges") is not None else "") + ")"
                      for c in sorted(checks, key=lambda c: c["score"]))
     mean = f", their mean {n['regions']:.3f}" if n.get("regions") is not None else ""
-    return ["REGIONS (each marked region read on its own, twice as fine as a whole view; weakest first"
-            + mean + (", which the score counts" if counted else "") + "): " + said]
+    lines = ["REGIONS (each marked region read on its own, twice as fine as a whole view; weakest first"
+             + mean + (", which the score counts" if counted else "") + "): " + said]
+    for c in checks:
+        if c.get("passed") is False and c.get("read_as"):
+            # a failed region gate: which of the reference's colours the build gets wrong there, largest first
+            said = "; ".join(
+                f"where the reference is {colour} ({r['share']:.0%} of it), yours reads "
+                + (", ".join(f"{k} {v:.0%}" for k, v in r["yours"].items() if v >= 0.10) or "a mix under 10% each")
+                for colour, r in list(c["read_as"].items())[:3] if r["share"] >= 0.05)
+            if said:
+                lines.append(f"  {c['name']} (its gate FAILED; {c['view']} view, the zone colours as rendered): {said}")
+    return lines
 
 
 def view_lines(rec: dict, scored: list[str]) -> list[str]:
@@ -661,7 +1179,13 @@ def feedback(rec: dict, stands: dict | None = None) -> str:
     when it was asked. A reader that keeps only the first lines still has the verdict."""
     name = rec.get("name", "")
     if not rec.get("ok"):
-        return f"[{name}] FAILED at {rec.get('stage', '?')}:\n{rec.get('error', '')}"
+        lines = [f"[{name}] FAILED at {rec.get('stage', '?')}:", str(rec.get("error", ""))]
+        preservation = rec.get("failure_preservation") or {}
+        if preservation.get("status") == "preserved":
+            lines.append("failure snapshot saved: " + str(preservation.get("snapshot", "")))
+        elif preservation.get("status") == "failed":
+            lines.append("failure snapshot could not be saved: " + str(preservation.get("error", "unknown I/O error")))
+        return "\n".join(lines)
     measured = rec.get("silhouette") or {}
     # the project names its own scoring views, or the score is over the orthographic three
     scored = ([v for v in rec["scoring"]["weights"] if v in measured] if rec.get("scoring")
@@ -673,13 +1197,19 @@ def feedback(rec: dict, stands: dict | None = None) -> str:
     elif gates:
         tally = f"; all {len(gates)} gates pass" if len(gates) > 1 else "; its gate passes"
     lines = [f"[{name}] built, in contract, rendered and measured: {numbers_text(rec.get('numeric') or {})}{tally}"]
+    mesh = readiness.summary(rec["readiness"], include_surface=False) if rec.get("readiness") else ""
+    surface = readiness.surface_summary(rec["readiness"]) if rec.get("readiness") else ""
+    if mesh:
+        lines.append(mesh)
     cropped = rec.get("cropped") or []
-    cut = (f"the subject touches the frame edge in {cropped}: it is cut off there, so the overlap for that view is "
-           "understated")
+    cut = (f"the subject touches the frame edge in {cropped}; it may be cropped, "
+           "which can raise or lower the overlap")
     if any(v in scored for v in cropped):               # a view the score is taken over: the number above is off
         lines.append(cut)
     lines += gate_lines(rec)
     lines += standing_lines(rec, stands, scored)
+    if surface:
+        lines.append(surface)
     lines += region_lines(rec)
     if rec.get("scoring"):
         weak = lambda rows: ", ".join(f"{r['view']} {r['value']:.3f}" for r in rows[:2]) or "none"   # noqa: E731
@@ -691,10 +1221,25 @@ def feedback(rec: dict, stands: dict | None = None) -> str:
         lines += scored_views_lines(measured)
     lines += view_lines(rec, scored)
     lines += zone_reading_lines(rec.get("zone_reading") or {}, scored)
+    maps = rec.get("zone_maps") or {}
+    if maps:
+        lines.append("WHERE THE COLOURS DISAGREE, cell by cell (reference zones, yours, and red where they differ), "
+                     "in the comparison pictures' directory: "
+                     + ", ".join(Path(maps[v]).name for v in ([v for v in scored if v in maps] or sorted(
+                         v for v in maps if v in measured)) + sorted(v for v in maps if v not in measured)))
     for warning in (rec.get("review") or {}).get("warnings", []):
         lines.append("review warning: " + warning)
     if (rec.get("review") or {}).get("diagnostics"):
         lines.append(parts_line(rec["review"]["diagnostics"]))
+    if rec.get("readiness"):
+        lines += readiness.lines(rec["readiness"])
+    if rec.get("hidden"):
+        lines += ["HIDDEN (an object no scored camera sees much of): " + line
+                  for line in review.hidden_lines(rec["hidden"])]
+    if rec.get("floating"):
+        lines += ["FLOATING (sampled separation; inspect contact): " + line for line in review.floating_lines(rec["floating"])]
+    if rec.get("flipped"):
+        lines += ["FLIPPED: " + line for line in review.flipped_lines(rec["flipped"])]
     if rec.get("profile_diff"):
         lines.append(profile.compare_text(rec["profile_diff"]))
     if cropped and cut not in lines:

@@ -36,7 +36,7 @@ import bpy
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from script_check import check_script  # noqa: E402
+from script_check import check_script, pydata_faces, pydata_problem  # noqa: E402
 
 OK_MARK, ERR_MARK = "JIG_BUILD_OK", "JIG_BUILD_ERROR"
 
@@ -55,6 +55,24 @@ def reset_scene():
     for coll in (bpy.data.meshes, bpy.data.materials, bpy.data.curves, bpy.data.lights, bpy.data.cameras):
         for x in list(coll):
             coll.remove(x)
+
+
+def guard_from_pydata():
+    """Mesh.from_pydata (Python in Blender's bpy_types) checked first: a face naming a vertex that is not there is
+    taken without a word and crashes Blender later with no traceback; here it is a ValueError naming the face. A face
+    naming a vertex twice is mended (`pydata_faces`), as Blender would mend most of them, before it can hang it."""
+    original = bpy.types.Mesh.from_pydata
+
+    def from_pydata(self, vertices, edges, faces, *args, **kwargs):
+        vertices, edges, faces = (x if hasattr(x, "__len__") else list(x) for x in (vertices, edges, faces))
+        problem = pydata_problem(len(vertices), edges, faces)
+        if problem:
+            raise ValueError(f"mesh {self.name!r}: from_pydata was given a {problem}. Blender would crash on it "
+                             "with no traceback, so it is refused here")
+        faces, _mended = pydata_faces(faces)
+        return original(self, vertices, edges, faces, *args, **kwargs)
+
+    bpy.types.Mesh.from_pydata = from_pydata
 
 
 def join_meshes(name):
@@ -223,6 +241,7 @@ def main():
     except Exception:
         pass
     reset_scene()
+    guard_from_pydata()
     with open(script, encoding="utf-8") as f:
         src = f.read()
     problems = check_script(src)

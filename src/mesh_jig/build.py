@@ -19,7 +19,11 @@ from . import glb, script_check
 
 RUNNER = Path(__file__).resolve().parent / "blender_runner.py"
 BLENDER_ENV = "MESH_JIG_BLENDER"
-OK_MARK = "JIG_BUILD_OK"
+OK_MARK, ERR_MARK = "JIG_BUILD_OK", "JIG_BUILD_ERROR"
+CRASHED = ("\nBlender itself crashed, so there is no traceback and no line number. A mesh handed indices that are not "
+           "there is the usual cause: bmesh faces or verts used after an op removed them, a vertex group or colour "
+           "layer indexed past its mesh, or a foreach_set given an array of the wrong length (from_pydata's faces "
+           "are checked before Blender sees them). Look at the last mesh your script changed.")
 BUILD_TIMEOUT_S = 300
 PALETTE_FILE = "palette.json"       # the project's palette as the runner hands it to a script that paints its texture
 
@@ -101,7 +105,11 @@ def build_variants(script: str | Path, out_dir: str | Path, spec: dict, *, blend
         except OSError as e:
             return f"variant {variant or 'default'}: could not run Blender at {blender} ({e})"
         log = (r.stdout or "") + (r.stderr or "")
-        return "" if OK_MARK in log else f"variant {variant or 'default'}: " + log[-2500:]
+        if OK_MARK in log:
+            return ""
+        if ERR_MARK not in log and "EXCEPTION_" in log:
+            log += CRASHED
+        return f"variant {variant or 'default'}: " + log[-2500:]
 
     with ThreadPoolExecutor(max_workers=len(files)) as pool:
         errs = [e for e in pool.map(one, files.items()) if e]

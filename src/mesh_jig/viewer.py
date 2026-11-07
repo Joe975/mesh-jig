@@ -234,6 +234,17 @@ def kept_build(proj: project_mod.Project) -> tuple[str, str] | None:
     return (str(name), rel) if name and rel else None
 
 
+def ready_of(rec: dict) -> dict | None:
+    """What the index holds of an attempt's mesh reading (`readiness.measure`): the triangle count, and against a
+    target how many of its checks hold. The whole reading is in the attempt's eval.json, which the page reads when
+    the attempt is picked."""
+    reading = rec.get("readiness")
+    if not isinstance(reading, dict):
+        return None
+    return {"target": reading.get("target"), "passed": reading.get("passed"),
+            "of": len(reading.get("checks") or []) or None, "triangles": (reading.get("cost") or {}).get("triangles")}
+
+
 def attempt_record(proj: project_mod.Project, attempt: Path) -> dict | None:
     """One attempt as the page shows it, from its eval.json and the pictures beside it; None without an eval.json.
     Pictures are found by the attempt's layout, not by the paths eval.json stored: a copied project still works."""
@@ -268,9 +279,11 @@ def attempt_record(proj: project_mod.Project, attempt: Path) -> dict | None:
             "gates": [{"name": str(g.get("name") or ""), "passed": bool(g.get("passed")),
                        "message": str(g.get("message") or "")[:200]} for g in evaluate_mod.acceptance_gates(rec)],
             "wall_s": rec.get("wall_s"), "colours": bool(rec.get("zone_reading")), "harness": harness_of(rec, root),
+            "ready": ready_of(rec),
             "script": _rel(root, attempt / str(proj.spec.get("script") or "model.py")),
             "glb": _rel(root, attempt / "out" / glb_mod.judged_glb(proj.spec)),
             "eval": _rel(root, attempt / evaluate_mod.EVAL_FILE),
+            "review": _rel(root, attempt / "review.md"),
             "pairwise": {"win_rate": pw.get("win_rate"), "decisive": pw.get("decisive"),
                          "against": rec.get("against_name") or ""} if pw else None}
 
@@ -282,7 +295,8 @@ def run_record(root: Path, run: Path) -> dict | None:
     except (OSError, json.JSONDecodeError):
         return None
     keep = ("model", "turns", "evaluations", "best", "cost_usd", "wall_s", "done", "error", "summary", "prompt_tokens",
-            "completion_tokens", "tool_calls", "rejected_calls", "harness", "url", "effort")
+            "completion_tokens", "tool_calls", "rejected_calls", "harness", "url", "effort", "workflow", "checks",
+            "best_numeric", "latest", "cost_kind", "budget")
     return {"name": run.name, **{k: rep.get(k) for k in keep}, "report": _rel(root, run / "report.json"),
             "transcript": _rel(root, run / "transcript.jsonl")}
 
@@ -301,7 +315,8 @@ def project_record(proj: project_mod.Project, label: str, group: str = "") -> di
         if kept and not a["glb"] and a["name"] == kept[0]:
             a["glb"] = kept[1]
     return {"id": project_id(root), "label": label, "group": group, "name": proj.name, "path": str(root), "brief": proj.brief.strip(),
-            "palette": proj.palette, "attempts": attempts, "best": best, "runs": runs, "driver": driver_of(root, runs),
+            "palette": proj.palette, "attempts": attempts, "best": best, "latest": scored[-1]["name"] if scored else None,
+            "runs": runs, "driver": driver_of(root, runs),
             "stage": stage_of(proj.spec)}
 
 
@@ -553,7 +568,7 @@ def export(paths: list[str | Path], out: str | Path, skip: tuple[str, ...] = (),
             for r in p["runs"]:
                 r["transcript"] = r["report"] = None
             for a in p["attempts"]:
-                files.update((p["id"], a[k]) for k in ("script", "eval", "glb") if a[k])
+                files.update((p["id"], a[k]) for k in ("script", "eval", "glb", "review") if a[k])
                 for w in a["views"].values():
                     files.update((p["id"], w[k]) for k in ("compare", "overlay", "render") if w[k])
                     if w["render"]:
@@ -957,7 +972,7 @@ function drivers(ref) {
       .sort((x, y) => y.a.numeric.numeric_score - x.a.numeric.numeric_score)[0];
     return `<button class="driver ${k === "none" ? "" : k}" data-driver="${k}" aria-pressed="${state.driver === k}" title="${state.driver === k ? "Show every run" : "Show only these runs"}">
       <span class="head">${k === "none" ? `<span class="drv">Not recorded</span>` : badge(ps[0])}<small>${ps.length} run${ps.length === 1 ? "" : "s"}</small></span>
-      <span class="best">${best ? `<b>${f(best.a.numeric.numeric_score)}</b>best, ${runName(best.p)}` : "nothing measured yet"}</span>
+      <span class="best">${best ? `<b>${f(best.a.numeric.numeric_score)}</b>highest numeric score, ${runName(best.p)}` : "nothing measured yet"}</span>
       <small>${KIND_IS[k]}</small></button>`;
   }).join("")}</div>`;
 }
@@ -1016,8 +1031,12 @@ function grid(ref) {
 const COLS = [["numeric_score", "score", score, 3], ["run", "run", r => r.p.label], ["attempt", "attempt and note", r => r.a.name],
   ["ortho_iou", "overlap", r => r.a.numeric.ortho_iou, 3], ["resemblance", "resemblance", r => r.a.numeric.resemblance, 3],
   ["zone", "zones", r => r.a.numeric.zone, 2], ["structure", "markings", r => r.a.structure, 2],
-  ["mae_mm", "outline mm", r => r.a.numeric.mae_mm, 2]];
-const COL_WIDTH = {ortho_iou: 74, resemblance: 96, zone: 62, structure: 82, mae_mm: 88};
+  ["mae_mm", "outline mm", r => r.a.numeric.mae_mm, 2],
+  ["triangles", "triangles", r => r.a.ready ? r.a.ready.triangles : null, 0],
+  // against the target the attempt was built for: the share of its mesh checks that hold, shown as a count
+  ["ready", "mesh ready", r => r.a.ready && r.a.ready.of ? r.a.ready.passed / r.a.ready.of : null, 2,
+   r => `<span title="mesh checks that hold for ${esc(r.a.ready.target)}">${r.a.ready.passed} of ${r.a.ready.of}</span>`]];
+const COL_WIDTH = {ortho_iou: 74, resemblance: 96, zone: 62, structure: 82, mae_mm: 88, triangles: 78, ready: 86};
 
 function attempts(ref) {
   const all = rows(ref).filter(r => shown(ref).includes(r.p)), best = bestOf(ref);
@@ -1043,7 +1062,7 @@ function attempts(ref) {
     : sections(ref).flatMap(s => [{section: s}, ...runRows(s.open ? s.ps : [s.top])]);
   const more = r => !r.more ? "" : `<button class="more" data-open="${esc(r.p.id)}" aria-expanded="${r.open}" title="${r.open ? "Hide" : "Show"} this run's other ${
     r.more === 1 ? "attempt" : r.more + " attempts"}">${r.open ? "hide" : "+" + r.more}</button>`;
-  const tools = `<div class="tools"><span>Show ${[["best", "the best attempt of each run"], ["all", "every attempt"]].map(([k, label]) =>
+  const tools = `<div class="tools"><span>Show ${[["best", "the highest numeric score of each run"], ["all", "every attempt"]].map(([k, label]) =>
     `<button data-every="${k}" aria-pressed="${state.every === (k === "all")}">${label}</button>`).join("")}</span></div>`;
   const head = cols.map((c, i) => `<th class="${i > 2 ? "n" : ""}" ${c[0] === col[0] ? `aria-sort="${state.desc ? "descending" : "ascending"}"` : ""}>
     <button data-sort="${c[0]}">${c[1]}${c[0] === col[0] ? (state.desc ? " ▾" : " ▴") : ""}</button></th>`).join("");
@@ -1051,7 +1070,7 @@ function attempts(ref) {
     : `<tr class="row ${best && r.id === best.id ? "best" : ""} ${r.under ? "under" : ""}" tabindex="0" data-pick="${esc(r.id)}">
     <td>${r.a.ok ? meter(score(r), 3) || "-" : `<span class="fail">failed at ${esc(r.a.stage || "build")}</span>`}${commit(r.a)}</td>
     <td title="${esc(r.p.label)}">${r.under ? "" : `${badge(r.p) || esc(r.p.label)}${more(r)}${r.p.driver ? `<small>${esc(r.p.label)}</small>` : ""}`}</td><td title="${esc(r.a.note || r.a.name)}">${esc(r.a.name)}<small>${esc(r.a.note)}</small></td>
-    ${cols.slice(3).map(c => `<td class="n">${f(c[2](r), c[3])}</td>`).join("")}</tr>`).join("");
+    ${cols.slice(3).map(c => `<td class="n">${c[4] && c[2](r) != null ? c[4](r) : f(c[2](r), c[3])}</td>`).join("")}</tr>`).join("");
   return `${tools}<table class="list"><colgroup><col class="score"><col class="run"><col>${cols.slice(3).map(c => `<col style="width:${COL_WIDTH[c[0]]}px">`).join("")}</colgroup>
     <thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
 }
@@ -1060,7 +1079,7 @@ function agentRuns(ref) {
   const list = shown(ref).flatMap(p => p.runs.map(r => ({p, r})))
     .sort((x, y) => (y.r.best?.numeric_score ?? -1) - (x.r.best?.numeric_score ?? -1));
   const n = (x, text) => `<span class="n">${x == null ? "-" : text}</span>`;
-  return `<div class="agents"><div class="cols"><span>model and run</span><span class="n">best</span><span class="n">attempts</span>
+  return `<div class="agents"><div class="cols"><span>model and run</span><span class="n">numeric best</span><span class="n">attempts</span>
       <span class="n">turns</span><span class="n">cost</span><span class="n">time</span><span class="n">tokens</span><span></span></div>` +
     list.map(({p, r}) => {
       const bestId = r.best && p.attempts.some(a => a.name === r.best.name) ? p.id + "/" + r.best.name : null;
@@ -1068,9 +1087,10 @@ function agentRuns(ref) {
         ${n(r.best, f(r.best?.numeric_score) + commit(p.attempts.find(a => a.name === r.best?.name)))}${n(r.evaluations, r.evaluations)}${n(r.turns, r.turns)}
         ${n(r.cost_usd || null, "$" + Number(r.cost_usd).toFixed(3))}${n(r.wall_s, Math.round(r.wall_s) + " s")}
         ${n(r.prompt_tokens, Math.round((r.prompt_tokens + (r.completion_tokens || 0)) / 1000) + "k")}</summary>
-        <div class="body"><p class="${r.done ? "ok" : "fail"}">${r.done ? "The model called done." : "The model did not call done."}${r.error ? " " + esc(r.error) : ""}</p>
+        <div class="body"><p class="${r.done ? "ok" : "fail"}">${r.workflow === "visual-gauntlet" ? (r.done ? "Visual iterations complete." : "Visual iterations incomplete.") : (r.done ? "The model called done." : "The model did not call done.")}${r.error ? " " + esc(r.error) : ""}</p>
         ${r.summary ? `<pre>${esc(r.summary)}</pre>` : ""}
-        ${bestId ? `<button class="act" data-pick="${esc(bestId)}">Show best attempt ${esc(r.best.name)}</button>` : ""}
+        ${bestId ? `<button class="act" data-pick="${esc(bestId)}">Highest numeric score: ${esc(r.best.name)}</button>` : ""}
+        ${r.latest && p.attempts.some(a => a.name === r.latest.name) ? `<button class="act" data-pick="${esc(p.id + "/" + r.latest.name)}">Latest: ${esc(r.latest.name)}</button>` : ""}
         ${r.transcript ? `<button class="act" data-transcript="${file(p.id, r.transcript)}">Show transcript</button><div class="transcript"></div>` : ""}</div></details>`;
     }).join("") + `</div>`;
 }
@@ -1454,7 +1474,8 @@ function drawInspector() {
   const palette = a.colours && Object.keys(p.palette || {}).length ? `<p class="palette"><span>The project's palette</span>${Object.entries(p.palette).map(([name, hex]) =>
       `<span><i class="sw" style="background:${colour(hex)}"></i>${esc(name)}</span>`).join("")}</p>` : "";
   const links = [a.script && `<a target="_blank" href="${file(p.id, a.script)}">model script</a>`,
-    a.eval && `<a target="_blank" href="${file(p.id, a.eval)}">eval.json</a>`].filter(Boolean).join(", ");
+    a.eval && `<a target="_blank" href="${file(p.id, a.eval)}">eval.json</a>`,
+    a.review && `<a target="_blank" href="${file(p.id, a.review)}">visual review</a>`].filter(Boolean).join(", ");
   const shot = (href, src, alt, cls = "") => `<a target="_blank" title="Open the picture" href="${href}"><img class="tile ${cls}" loading="lazy" src="${src}" alt="${alt}"></a>`;
   const views = Object.entries(a.views).map(([v, w]) => {
     const rv = ref.views[v];
@@ -1512,6 +1533,27 @@ function checkRow(c) {
   return `<span class="name">${esc(name)}</span><span class="said">${esc(said)}</span><span class="${isObservation(c) ? "" : c.passed ? "ok" : "fail"}">${isObservation(c) ? "observation" : c.passed ? "met" : "not met"}</span>`;
 }
 
+// The mesh reading of an attempt (readiness.measure): what the file costs an engine and what a rig or a texture
+// would find in it. Against a target each reading is a row that holds or does not; with none there are readings only.
+function meshReady(ready) {
+  if (!ready || !ready.cost) return "";
+  const share = x => x >= 0.095 || x === 0 ? Math.round(x * 100) + "%" : (x * 100).toFixed(1) + "%";
+  const value = x => Number.isInteger(x) ? String(x) : share(x);
+  const c = ready.cost, s = ready.surface || {}, uv = ready.uv, checks = ready.checks || [];
+  const rows = checks.map(k => `<span class="name">${esc(k.name)}</span><span class="said">${esc(value(k.value))}, wants ${esc(k.limit)}: ${esc(k.what)}${
+      k.hard ? " (a build over it fails)" : ""}</span><span class="${k.passed ? "ok" : "fail"}">${k.passed ? "met" : "not met"}</span>`).join("");
+  const cost = `${c.triangles} triangles, ${c.vertices} vertices, ${c.mesh_nodes} mesh node${c.mesh_nodes === 1 ? "" : "s"}, ${c.materials} material${
+      c.materials === 1 ? "" : "s"}, ${Math.round(c.bytes / 1024)} KiB.`;
+  const surface = s.pieces == null ? "" : ` ${s.pieces} connected piece${s.pieces === 1 ? "" : "s"}, ${s.pieces_90} holding nine tenths of the surface;
+      ${share(s.buried)} of the triangles buried; ${share(s.open_edges)} of edges open; ${share(s.slivers)} slivers; ${share(s.symmetry)} of vertices mirrored.`;
+  const uvs = uv ? ` UVs on ${share(uv.with_uv)} of the triangles (${share(uv.outside)} outside the square, ${share(uv.collapsed)} collapsed).`
+    : " No UVs: the texturing stage unwraps.";
+  return `<h3>Mesh readiness${ready.target ? " for " + esc(ready.target) : ""}</h3>
+    <p class="what">${checks.length ? `${ready.passed} of ${checks.length} checks hold. ` : "No target is set for this attempt, so nothing is held to a limit. "}Read
+      from the exported file for the stages after modelling (the engine, a rig, a texture): beside the score, not part of it.</p>
+    ${rows ? `<div class="checks">${rows}</div>` : ""}<p class="what">${cost}${surface}${uvs}</p>`;
+}
+
 // the rest of what was measured is in the attempt's eval.json, not in the index: the part checks, the outline at
 // each named station, and how the surface reads in palette colours
 async function showRecord(p, a, id) {
@@ -1524,7 +1566,8 @@ async function showRecord(p, a, id) {
   const failed = gates.filter(c => !c.passed);
   $("checks").innerHTML = (outline.height_error_mm != null ? `<p class="what">Height against the reference: ${signed(outline.height_error_mm)} mm.</p>` : "")
     + (checks.length ? `<h3>Part checks</h3><p class="what">${gates.length - failed.length} of ${gates.length} acceptance gates met; ${observed.length} observations without acceptance limits. Region measurements can also contribute to the configured score.</p>
-      <div class="checks">${failed.concat(gates.filter(c => c.passed), observed).map(checkRow).join("")}</div>` : "");
+      <div class="checks">${failed.concat(gates.filter(c => c.passed), observed).map(checkRow).join("")}</div>` : "")
+    + meshReady(rec.readiness);
   document.querySelectorAll("#inspect .stations").forEach(box => {
     const rows = ((outline.views || {})[box.dataset.view] || {}).rows || [];
     if (rows.length && rows[0].name) box.innerHTML = `Width at each station against the reference, in mm (+ is wider)<div class="chips">${rows.map(x =>
@@ -1569,7 +1612,7 @@ function drawBoard() {
   if (!tabs.some(t => t[0] === state.tab)) state.tab = "runs";
   $("board").innerHTML = `<h1>${esc(ref.name)}</h1>
     <p class="facts"><span>${count(Object.keys(ref.views).length, "view")}</span><span>${count(ref.projects.length, "run")}</span>
-      <span>${count(all.length, "attempt")}</span>${best ? `<span>best <b>${f(score(best))}</b> ${esc(best.p.label)} / ${esc(best.a.name)}</span>` : ""}</p>
+      <span>${count(all.length, "attempt")}</span><span>Inspect renders to choose visually; highest numeric score and latest are separate labels.</span>${best ? `<span>highest numeric score <b>${f(score(best))}</b> ${esc(best.p.label)} / ${esc(best.a.name)}</span>` : ""}</p>
     ${drivers(ref)}<div class="tabs" role="tablist">${tabs.map(([k, label, n]) =>
       `<button role="tab" data-tab="${k}" aria-selected="${state.tab === k}">${label}<i>${n}</i></button>`).join("")}</div>
     <div class="sheet">${state.tab === "attempts" ? attempts(ref) : state.tab === "agent" ? agentRuns(ref) : state.tab === "3d" ? lineup(ref) : grid(ref)}</div>`;

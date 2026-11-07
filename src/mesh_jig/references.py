@@ -175,3 +175,219 @@ def write_seen(project, out_dir: str | Path) -> list[Path]:
         seen.save(p)
         written.append(p)
     return written
+
+
+def across(project, view: str, centre_px: float | None = None, who: str = "--articulation") -> dict:
+    """How a reference view whose camera looks across (not up or down) maps to Blender metres: `right`, the Blender
+    axis the picture's right runs along; `per_px`, the subject's scale in it (`model.height_m` over its height in
+    pixels); `centre`, the model's centreline in the picture (`centre_px`, else the project's calibration origin for
+    the view, else the middle of the subject's box, which a tail or a raised arm pushes off it) and `said`, which of
+    those it is; and the view's `facts`. A pixel (x, y) is `right * (x - centre) * per_px` across and
+    `(ground_y - y) * per_px` above the ground."""
+    refs = project.references
+    if view not in refs:
+        raise ValueError(f"{who} {view}: no reference view of that name (there are {', '.join(refs)})")
+    height = (project.spec or {}).get("height_m")
+    if not height:
+        raise ValueError(f"{who} needs model.height_m: a standing subject's scale comes from its height")
+    shot = next((s for s in render.shots_for(project.spec) if s["name"] == view), None)
+    if shot is None or "cam_pos" not in shot:
+        raise ValueError(f"{who} {view}: the project has no camera of that name")
+    forward = np.asarray(shot.get("cam_target", (0, 0, 0)), float) - np.asarray(shot["cam_pos"], float)
+    if abs(forward[1]) > 1e-6 * np.linalg.norm(forward):
+        raise ValueError(f"{who} {view}: its camera looks up or down; pick a view that looks across")
+    right = np.cross(forward, (0.0, 1.0, 0.0))
+    right /= np.linalg.norm(right)
+    right = np.array([right[0], -right[2], right[1]])          # glTF -> Blender
+    f = facts(refs[view])
+    if f["box"] is None:
+        raise ValueError(f"{who} {view}: no subject found in the picture")
+    calibration = ((project.data.get("criteria") or {}).get("outline") or {}).get("calibration") or {}
+    origins = calibration.get("origins_px") or {}
+    if centre_px is not None:
+        centre, said = float(centre_px), f"the centreline given, x {centre_px:g}"
+    elif view in origins:
+        centre, said = float(origins[view][0]), f"the calibration's centreline, x {origins[view][0]:g}"
+    else:
+        centre, said = float(f["centre_x"]), (f"the middle of the subject's box, x {f['centre_x']}: if a tail or an "
+                                               "arm pushes the box off the body's centreline, give --centre")
+    return {"right": right, "per_px": float(height) / f["height_px"], "centre": centre, "said": said, "facts": f}
+
+
+def articulation_path(project, view: str, points_px: list[tuple[float, float]],
+                      centre_px: float | None = None) -> tuple[list[list[float]], str]:
+    """A `review.articulations` path from points picked on one reference view, root first: each pixel turned into
+    Blender metres through the view's camera (`across`), with Z above the ground line. The axis the view looks along
+    is 0: a part off that plane (an arm held forward, read on the front view) needs it set by hand, or read off a
+    second view. The second value returned says which centreline was used."""
+    frame = across(project, view, centre_px)
+    right, per_px, ground_y = frame["right"], frame["per_px"], frame["facts"]["ground_y"]
+    out = []
+    for x, y in points_px:
+        p = right * (float(x) - frame["centre"]) * per_px + np.array([0.0, 0.0, (ground_y - float(y)) * per_px])
+        out.append([round(float(v), 3) + 0.0 for v in p])
+    return out, frame["said"]
+
+
+RULED_SUFFIX = "_ruled"
+RULE_MARGIN = (52, 22)      # pixels added left of and below a ruled picture for its numbers
+
+
+def rule_step(height_m: float) -> float:
+    """A round spacing that puts about ten lines up a subject: 0.1 m on a 1 m one, 0.02 m on a 0.2 m one."""
+    raw = height_m / 10
+    power = 10 ** math.floor(math.log10(raw))
+    return next(power * k for k in (1, 2, 5, 10) if power * k >= raw * 0.75)
+
+
+def ground_z(project) -> float:
+    """Blender Z of the ground the reference views stand on: the outline's `origin_m` Z, else 0."""
+    stated = ((project.data.get("criteria") or {}).get("outline") or (project.spec or {}).get("profile") or {})
+    return float((stated.get("origin_m") or (0, 0, 0))[2])
+
+
+def ruled(project, view: str, picture: Image.Image | None = None) -> Image.Image | None:
+    """The reference view with lines at round Blender coordinates: across, the axis its picture's right runs along,
+    from the model's centreline (`across`); up, Blender Z, from the ground at the outline's `origin_m` Z (0 when the
+    project states none). A builder reads where a part of the reference sits in the coordinates its script writes,
+    which the side-by-sides, each cropped and scaled to its own subject, cannot show. Lines at 0 are red. None for a
+    view `across` cannot read (no height, a camera looking up or down, no subject). `picture`, drawn in the
+    reference's own pixels (`in_frame`), is ruled in place of the reference."""
+    try:
+        frame = across(project, view, who="ruled")
+    except ValueError:
+        return None
+    ground = ground_z(project)
+    axis = int(np.argmax(np.abs(frame["right"])))
+    sign, name = float(np.sign(frame["right"][axis])), "XYZ"[axis]
+    per_px, centre, ground_y = frame["per_px"], frame["centre"], frame["facts"]["ground_y"]
+    step = rule_step(float(project.spec["height_m"]))
+    digits = max(0, -math.floor(math.log10(step)))
+    if picture is not None:
+        im = picture.convert("RGB")
+    else:
+        with Image.open(project.references[view]) as im:
+            im = im.convert("RGB")
+    left, below = RULE_MARGIN
+    out = Image.new("RGB", (im.width + left, im.height + below), (255, 255, 255))
+    out.paste(im, (left, 0))
+    d = ImageDraw.Draw(out)
+
+    def values(ends):
+        lo, hi = min(ends), max(ends)
+        return [k * step for k in range(math.ceil(lo / step - 1e-9), math.floor(hi / step + 1e-9) + 1)]
+
+    def colour(at_zero):
+        return (220, 60, 60) if at_zero else (150, 160, 235)
+
+    for value in values([sign * (x - centre) * per_px for x in (0, im.width - 1)]):
+        x = left + centre + value / (sign * per_px)
+        d.line([(x, 0), (x, im.height - 1)], fill=colour(abs(value) < step / 100))
+        d.text((x - 14, im.height + 5), f"{name}{value:+.{digits}f}", fill=(30, 30, 140))
+    for z in values([ground + (ground_y - y) * per_px for y in (0, im.height - 1)]):
+        y = ground_y - (z - ground) / per_px
+        d.line([(left, y), (out.width - 1, y)], fill=colour(abs(z) < step / 100))
+        d.text((2, y - 6), f"Z{z:+.{digits}f}", fill=(30, 30, 140))
+    return out
+
+
+def in_frame(project, view: str, render_path: str | Path) -> Image.Image | None:
+    """A build's render of `view` resampled into the reference view's own pixels: each pixel shows the point of the
+    build at the Blender coordinates the reference's pixel reads as (`across`, the ground at `ground_z`), so the two
+    share a scale, a centreline and a ground line. Ruled alike (`ruled`), a tail 0.13 m short is 0.13 m short
+    against the same line, which the side-by-sides, each scaled to its own subject, hide. None for a view `ruled`
+    cannot read or a camera that is not orthographic."""
+    try:
+        frame = across(project, view, who="ruled")
+    except ValueError:
+        return None
+    shot = next((s for s in render.shots_for(project.spec) if s["name"] == view), None)
+    if not shot or not shot.get("ortho"):
+        return None
+    with Image.open(render_path) as r:
+        pixels = np.asarray(r.convert("RGB"))
+    height, width = pixels.shape[:2]
+    eye, (right, up, _forward), _ = render.camera(shot)
+    scale, per_px = render.stage_scale(project.spec), frame["per_px"]
+    px_per_unit = height / float(shot["ortho"])
+    f = frame["facts"]
+    w, h = Image.open(project.references[view]).size
+    xs = (np.arange(w) + 0.5 - frame["centre"]) * per_px                    # metres along the picture's right
+    zs = ground_z(project) + (f["ground_y"] - np.arange(h) - 0.5) * per_px    # Blender Z
+    col = np.floor(width / 2 + (xs * scale - right @ eye) * px_per_unit).astype(int)
+    row = np.floor(height / 2 - (zs * scale - up @ eye) * px_per_unit).astype(int)
+    inside = (row[:, None] >= 0) & (row[:, None] < height) & (col[None] >= 0) & (col[None] < width)
+    out = pixels[np.clip(row, 0, height - 1)][:, np.clip(col, 0, width - 1)]
+    out[~inside] = pixels[0, 0]
+    return Image.fromarray(out)
+
+
+def ruled_pair(project, view: str, render_path: str | Path) -> Image.Image | None:
+    """The ruled reference and the build's render ruled in the same frame (`in_frame`), side by side and labelled."""
+    picture = in_frame(project, view, render_path)
+    if picture is None:
+        return None
+    left, right = ruled(project, view), ruled(project, view, picture)
+    label, gap = 18, 12
+    out = Image.new("RGB", (left.width + gap + right.width, left.height + label), (255, 255, 255))
+    out.paste(left, (0, label))
+    out.paste(right, (left.width + gap, label))
+    d = ImageDraw.Draw(out)
+    d.text((4, 3), f"REFERENCE {view}, Blender metres", fill=(0, 0, 0))
+    d.text((left.width + gap + 4, 3), f"YOUR BUILD {view}, the same lines", fill=(0, 0, 0))
+    return out
+
+
+def write_ruled_pairs(project, renders: dict[str, str], out_dir: str | Path) -> dict[str, str]:
+    """ruled_<view>.png for every rendered view `ruled_pair` can draw, by view name."""
+    out_dir, written = Path(out_dir), {}
+    for view, path in renders.items():
+        if view in project.references:
+            picture = ruled_pair(project, view, path)
+            if picture is not None:
+                out_dir.mkdir(parents=True, exist_ok=True)
+                target = out_dir / f"ruled_{view}.png"
+                picture.save(target)
+                written[view] = str(target)
+    return written
+
+
+def write_ruled(project, out_dir: str | Path) -> dict[str, str]:
+    """<view>_ruled.png for every reference view `ruled` can read, by view name."""
+    out_dir = Path(out_dir)
+    written = {}
+    for view in project.references:
+        picture = ruled(project, view)
+        if picture is not None:
+            out_dir.mkdir(parents=True, exist_ok=True)
+            path = out_dir / f"{view}{RULED_SUFFIX}.png"
+            picture.save(path)
+            written[view] = str(path)
+    return written
+
+
+def probe_thousandths(project, view: str, x: float, y: float) -> tuple[list[float], str]:
+    """A pixel of a reference view in the brief's outline units for a project that states no size: thousandths of
+    the subject's extent along the outline's unit axis, from the centre of its bounding box, Blender axes. A builder
+    of such a project was told `--probe` needs model.height_m and placed its first attempt by eye, 15% off."""
+    refs = project.references
+    if view not in refs:
+        raise ValueError(f"--probe {view}: no reference view of that name (there are {', '.join(refs)})")
+    reading = outline.measure(refs, project.spec)
+    shot = next((s for s in render.shots_for(project.spec) if s["name"] == view), None)
+    if not reading or shot is None:
+        raise ValueError(f"--probe {view}: the project states no size and no outline can be read through its cameras")
+    _, (r, u, _), _ = render.camera(shot)
+    up_axis = int(np.argmax(np.abs(u)))                 # glTF; Blender's Z is glTF's Y
+    f = facts(refs[view])
+    if f["box"] is None:
+        raise ValueError(f"--probe {view}: no subject found in the picture")
+    blender = {0: "X", 1: "Z", 2: "Y"}
+    extent = reading["extents"][blender[up_axis]]
+    per_px = 1000.0 * extent / f["height_px"]
+    across = (float(x) - (f["box"][0] + f["box"][2]) / 2) * per_px
+    upward = ((f["box"][1] + f["box"][3]) / 2 - float(y)) * per_px
+    right = np.array([r[0], -r[2], r[1]])
+    up = np.array([u[0], -u[2], u[1]])
+    p = right * across + up * upward
+    return [round(float(v), 0) + 0.0 for v in p], reading["unit_axis"]

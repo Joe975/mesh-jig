@@ -15,6 +15,9 @@ from . import glb, profile, render, silhouette
 
 # world horizontal axis and sign of image-right in Blender axes
 VIEW_AXES = {"front": (0, -1), "rear": (0, 1), "side": (1, -1), "right": (1, 1)}
+# what min and max are along each axis, whichever side of the picture the view shows them on
+AXIS_ENDS = {"x": " (along X: min the model's left side, max its right; + is further toward its right)",
+             "y": " (along Y: min the back, max the front; + is further toward the front)"}
 
 
 def _positive(value) -> bool:
@@ -147,6 +150,8 @@ def compare_text(diff: dict) -> str:
     lines = [f"STANDING OUTLINE ERRORS (model minus reference, mm): height {diff['height_error_mm']:+.3f}; "
              f"endpoint MAE {diff['mae_mm']}; missing {diff['missing_stations']}; extra {diff['extra_stations']}."]
     for view, table in diff["views"].items():
-        lines.append(view + " min/max/width: " + "  ".join(
+        # which way min and max run: builders read them as the picture's left and right, which they are not
+        ends = AXIS_ENDS.get(table.get("axis"), "")
+        lines.append(view + f" min/max/width{ends}: " + "  ".join(
             f"{r['name']} z{r['z_mm']:.0f}:{r['min_mm']}/{r['max_mm']}/{r['width_mm']}" for r in table["rows"]))
     return "\n".join(lines)

@@ -59,6 +59,17 @@ def test_a_failed_variant_returns_the_tail_of_blenders_log(tmp_path):
     assert err.startswith("variant missile: ") and "NameError: wing" in err and "line 4" in err
 
 
+def test_a_crash_with_no_traceback_says_what_usually_causes_one(tmp_path):
+    script = tmp_path / "ship.py"
+    script.write_text(GOOD)
+    crash = "Writing: blender.crash.txt\nError   : EXCEPTION_ACCESS_VIOLATION\nModule  : blender.exe\n"
+    err = build.build_variants(script, tmp_path / "out", SPEC, blender="b",
+                               runner=lambda argv, **kw: subprocess.CompletedProcess(argv, 3221225477, crash, ""))
+    assert "EXCEPTION_ACCESS_VIOLATION" in err and "Blender itself crashed" in err
+    traced = build.build_variants(script, tmp_path / "out", SPEC, blender="b", runner=fake_blender([], fail="missile"))
+    assert "Blender itself crashed" not in traced, "a script error has its traceback"
+
+
 def test_a_contract_breach_is_the_error_even_when_blender_succeeded(tmp_path):
     script = tmp_path / "ship.py"
     script.write_text(GOOD)

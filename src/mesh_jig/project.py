@@ -17,6 +17,10 @@ jig.json:
      "model": {...},                            the build contract, see mesh_jig.glb
      "criteria": {"views": {...}, "outline": {...}, "gates": {...}, "review": {...}},
                                                 optional: what this reference is judged on, see mesh_jig.criteria
+     "target": "quest",                         optional: what a build is for (quest, pcvr or one of `targets`); a
+                                                command's --target says it for one run. See mesh_jig.target
+     "targets": {"quest": {"max_triangles": 8000}},
+                                                optional: a target's limits changed, or a target of the project's own
      "sheet": {"source": "sheet.png",           optional: cut refs/ from one design sheet (`mesh-jig sheet`)
                "mask_sample_x": 8,
                "crops": {"hero": {"box": [x0, y0, x1, y1], "mask": [[x0, y0, x1, y1], ...]}, ...}}}
@@ -30,6 +34,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from . import criteria, glb, outline, palette as palette_mod, profile, silhouette, scoring, standing, render, review
+from . import target as target_mod
 
 JIG_FILE = "jig.json"
 ATTEMPTS = "attempts"
@@ -46,6 +51,7 @@ class Project:
     root: Path
     data: dict
     _profile: dict | None = field(default=None, repr=False)
+    chosen_target: str | None = None        # a command's --target; the project's own `target` when None
 
     @property
     def name(self) -> str:
@@ -63,7 +69,15 @@ class Project:
         spec = dict(self.stated.get("model") or {})
         spec.setdefault("script", "model.py")
         spec.setdefault("glb", f"{self.name}_{{variant}}.glb" if spec.get("variants") else f"{self.name}.glb")
-        return spec
+        return target_mod.apply(spec, self.target)
+
+    @property
+    def target(self) -> dict | None:
+        """What a build is for (`target.resolve`), or None: no target named, or one `problems` reports as wrong."""
+        try:
+            return target_mod.resolve(self.data, self.chosen_target)
+        except target_mod.TargetError:
+            return None
 
     @property
     def refs_dir(self) -> Path:
@@ -147,6 +161,7 @@ class Project:
             return [f"{JIG_FILE} needs a `model` block (see mesh_jig.glb for its fields)"]
         spec = self.spec
         out += criteria.fold(self.data)[1]
+        out += target_mod.problems(self.data, self.chosen_target)
         if len(glb.variant_names(spec)) > 1 and "{variant}" not in spec["glb"]:
             out.append(f"model.glb {spec['glb']!r} must contain {{variant}} when there is more than one variant")
         if spec.get("judge_variant") and spec["judge_variant"] not in glb.variant_names(spec):
@@ -184,6 +199,9 @@ class Project:
         if spec.get("light") is not None and spec["light"] not in render.LIGHT_MODES:
             out.append(criteria.named(f"model.light must be one of {', '.join(render.LIGHT_MODES)}", "model.light",
                                       criteria.sources(self.data).get("light", "")))
+        if spec.get("colour_from") is not None and spec["colour_from"] not in render.COLOUR_SOURCES:
+            out.append(criteria.named(f"model.colour_from must be one of {', '.join(render.COLOUR_SOURCES)}",
+                                      "model.colour_from", criteria.sources(self.data).get("colour_from", "")))
         for shot in spec.get("shots") or []:
             if not all(k in shot for k in ("name", "cam_pos", "cam_target")):
                 out.append(f"model.shots entry {shot!r} needs name, cam_pos and cam_target")
@@ -224,8 +242,8 @@ class Project:
         return out
 
 
-def load(path: str | Path) -> Project:
-    """The project at `path` (its directory or its jig.json)."""
+def load(path: str | Path, target: str | None = None) -> Project:
+    """The project at `path` (its directory or its jig.json), built for `target` when one is named."""
     p = Path(path)
     root = p.parent if p.is_file() else p
     jig = root / JIG_FILE
@@ -237,4 +255,6 @@ def load(path: str | Path) -> Project:
         raise ProjectError(f"{jig}: not JSON ({e})") from None
     if not isinstance(data, dict):
         raise ProjectError(f"{jig}: the top level must be an object")
-    return Project(root=root.resolve(), data=data)
+    if target is not None and target not in target_mod.names(data):
+        raise ProjectError(f"--target {target!r} is not a target of this project: {', '.join(target_mod.names(data))}")
+    return Project(root=root.resolve(), data=data, chosen_target=target)

@@ -41,6 +41,7 @@ CHUNK_BIN = 0x004E4942
 COMPONENT = {5120: np.int8, 5121: np.uint8, 5122: np.int16, 5123: np.uint16, 5125: np.uint32, 5126: np.float32}
 NCOMP = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4, "MAT4": 16}
 MAX_DEGENERATE_FRACTION = 0.01
+MAX_COLOURS_KEPT = 64          # distinct vertex colours kept in the stats, for a build held to its palette
 MAX_ORIGIN_OFFSET = 0.25     # bounds centre within this fraction of the length from the node origin
 REPORT = "glb_stats.json"
 
@@ -124,6 +125,7 @@ def mesh_nodes(gltf: dict):
 def stats(path: str | Path) -> dict:
     gltf, blob = read_glb(path)
     names, tris, degenerate, prims, colours = [], 0, 0, 0, set()
+    node_tris, node_degenerate, node_bounds = [], [], []
     zero_area, near_degenerate = 0, 0
     all_pts, missing_colour, nonfinite = [], 0, False
     textured_prims, missing_uv = 0, 0
@@ -132,6 +134,7 @@ def stats(path: str | Path) -> dict:
         node = gltf["nodes"][ni]
         mesh = gltf["meshes"][node["mesh"]]
         names.append(node.get("name") or mesh.get("name") or f"node{ni}")
+        tris_before, bad, mine = tris, [], len(all_pts)
         for prim in mesh.get("primitives", []):
             if prim.get("mode", 4) != 4:
                 continue
@@ -141,6 +144,10 @@ def stats(path: str | Path) -> dict:
                 nonfinite = True
                 continue
             pts = (np.c_[pos, np.ones(len(pos))] @ world.T)[:, :3]
+            # Finite accessor values can become non-finite through node transforms.
+            if not np.isfinite(pts).all():
+                nonfinite = True
+                continue
             all_pts.append(pts)
             idx = accessor(gltf, blob, prim["indices"]).astype(np.int64).ravel() if "indices" in prim else np.arange(len(pos))
             tri = idx[: len(idx) // 3 * 3].reshape(-1, 3)
@@ -151,6 +158,8 @@ def stats(path: str | Path) -> dict:
                 scale = max(float(np.ptp(pts, axis=0).max()), 1e-9)
                 small = area < (scale * 1e-5) ** 2
                 degenerate += int(small.sum())
+                if small.any():
+                    bad.append(((a + b + c) / 3)[small][:, 1])
                 zero_area += int((area == 0).sum())
                 near_degenerate += int((small & (area > 0)).sum())
             if "COLOR_0" in prim["attributes"]:
@@ -163,38 +172,81 @@ def stats(path: str | Path) -> dict:
             mi = prim.get("material")
             if mi is not None and mi < len(mats) and "baseColorTexture" in (mats[mi].get("pbrMetallicRoughness") or {}):
                 textured_prims += 1
+        node_tris.append([names[-1], tris - tris_before])
+        if len(all_pts) > mine:
+            here = np.vstack(all_pts[mine:])
+            node_bounds.append([names[-1], [round(float(v), 4) for v in here.min(axis=0)],
+                                [round(float(v), 4) for v in here.max(axis=0)]])
+        if bad:
+            ys = np.concatenate(bad)
+            node_degenerate.append([names[-1], int(len(ys)), round(float(ys.min()), 3), round(float(ys.max()), 3)])
     pts = np.vstack(all_pts) if all_pts else np.zeros((0, 3))
     lo = pts.min(axis=0).tolist() if len(pts) else [0, 0, 0]
     hi = pts.max(axis=0).tolist() if len(pts) else [0, 0, 0]
     return {"file": Path(path).name, "mesh_nodes": names, "primitives": prims, "triangles": tris,
+            "node_triangles": node_tris, "node_degenerate": node_degenerate,
+            "node_bounds": node_bounds,
             "degenerate_triangles": degenerate, "nonfinite": nonfinite,
             "zero_area_triangles": zero_area, "near_degenerate_triangles": near_degenerate,
             "bounds_min": [round(v, 6) for v in lo], "bounds_max": [round(v, 6) for v in hi],
             "size": [round(h - l, 6) for l, h in zip(lo, hi)],
             "centre": [round((h + l) / 2, 6) for l, h in zip(lo, hi)],
             "primitives_without_color0": missing_colour, "distinct_colors": len(colours),
+            "colors": sorted(colours)[:MAX_COLOURS_KEPT],
             "materials": len(mats), "images": len(gltf.get("images", [])),
             "primitives_without_texcoord0": missing_uv, "textured_primitives": textured_prims}
+
+
+def by_node(s: dict, top: int = 8) -> str:
+    """The nodes holding the most triangles, for a build over its ceiling: where to cut. '' for a single mesh or a
+    stats record written before node_triangles was."""
+    rows = sorted((n for n in s.get("node_triangles") or [] if n[1]), key=lambda n: -n[1])
+    if len(rows) < 2:
+        return ""
+    more = f", {len(rows) - top} more" if len(rows) > top else ""
+    return "; by node: " + ", ".join(f"{n} {t}" for n, t in rows[:top]) + more
+
+
+def reaching(s: dict, k: int) -> str:
+    """For an extent outside the contract: which nodes set the lowest and the highest point along axis k, so a builder
+    moves or scales a part rather than clamping every vertex into a box. '' for a record without node bounds."""
+    bounds = s.get("node_bounds") or []
+    if not bounds:
+        return ""
+    low = sorted(bounds, key=lambda b: b[1][k])[:2]
+    high = sorted(bounds, key=lambda b: -b[2][k])[:2]
+    said = lambda rows, i: ", ".join(f"{b[0]} {b[i][k]:+.3f}" for b in rows)  # noqa: E731
+    up = " (glTF Y is up: Blender's Z)" if k == 1 else " (glTF Z is Blender's -Y)" if k == 2 else ""
+    return f"; lowest {said(low, 1)}, highest {said(high, 2)} m{up}"
+
+
+ZERO_AREA_HINT = (". A zero-area triangle has corners at one point: a ring of vertices built at a pole (radius 0 "
+                  "at the top or bottom of a lathe or sphere) makes them. End such a profile at one vertex, or merge "
+                  "the copies: bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-6)")
 
 
 def check(s: dict, spec: dict) -> list[str]:
     """Contract issues for one GLB's stats; [] when it passes."""
     issues = []
     name = s["file"]
-    if s["triangles"] == 0:
-        return [f"{name}: no triangles"]
     if s["nonfinite"]:
         issues.append(f"{name}: non-finite vertex positions")
+    if s["triangles"] == 0:
+        return issues + [f"{name}: no triangles"]
     if spec.get("single_mesh") and len(s["mesh_nodes"]) != 1:
         issues.append(f"{name}: {len(s['mesh_nodes'])} mesh nodes {s['mesh_nodes'][:6]}, the contract wants ONE mesh (join the parts)")
     if spec.get("max_triangles") and s["triangles"] > spec["max_triangles"]:
-        issues.append(f"{name}: {s['triangles']} triangles > budget {spec['max_triangles']}")
+        issues.append(f"{name}: {s['triangles']} triangles > budget {spec['max_triangles']}"
+                      f" ({s['triangles'] - spec['max_triangles']} over){by_node(s)}")
     if spec.get("min_triangles") and s["triangles"] < spec["min_triangles"]:
         issues.append(f"{name}: only {s['triangles']} triangles (< {spec['min_triangles']}); too crude to read as the reference")
     if s["degenerate_triangles"] > MAX_DEGENERATE_FRACTION * s["triangles"]:
         detail = (f" ({s['zero_area_triangles']} zero-area, {s['near_degenerate_triangles']} tiny positive-area)"
                   if "zero_area_triangles" in s and "near_degenerate_triangles" in s else "")
-        issues.append(f"{name}: {s['degenerate_triangles']} degenerate triangles of {s['triangles']}{detail}")
+        where = "; in " + ", ".join(f"{n} {k} at heights {lo:.3f} to {hi:.3f} m" for n, k, lo, hi in
+                                    sorted(s["node_degenerate"], key=lambda d: -d[1])[:5]) if s.get("node_degenerate") else ""
+        mend = ZERO_AREA_HINT if s.get("zero_area_triangles") else ""
+        issues.append(f"{name}: {s['degenerate_triangles']} degenerate triangles of {s['triangles']}{detail}{where}{mend}")
     sx, sy, sz = s["size"]
     dimensions = dict(spec.get("axis_extents_m") or {})
     if spec.get("height_m"):
@@ -204,7 +256,8 @@ def check(s: dict, spec: dict) -> list[str]:
         tol = float(spec.get("height_tolerance", 0.05) if axis == "Y" and spec.get("height_m")
                     else (spec.get("axis_tolerances") or {}).get(axis, 0.05))
         if abs(extent - target) > tol * target:
-            issues.append(f"{name}: extent along {axis} is {extent:.4f} m, contract {target:.4f} m +/- {tol:.0%}")
+            issues.append(f"{name}: extent along {axis} is {extent:.4f} m, contract {target:.4f} m +/- {tol:.0%}"
+                          + reaching(s, "XYZ".index(axis)))
     if spec.get("length_m"):
         want, tol = float(spec["length_m"]), float(spec.get("length_tolerance", 0.05))
         if abs(sz - want) > tol * want:
@@ -338,3 +391,19 @@ def write_report(out_dir: str | Path, spec: dict) -> dict:
     Path(out_dir).mkdir(parents=True, exist_ok=True)
     (Path(out_dir) / REPORT).write_text(json.dumps(rec, indent=1), encoding="utf-8")
     return rec
+
+
+def off_palette(stats: dict, palette: dict[str, str], tolerance: float = 0.06) -> list[tuple]:
+    """The vertex colours (linear, as COLOR_0 holds them) further than `tolerance` from every palette colour, in
+    linear RGB: faces a paint step missed, left in a default white, read as a colour the reference does not have. A
+    builder found 758 such triangles with a script of its own after `build` said only "8 colours"."""
+    if not palette or not stats.get("colors"):
+        return []
+    hexes = [h.lstrip("#") for h in palette.values()]
+    srgb = np.array([[int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)] for h in hexes])
+    linear = np.where(srgb <= 0.04045, srgb / 12.92, ((srgb + 0.055) / 1.055) ** 2.4)
+    out = []
+    for c in stats["colors"]:
+        if np.linalg.norm(linear - np.asarray(c, float), axis=1).min() > tolerance:
+            out.append(tuple(c))
+    return out

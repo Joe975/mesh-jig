@@ -82,10 +82,27 @@ def refine(references: dict[str, str | Path], palette: dict[str, str]) -> tuple[
     return out, counts
 
 
+SUGGEST_CUT = 64            # colours the body pixels are median-cut to before they are merged down
+
+
+def lab(rgb: np.ndarray) -> np.ndarray:
+    """sRGB 0-255 (..., 3) to CIELAB (D65), where a distance reads about as far apart as the eye sees it."""
+    c = np.asarray(rgb, dtype=float) / 255.0
+    c = np.where(c > 0.04045, ((c + 0.055) / 1.055) ** 2.4, c / 12.92)
+    xyz = c @ np.array([[0.4124, 0.3576, 0.1805], [0.2126, 0.7152, 0.0722], [0.0193, 0.1192, 0.9505]]).T
+    xyz = xyz / np.array([0.9505, 1.0, 1.089])
+    f = np.where(xyz > 0.008856, np.cbrt(xyz), 7.787 * xyz + 16 / 116)
+    return np.stack([116 * f[..., 1] - 16, 500 * (f[..., 0] - f[..., 1]), 200 * (f[..., 1] - f[..., 2])], -1)
+
+
 def suggest(references: dict[str, str | Path], colors: int = 5) -> dict[str, str]:
     """A palette read off the reference views: the body pixels of every view (inside the silhouette), median-cut to
-    `colors` colours, largest share first, named c1..cN. Deterministic. A starting point to rename and prune, not
-    a measurement: shading on a painted sheet splits one paint into two entries."""
+    SUGGEST_CUT colours, then the two whose merging adds least to the spread (Ward's cost, in CIELAB) merged until
+    `colors` are left, largest share first, named c1..cN. Deterministic. A starting point to rename and prune, not a
+    measurement. A median cut straight to `colors` splits the largest paint into its shades and loses a second hue
+    with a tenth of the pixels (an owl's slate-blue wing tips and glasses: none of seven colours within 28 CIELAB
+    units of it, where this finds one within 3). An eye or a beak of under a percent of the pixels is still merged
+    into its neighbour: sample those off the sheet."""
     body = []
     for path in references.values():
         im = silhouette._load(path)
@@ -96,11 +113,23 @@ def suggest(references: dict[str, str | Path], colors: int = 5) -> dict[str, str
         return {}
     pixels = np.concatenate(body)
     strip = Image.fromarray(pixels.reshape(1, -1, 3).astype(np.uint8), "RGB")
-    q = strip.quantize(colors=max(1, colors), method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+    q = strip.quantize(colors=max(SUGGEST_CUT, colors), method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
     table = q.getpalette()
-    counts = sorted(q.getcolors(), reverse=True)
+    found = sorted(q.getcolors(), key=lambda c: (-c[0], c[1]))
+    rgb = np.array([table[i * 3: i * 3 + 3] for _n, i in found], dtype=float)
+    groups = [[float(n), rgb[k] * n, lab(rgb[k])] for k, (n, _i) in enumerate(found)]   # count, rgb sum, lab mean
+    while len(groups) > max(1, colors):
+        n = np.array([g[0] for g in groups])
+        centres = np.array([g[2] for g in groups])
+        cost = (n[:, None] * n[None] / (n[:, None] + n[None])) * ((centres[:, None] - centres[None]) ** 2).sum(-1)
+        cost[np.tril_indices(len(groups))] = np.inf
+        a, b = np.unravel_index(int(np.argmin(cost)), cost.shape)
+        (na, sa, la), (nb, sb, lb) = groups[a], groups[b]
+        groups[a] = [na + nb, sa + sb, (la * na + lb * nb) / (na + nb)]
+        del groups[b]
+    groups.sort(key=lambda g: -g[0])
     out = {}
-    for i, (_n, index) in enumerate(counts):
-        r, g, b = table[index * 3: index * 3 + 3]
+    for i, (count, total, _lab) in enumerate(groups):
+        r, g, b = (int(round(float(v))) for v in total / count)
         out[f"c{i + 1}"] = f"#{r:02x}{g:02x}{b:02x}"
     return out

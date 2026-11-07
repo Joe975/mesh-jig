@@ -12,7 +12,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 
-from . import glb, render, resemblance, silhouette
+from . import articulation, glb, render, resemblance, silhouette
 from .palette import zone_rgb
 
 
@@ -26,8 +26,10 @@ def _limit(v, lo=0, hi=1):
 
 
 def validate(config: dict, spec: dict, refs: dict, zones: tuple = ()) -> None:
-    if not isinstance(config, dict) or set(config) - {"parts", "regions", "landmarks", "visibility", "clearance"}:
-        raise ValueError("review needs parts/regions/landmarks/visibility/clearance")
+    if not isinstance(config, dict) or set(config) - {"parts", "regions", "landmarks", "visibility", "clearance",
+                                                      "articulations"}:
+        raise ValueError("review needs parts/regions/landmarks/visibility/clearance/articulations")
+    articulation.validate(config.get("articulations", []))
     parts = config.get("parts", {})
     if not isinstance(parts, dict):
         raise ValueError("review.parts must map part names to exact exported node names")
@@ -106,16 +108,18 @@ def _fine(a: np.ndarray, box) -> np.ndarray:
     return np.pad(cut, [(0, side - cut.shape[0]), (0, side - cut.shape[1])] + [(0, 0)] * (cut.ndim - 2))
 
 
-def region_reading(a, ma, b, mb, box) -> dict:
+def region_reading(a, ma, b, mb, box, paint=None) -> dict:
     """{"colour", "edges", "score"} of one region on the FINE canvases of the build (a) and the reference (b): how
     close its colours are (`resemblance.colour_closeness`), whether its edges are in place
     (`resemblance.structure_similarity`), and their mean. A region the reference has and the build leaves empty has
     nothing in common with it, 0; a region with no edge on either side is read on its colour alone; `score` is None
-    where the reference itself has nothing in the box."""
+    where the reference itself has nothing in the box. `paint` is the build's unlit canvas (`colour_from:
+    "albedo"`): colour is read from it, edges from the lit `a`."""
+    paint = _fine(a if paint is None else paint, box)
     a, ma, b, mb = _fine(a, box), _fine(ma, box), _fine(b, box), _fine(mb, box)
     if not mb.any():
         return {"colour": None, "edges": None, "score": None}
-    colour = resemblance.colour_closeness(resemblance.cell_colours(a, ma), resemblance.cell_colours(b, mb))
+    colour = resemblance.colour_closeness(resemblance.cell_colours(paint, ma), resemblance.cell_colours(b, mb))
     edges = resemblance.structure_similarity(resemblance.edge_histograms(a, ma), resemblance.edge_histograms(b, mb))
     colour = 0.0 if colour is None else colour
     parts = [colour] + ([edges] if edges is not None else [])
@@ -134,9 +138,12 @@ def is_observation(check: dict) -> bool:
             and "min_iou" not in check and "min_zone" not in check)
 
 
-def regions(renders: dict, refs: dict, config: list, zones: tuple) -> list[dict]:
+def regions(renders: dict, refs: dict, config: list, zones: tuple, colours: dict | None = None) -> list[dict]:
+    """Each marked region read on its view: overlap, zones, and `region_reading`'s colour and edges. `colours` are
+    the renders' unlit passes (`colour_from: "albedo"`), which zones and colour are read from when given."""
     out = []
-    cache, fine = {}, {}
+    cache, fine, paint = {}, {}, {}
+    colours = colours or {}
     for r in config:
         view = r["view"]
         observation = "min_iou" not in r and "min_zone" not in r
@@ -148,24 +155,47 @@ def regions(renders: dict, refs: dict, config: list, zones: tuple) -> list[dict]
         if view not in cache:
             cache[view] = (resemblance.normalised(renders[view]), resemblance.normalised(refs[view]))
             fine[view] = (*resemblance.normalised(renders[view], FINE), *resemblance.normalised(refs[view], FINE))
+            paint[view] = ((resemblance.normalised_colour(renders[view], colours[view]),
+                            resemblance.normalised_colour(renders[view], colours[view], FINE))
+                           if view in colours else (cache[view][0][0], None))
         (a, ma), (b, mb) = cache[view]
         x0, y0, x1, y1 = [int(v * resemblance.GRID) for v in r["box"]]
-        a, b = a[y0:y1, x0:x1], b[y0:y1, x0:x1]
+        a, b = paint[view][0][y0:y1, x0:x1], b[y0:y1, x0:x1]
         ma, mb = ma[y0:y1, x0:x1], mb[y0:y1, x0:x1]
         iou = silhouette.iou(ma, mb)
-        zone = None
+        zone, read_as = None, {}
         union = ma | mb
         if zones and union.any():
             p = zone_rgb(zones)
             ca = ((a[..., None, :] - p) ** 2).sum(-1).argmin(-1)
             cb = ((b[..., None, :] - p) ** 2).sum(-1).argmin(-1)
             zone = round(float(((ca == cb) & ma & mb).sum() / union.sum()), 4)
+            read_as = region_colours(ca, ma, cb, mb, [z[1] for z in zones])
         passed = bool(mb.any()) and iou >= r.get("min_iou", 0) and ("min_zone" not in r or
                                                           zone is not None and zone >= r["min_zone"])
         out.append({"name": r["name"], "view": view, "iou": iou, "zone": zone,
                     "reference_pixels": int(mb.sum()), "observation": observation,
                     "passed": None if observation else passed, **_limits(r, "min_iou", "min_zone"),
-                    **region_reading(*fine[view], r["box"])})
+                    **region_reading(*fine[view], r["box"], paint[view][1]),
+                    **({"read_as": read_as} if read_as else {})})
+    return out
+
+
+def region_colours(ca, ma, cb, mb, names: list[str]) -> dict:
+    """What the build shows where the reference has each of its colours inside one region, from the zone score's own
+    cells: {reference colour: {"share": of the region's reference cells, "yours": {colour or "nothing": share}}},
+    the reference's largest colour first. A zone gate says only how many cells disagree; this says which."""
+    total = int(mb.sum())
+    out = {}
+    for k in np.argsort([-int((mb & (cb == k)).sum()) for k in range(len(names))]):
+        where = mb & (cb == k)
+        n = int(where.sum())
+        if not n:
+            continue
+        yours = {names[j]: round(int((where & ma & (ca == j)).sum()) / n, 3) for j in range(len(names))}
+        yours["nothing"] = round(int((where & ~ma).sum()) / n, 3)
+        out[names[k]] = {"share": round(n / total, 3),
+                         "yours": dict(sorted(((c, v) for c, v in yours.items() if v), key=lambda cv: -cv[1]))}
     return out
 
 
@@ -227,8 +257,8 @@ def _limits(item: dict, *keys: str) -> dict:
     return {k: item[k] for k in keys if k in item}
 
 
-def part_indices(path: str | Path, parts: dict) -> dict[str, np.ndarray]:
-    """Triangle order matches render.load, including scene-node transforms and triangle primitives."""
+def node_triangles(path: str | Path) -> dict[str, list[int]]:
+    """Each named node's triangles, in render.load's order (scene-node transforms, triangle primitives)."""
     doc, _ = glb.read_glb(path)
     by_node, offset = {}, 0
     for ni, _ in glb.mesh_nodes(doc):
@@ -240,6 +270,211 @@ def part_indices(path: str | Path, parts: dict) -> dict[str, np.ndarray]:
         name = node.get("name") or mesh.get("name") or f"node{ni}"
         by_node.setdefault(name, []).extend(range(offset, offset + count))
         offset += count
+    return by_node
+
+
+HIDDEN_FRACTION = 0.25      # a node showing less of itself than this in every view it is drawn in is reported
+HIDDEN_MIN_PIXELS = 12      # a node covering fewer pixels than this alone in a view is too small to read there
+
+
+def hidden(path: str | Path, spec: dict, views: list[str]) -> list[dict]:
+    """The nodes of a build that no camera of `views` sees much of: inside or behind another node. For each node and
+    view, the node is drawn alone and then with everything (the z-buffer `visibility` uses, 320x180), and the share of
+    its own pixels that survive is its fraction there. A node whose largest fraction is under HIDDEN_FRACTION is
+    listed with its fraction in each view and the node covering most of what is hidden (`behind`). Eyes sunk in a
+    head, glasses half inside a face: a reviewer sees only that they are missing or broken, and a builder cannot see
+    why. A diagnostic beside the score, never in it."""
+    by_node = node_triangles(path)
+    if len(by_node) < 2:
+        return []
+    mesh = render.load(path)
+    owner = np.full(len(mesh.tris), -1)
+    names = list(by_node)
+    for k, name in enumerate(names):
+        owner[by_node[name]] = k
+    shots = {s["name"]: s for s in render.shots_for(spec)}
+    scale = render.stage_scale(spec)
+    frames = {v: render.rasterise(mesh, shots[v], scale=scale, width=320, height=180)[0] for v in views if v in shots}
+    out = []
+    for k, name in enumerate(names):
+        ids = np.asarray(by_node[name], dtype=int)
+        subset = render.Mesh(mesh.tris[ids], mesh.colors[ids], mesh.normals[ids])
+        fractions, covering = {}, np.zeros(len(names), dtype=int)
+        for view, frame in frames.items():
+            alone = render.rasterise(subset, shots[view], scale=scale, width=320, height=180)[0] >= 0
+            if alone.sum() < HIDDEN_MIN_PIXELS:
+                continue
+            shown = alone & np.isin(frame, ids)
+            fractions[view] = round(float(shown.sum() / alone.sum()), 3)
+            over = frame[alone & ~shown]
+            covering += np.bincount(owner[over[over >= 0]], minlength=len(names))
+        if fractions and max(fractions.values()) < HIDDEN_FRACTION:
+            covering[k] = 0
+            out.append({"node": name, "views": fractions,
+                        "behind": names[int(covering.argmax())] if covering.any() else None})
+    return out
+
+
+def hidden_lines(found: list[dict]) -> list[str]:
+    """The `hidden` list as the builder reads it, a line a node."""
+    return [f"{h['node']}: at most {max(h['views'].values()):.0%} of it shows in any view ("
+            + ", ".join(f"{v} {f:.0%}" for v, f in h["views"].items()) + ")"
+            + (f"; it is inside or behind {h['behind']}: move it out in front of that surface, or make it bigger"
+               if h["behind"] else "") for h in found]
+
+
+FLOAT_GAP = 0.02            # sampled separation threshold as a share of model height; not proof of detachment
+FLOAT_STEP = 0.01           # surface points are spread about this share of the height apart
+
+
+def surface_points(tris: np.ndarray, step: float) -> np.ndarray:
+    """Points over triangles (T, 3, 3): a barycentric grid about `step` apart along each triangle's longest edge (at
+    most 8 divisions), corners included. Deterministic."""
+    out = []
+    longest = np.linalg.norm(tris - tris[:, [1, 2, 0]], axis=2).max(axis=1)
+    divisions = np.clip(np.ceil(longest / max(step, 1e-9)), 1, 8).astype(int)
+    for k in np.unique(divisions):
+        grid = np.array([(i / k, j / k) for i in range(k + 1) for j in range(k + 1 - i)])
+        weights = np.column_stack([grid[:, 0], grid[:, 1], 1 - grid.sum(axis=1)])      # (P, 3)
+        out.append(np.einsum("pc,tcd->tpd", weights, tris[divisions == k]).reshape(-1, 3))
+    return np.concatenate(out) if out else np.zeros((0, 3))
+
+
+def floating(path: str | Path, spec: dict) -> list[dict]:
+    """Pieces whose sampled point separation exceeds FLOAT_GAP of model height.
+
+    Samples of each connected piece (`component_labels`, `surface_points`) are compared with other pieces,
+    including its own node's. The historical `gap_m` field is a rounded sampled separation in metres, an upper
+    bound before rounding on the true surface gap, not proof of detachment. `nearest` names the other node
+    selected by sampling; it need not be the true nearest surface. Multi-piece nodes also record the piece's
+    size and centre (Blender metres). A diagnostic beside the score, never in it.
+    """
+    by_node = node_triangles(path)
+    mesh = render.load(path)
+    height = float(spec.get("height_m") or np.ptp(mesh.tris[..., 1]) or 1.0)
+    names, pieces = [], []                                   # a node's name per piece, and the piece's triangles
+    for name, tri_ids in by_node.items():
+        tri_ids = np.asarray(tri_ids, dtype=int)
+        labels = np.array(component_labels(mesh.tris[tri_ids]))
+        for label in dict.fromkeys(labels.tolist()):
+            names.append(name)
+            pieces.append((tri_ids[labels == label], len(set(labels.tolist()))))
+    if len(pieces) < 2:
+        return []
+    points = [surface_points(mesh.tris[ids], FLOAT_STEP * height) for ids, _count in pieces]
+    # cells the size of the gap: two points within it of each other are in one cell or neighbouring ones, so only
+    # points in neighbouring cells are measured exactly
+    cell = FLOAT_GAP * height
+    low = np.concatenate([p for p in points if len(p)]).min(axis=0)
+    grid = [np.floor((p - low) / cell).astype(np.int64) + 1 for p in points]
+    span = int(max(g.max() for g in grid if len(g))) + 3
+    near = np.array([(a, b, c) for a in (-1, 0, 1) for b in (-1, 0, 1) for c in (-1, 0, 1)])
+
+    def keys(g):
+        return (g[..., 0] * span + g[..., 1]) * span + g[..., 2]
+
+    def gap(a, b):
+        return min(float(np.sqrt(((a[i:i + 256, None] - b[None]) ** 2).sum(-1).min())) for i in range(0, len(a), 256))
+
+    point_keys = [keys(g) for g in grid]
+    out = []
+    for k, name in enumerate(names):
+        if not len(points[k]):
+            continue
+        reach = np.unique(keys(grid[k][:, None] + near[None]))
+        best, nearest = np.inf, None
+        for j in range(len(names)):
+            if j == k or not len(points[j]):
+                continue
+            close = points[j][np.isin(point_keys[j], reach)]
+            if len(close):
+                back = np.unique(keys(np.floor((close - low) / cell).astype(np.int64)[:, None] + 1 + near[None]))
+                d = gap(points[k][np.isin(point_keys[k], back)], close)
+                if d < best:
+                    best, nearest = d, names[j]
+        if best <= cell:
+            continue
+        if nearest is None:     # nothing within a cell: the gap from a sample of every other node
+            sample = points[k][:: max(1, len(points[k]) // 1000)]
+            for j in range(len(names)):
+                if j != k and len(points[j]):
+                    d = gap(sample, points[j][:: max(1, len(points[j]) // 1000)])
+                    if d < best:
+                        best, nearest = d, names[j]
+        entry = {"node": name, "gap_m": round(best, 3), "nearest": nearest}
+        ids, count = pieces[k]
+        if count > 1:
+            x, y, z = mesh.tris[ids].reshape(-1, 3).mean(axis=0)
+            entry["piece"] = {"triangles": int(len(ids)), "of": count,
+                              "centre_m": [round(float(v), 3) + 0.0 for v in (x, -z, y)]}       # glTF -> Blender
+        out.append(entry)
+    return out
+
+
+def floating_lines(found: list[dict]) -> list[str]:
+    """The `floating` list as the builder reads it, a line a piece."""
+    def what(f):
+        piece = f.get("piece")
+        if not piece:
+            return f["node"]
+        return (f"{f['node']} (one of its {piece['of']} pieces, {piece['triangles']} triangles around "
+                f"({', '.join(f'{v:+.2f}' for v in piece['centre_m'])}))")
+    return [f"{what(f)}: {f['gap_m'] * 100:.1f} cm sampled point separation from {f['nearest']} "
+            "(rounded estimate; sampling may miss contact); contact is unverified. "
+            "Inspect actual contact before moving geometry; if detached and intended to attach, "
+            "bring the surfaces together." for f in found]
+
+
+FLIPPED_SHARE = 0.05        # a node with more of its triangles than this wound against their normals is listed
+
+
+def flipped(path: str | Path, spec: dict, views: list[str]) -> list[dict]:
+    """The nodes a camera sees the back of: every triangle drawn from both sides (a second copy wound the other way)
+    in each of `views`, and for each node the share of its pixels where the nearest surface is a back face. The
+    renderer, and an engine, cull a triangle by its winding, so those pixels are holes through to the inside (r21's
+    owl: what looked like a harlequin of brown and ivory triangles was the background through flipped faces). Read
+    off the pictures, not the stored normals, which Blender recalculates from the same winding. A node over
+    FLIPPED_SHARE in some view is listed with its share in each. A diagnostic beside the score, never in it."""
+    by_node = node_triangles(path)
+    mesh = render.load(path)
+    count = len(mesh.tris)
+    both = render.Mesh(np.concatenate([mesh.tris, mesh.tris[:, ::-1]]), np.concatenate([mesh.colors, mesh.colors]),
+                       np.concatenate([mesh.normals, mesh.normals]))
+    owner = np.full(count, -1)
+    names = list(by_node)
+    for k, name in enumerate(names):
+        owner[by_node[name]] = k
+    shots = {s["name"]: s for s in render.shots_for(spec)}
+    shares: dict[str, dict[str, float]] = {name: {} for name in names}
+    for view in views:
+        if view not in shots:
+            continue
+        ids = render.rasterise(both, shots[view], scale=render.stage_scale(spec), width=320, height=180)[0]
+        seen = ids[ids >= 0]
+        back = seen >= count
+        node = owner[np.where(back, seen - count, seen)]
+        for k, name in enumerate(names):
+            mine = node == k
+            if mine.sum() >= HIDDEN_MIN_PIXELS:
+                shares[name][view] = round(float(back[mine].mean()), 3)
+    return [{"node": name, "views": views_of} for name, views_of in shares.items()
+            if views_of and max(views_of.values()) > FLIPPED_SHARE]
+
+
+def flipped_lines(found: list[dict]) -> list[str]:
+    """The `flipped` list as the builder reads it, a line a node."""
+    return [f"{f['node']}: the camera sees the back of up to {max(f['views'].values()):.0%} of it ("
+            + ", ".join(f"{v} {s:.0%}" for v, s in f["views"].items()) + "), so these back-facing pixels are culled "
+            "under single-sided rendering and can leave openings. Possible causes include inward winding, negative-scale "
+            "mirrors, or missing surfaces. If unexpected on a closed surface, inspect source topology and winding, seam "
+            "sharing, and mirrored transforms. After welding appropriate shared seams, recalculating normals may help an "
+            "inward shell; it will not fill a missing wall. Intentional one-sided surfaces may warn; choose treatment "
+            "for the task. Verify this view and the opposite/scored views after repair" for f in found]
+
+
+def part_indices(path: str | Path, parts: dict) -> dict[str, np.ndarray]:
+    """Triangle order matches render.load, including scene-node transforms and triangle primitives."""
+    by_node = node_triangles(path)
     return {name: np.array([i for node in part["nodes"] for i in by_node[node]]
                           if all(node in by_node for node in part["nodes"]) else [], dtype=int)
             for name, part in parts.items()}
@@ -247,8 +482,13 @@ def part_indices(path: str | Path, parts: dict) -> dict[str, np.ndarray]:
 
 def component_count(tris: np.ndarray) -> int:
     """Weld only coincident positions (1e-6 m); intersections are not fusion."""
+    return len(set(component_labels(tris))) if tris.size else 0
+
+
+def component_labels(tris: np.ndarray) -> list[int]:
+    """Each triangle's welded component (positions within 1e-6 m), as a label."""
     if not tris.size:
-        return 0
+        return []
     _, ids = np.unique(np.round(tris.reshape(-1, 3), 6), axis=0, return_inverse=True)
     parent = list(range(int(ids.max()) + 1))
     def root(i):
@@ -259,7 +499,23 @@ def component_count(tris: np.ndarray) -> int:
     for a, b, c in ids.reshape(-1, 3):
         parent[root(b)] = parent[root(a)]
         parent[root(c)] = parent[root(a)]
-    return len({root(i) for i in range(len(parent))})
+    return [root(int(a)) for a in ids.reshape(-1, 3)[:, 0]]
+
+
+def where_pieces(tris: np.ndarray, most: int = 4) -> str:
+    """The pieces of a part beyond its largest, by share of its triangles and where they are (Blender metres): what a
+    builder needs to find stray pieces the warning counts."""
+    labels = np.array(component_labels(tris))
+    keys, counts = np.unique(labels, return_counts=True)
+    order = np.argsort(-counts)
+    said = [f"the largest holds {counts[order[0]] / len(labels):.0%} of its triangles"]
+    for k in order[1:most + 1]:
+        pts = tris[labels == keys[k]].reshape(-1, 3)
+        lo, hi = pts.min(0), pts.max(0)
+        said.append(f"{counts[k]} triangles from {_point(np.round(lo, 3))} to {_point(np.round(hi, 3))} m")
+    if len(order) > most + 1:
+        said.append(f"{len(order) - most - 1} more")
+    return "; ".join(said)
 
 
 def ray_distance(tris: np.ndarray, origin, direction, hit: str = "first") -> float | None:
@@ -291,12 +547,14 @@ def measure(path: str | Path, spec: dict, config: dict, renders: dict, refs: dic
               else regions(renders, refs, config.get("regions", []), zones))
     warnings, diagnostics = [], {}
     parts = config.get("parts", {})
-    if not parts:
+    if not parts and not config.get("articulations"):
         return {"checks": checks, "diagnostics": diagnostics, "warnings": warnings}
     mesh = render.load(path)
     selected = part_indices(path, parts)
     # glTF -> Blender, without bbox normalization
     tris = np.stack([mesh.tris[..., 0], -mesh.tris[..., 2], mesh.tris[..., 1]], axis=-1)
+    for item in config.get("articulations", []):
+        checks.append(articulation.measure(tris, item, config["articulations"]))
     for name, ids in selected.items():
         if not len(ids):
             checks.append({"name": f"part:{name}", "passed": False, "error": "declared part missing from GLB"})
@@ -309,7 +567,8 @@ def measure(path: str | Path, spec: dict, config: dict, renders: dict, refs: dic
         if smooth < parts[name].get("smooth_min", 0):
             warnings.append(f"{name}: varying corner normals {smooth:.1%}; inspect skin shading (flat may be intentional)")
         if "max_components" in parts[name] and components > parts[name]["max_components"]:
-            warnings.append(f"{name}: {components} disconnected position-welded components; joining is not fusion")
+            warnings.append(f"{name}: {components} disconnected position-welded components; joining is not fusion "
+                            f"({where_pieces(tris[ids])})")
     for item in config.get("landmarks", []):
         ids = selected[item["part"]]
         pts = tris[ids].reshape(-1, 3)
@@ -396,6 +655,8 @@ def describe(check: dict) -> str:
         if zone is not None and not low_zone:
             other.append(f"colour zones {zone:.2f}")
         return f"{where}: " + "; ".join(short) + (f" ({', '.join(other)})" if other else "")
+    if kind == "articulation":
+        return articulation.describe(check)
     if kind == "landmark":
         if passed:
             return ""
@@ -441,6 +702,13 @@ def describe(check: dict) -> str:
             elif s.get("outer_distance_m") is None:
                 out.append(f"{ray} meets no {outer}")
             else:
-                out.append(f"gap {s['gap_m'] * 1000:+.1f} mm from {inner} out to {outer} on {ray}{allowed}")
+                said = f"gap {s['gap_m'] * 1000:+.1f} mm from {inner} out to {outer} on {ray}{allowed}"
+                if "min_m" in check and s["gap_m"] < check["min_m"]:
+                    said += (f": move {outer} out from {inner} (or {inner} in) by "
+                             f"{(check['min_m'] - s['gap_m']) * 1000:.1f} mm or more there")
+                elif "max_m" in check and s["gap_m"] > check["max_m"]:
+                    said += (f": bring {outer} in towards {inner} by {(s['gap_m'] - check['max_m']) * 1000:.1f} mm or "
+                             "more there")
+                out.append(said)
         return "; ".join(out) or "a probe failed"
     return ""

@@ -40,6 +40,12 @@ DIFFUSE = 0.75
 # direction is the light's travel in the camera's own (right, up, forward): the key from the upper left over the
 # camera's shoulder, the fill from the lower right. The key's energy is whatever brings a camera-facing face to 1.
 LIGHT_MODES = ("stage", "camera")
+# `colour_from: "albedo"` (jig.json `criteria.colour_from`): the colour measures read an unlit pass of the same frame,
+# each pixel the colour its surface stores (vertex colour times texture), whatever the light and whichever way the
+# face turns. The lit pass is still what the pictures show and what edges are read from.
+COLOUR_SOURCES = ("render", "albedo")
+UNLIT = (np.ones(3), [])
+ALBEDO_DIR = "albedo"
 CAMERA_AMBIENT = 0.45
 CAMERA_KEY, CAMERA_FILL, CAMERA_FILL_ENERGY = (0.33, -0.5, 0.8), (-0.77, 0.2, 0.6), 0.2
 DEFAULT_SHOTS = [
@@ -293,7 +299,9 @@ def render_views(spec: dict, glb_dir: str | Path, out_dir: str | Path, *, views:
                  size: tuple[int, int] = RENDER_SIZE) -> dict:
     """Render the project's shots from the GLBs under glb_dir into out_dir/<view>.png.
     -> {"renders": {view: path}, "cropped": [views whose subject touches the frame edge], "error": ""}. A GLB that
-    is not built, a shot name that does not exist or a frame with nothing in it is the error; nothing is raised."""
+    is not built, a shot name that does not exist or a frame with nothing in it is the error; nothing is raised.
+    With `colour_from: "albedo"` each frame is also drawn unlit into out_dir/albedo/<view>.png, from the same
+    rasterisation, and the record has {"albedo": {view: path}}."""
     glb_dir, out_dir = Path(glb_dir), Path(out_dir)
     shots = shots_for(spec)
     names = [s["name"] for s in shots]
@@ -304,6 +312,7 @@ def render_views(spec: dict, glb_dir: str | Path, out_dir: str | Path, *, views:
     out_dir.mkdir(parents=True, exist_ok=True)
     meshes: dict[str, Mesh] = {}
     renders, cropped = {}, []
+    unlit, albedo = spec.get("colour_from") == "albedo", {}
     width, height = size
     for shot in shots:
         if views and shot["name"] not in views:
@@ -327,7 +336,12 @@ def render_views(spec: dict, glb_dir: str | Path, out_dir: str | Path, *, views:
         target = out_dir / f"{shot['name']}.png"
         img.save(target)
         renders[shot["name"]] = str(target)
-    return {"renders": renders, "cropped": cropped, "error": ""}
+        if unlit:
+            (out_dir / ALBEDO_DIR).mkdir(exist_ok=True)
+            flat = out_dir / ALBEDO_DIR / f"{shot['name']}.png"
+            Image.fromarray(shade(meshes[fname], ids, bary, basis[2], UNLIT)).save(flat)
+            albedo[shot["name"]] = str(flat)
+    return {"renders": renders, "cropped": cropped, "error": "", **({"albedo": albedo} if unlit else {})}
 
 
 def write_comparisons(renders: dict[str, str], references: dict[str, str | Path], out_dir: str | Path,

@@ -208,7 +208,7 @@ def test_a_refused_request_raises_at_once_and_a_busy_one_backs_off():
         stream(up)
     assert len(up.requests) == 1
     slept = []
-    up = Upstream(http_error(503), urllib.error.URLError("refused"), sse(*HELLO))
+    up = Upstream(http_error(429), urllib.error.URLError("refused"), sse(*HELLO))
     assert stream(up, sleep=slept.append)["text"] == "hello"
     assert len(slept) == 2 and 2 <= slept[0] < 3 and 4 <= slept[1] < 5
 
@@ -238,3 +238,23 @@ def test_the_agents_chat_is_the_streamed_one(monkeypatch):
 def test_the_agent_command_takes_an_idle_limit():
     assert cli.parser().parse_args(["agent", "p", "--model", "m"]).idle == llm.CHAT_IDLE_S
     assert cli.parser().parse_args(["agent", "p", "--model", "m", "--idle", "240"]).idle == 240.0
+
+
+def test_a_server_restarting_or_loading_its_model_is_waited_for_without_spending_attempts(monkeypatch):
+    """A llama-server restart killed two owl runs: three tries in 14 s, and its model takes a minute to load."""
+    def loading():
+        return urllib.error.HTTPError("http://x/v1", 503, "Loading model", {},
+                                      io.BytesIO(b'{"error":{"message":"Loading model"}}'))
+    refused = urllib.error.URLError(ConnectionRefusedError(10061, "refused"))
+    slept, said = [], []
+    up = Upstream(refused, loading(), loading(), loading(), loading(), sse(*HELLO))
+    assert stream(up, sleep=slept.append, log=said.append)["text"] == "hello"
+    assert slept == [llm.UNAVAILABLE_POLL_S] * 5 and all("not taking calls" in s for s in said)
+    # the wait is bounded: past it, a server still down spends attempts as any fault does, and the call ends
+    monkeypatch.setattr(llm, "UNAVAILABLE_WAIT_S", 2 * llm.UNAVAILABLE_POLL_S)
+    with pytest.raises(llm.LLMError, match=r"HTTP 503 .* \(after 3 attempts\)"):
+        stream(Upstream(*[loading() for _ in range(5)]))
+    # a 500 is a fault, not a server that is down: it spends an attempt
+    errors = [urllib.error.HTTPError("http://x/v1", 500, "boom", {}, io.BytesIO(b"boom")) for _ in range(3)]
+    with pytest.raises(llm.LLMError, match=r"HTTP 500 .* \(after 3 attempts\)"):
+        stream(Upstream(*errors))

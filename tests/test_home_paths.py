@@ -76,6 +76,20 @@ def test_no_blend_file_is_tracked():
     assert not blends, f"tracked .blend files (see .gitignore): {blends}"
 
 
+def test_failed_evaluation_snapshots_are_ignored_anywhere_in_an_attempt(tmp_path):
+    repo = tmp_path / "ignore-probe"
+    repo.mkdir()
+    try:
+        subprocess.run(["git", "init", "-q"], cwd=repo, capture_output=True, check=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        pytest.skip("git is unavailable")
+    (repo / ".gitignore").write_text((ROOT / ".gitignore").read_text(encoding="utf-8"), encoding="utf-8")
+    path = "examples/demo/attempts/a01/failed-evaluations/snapshot/eval.json"
+    result = subprocess.run(["git", "check-ignore", "--no-index", "-v", "--stdin"], cwd=repo,
+                            input=path + "\n", capture_output=True, text=True, check=True, timeout=30)
+    assert "failed-evaluations/" in result.stdout and path in result.stdout
+
+
 JIG = r"D:\work\jig"                # a checkout, for the root tests
 
 

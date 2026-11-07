@@ -86,7 +86,7 @@ def test_a_mesh_is_held_to_the_table_end_by_end(tmp_path):
     assert all((r["min_mm"], r["max_mm"], r["width_mm"]) == (-5.0, 5.0, 10.0) for r in wide["views"]["front"]["rows"])
     assert all(r["width_mm"] == 0.0 for r in wide["views"]["side"]["rows"])
     said = outline.compare_text(wide)
-    assert "z+0:+5/+5" in said and "overall extents X +10, Y +0, Z +0" in said, "+ is further out at either end"
+    assert "z+0 (z+0 mm):+5/+5" in said and "overall extents X +10, Y +0, Z +0" in said, "+ is further out at either end"
     off_centre = outline.compare(free, outline.from_mesh(slab((20, 10, 40), (300, -70, 9)), free))
     assert off_centre["mae_mm"] == 0.0, "positions are from the bounding box centre, as the reference's are"
 
@@ -106,7 +106,7 @@ def test_the_ends_are_signed_so_a_mirrored_build_does_not_pass(tmp_path):
     assert wrong["mae_mm"] > 1.0
     row = wrong["views"]["front"]["rows"][0]
     assert row["name"] == "z-18" and (row["min_mm"], row["max_mm"]) == (6.0, 6.0), "the body sits 6 mm towards +X"
-    assert "z-18:-6/+6" in outline.compare_text(wrong), "short at the -X end, too far out at the +X end"
+    assert "z-454 (z-18 mm):-6/+6 (-150/+150)" in outline.compare_text(wrong), "short at the -X end, too far out at the +X end"
 
 
 def test_a_part_left_out_costs_its_width_and_a_part_added_costs_its_own(tmp_path):
@@ -181,3 +181,18 @@ def test_a_declared_height_puts_the_table_in_millimetres(tmp_path):
     assert ref["unit_axis"] == "Z" and ref["unit_mm"] == 1000.0
     assert abs(ref["extents"]["X"] - 0.55) < 0.01 and abs(ref["extents"]["Y"] - 0.35) < 0.01
     assert "in millimetres" in outline.text(ref) and "Z 1000" in outline.text(ref)
+
+
+def test_the_furthest_off_ends_are_located_and_given_to_their_node(tmp_path):
+    refs = box_refs(tmp_path)
+    free = outline.measure(refs, {"shots": SHOTS})
+    # the body as drawn, and a fin each side, nodes of their own, reaching 7 mm past its sides over the middle (a
+    # pair, so the box's centre stays where the body's is)
+    body, left, right = slab((20, 10, 40)), slab((10, 4, 10), (-12, 0, 0)), slab((10, 4, 10), (12, 0, 0))
+    tris = np.concatenate([body, left, right])
+    names = ["Body"] * len(body) + ["FinL"] * len(left) + ["Fin"] * len(right)
+    diff = outline.compare(free, outline.from_mesh(tris, free, names))
+    said = outline.compare_text(diff)
+    worst = said[said.index("the furthest-off ends"):]
+    assert "+X end" in worst and "in Fin" in worst, worst
+    assert outline.from_mesh(body, free)["views"]["front"]["rows"][0].get("max_by") is None, "one node: no name"

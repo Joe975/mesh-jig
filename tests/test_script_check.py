@@ -125,3 +125,23 @@ def test_one_forbidden_call_is_named_once_not_as_an_api_and_as_a_method():
 def test_a_repeated_offence_on_one_line_is_reported_once():
     issues = check_script("def build():\n    open('a'); open('b')\n")
     assert len([i for i in issues if "open" in i]) == 1
+
+
+def test_a_mesh_that_would_crash_blender_is_named_before_it_reaches_it():
+    from mesh_jig.script_check import pydata_problem
+    quad = [(0, 1, 2, 3)]
+    assert pydata_problem(4, [], quad) == "" and pydata_problem(4, [(0, 1)], []) == ""
+    said = pydata_problem(4, [], [(0, 1, 2), (1, 2, 7), (2, 3, 9)])
+    assert said.startswith("face 1 (1, 2, 7) names vertex 7, and the list holds 4 (indices 0 to 3)")
+    assert said.endswith("; 1 more like it")
+    assert "names vertex -1" in pydata_problem(4, [], [(0, 1, -1)])
+    assert pydata_problem(4, [], [(0, 1, 1), (0, 1, 2, 2)]) == "", "a vertex named twice is mended, not refused"
+    assert "edge 0" in pydata_problem(4, [(0, 4)], [])
+    assert "whole numbers" in pydata_problem(4, [], [(0, 1.5, 2)])
+
+
+def test_a_face_naming_a_vertex_twice_keeps_it_once_and_one_left_with_two_corners_goes():
+    from mesh_jig.script_check import pydata_faces
+    faces = [(0, 1, 2), (0, 1, 2, 2), (3, 3, 1), (2, 1, 3, 1)]
+    assert pydata_faces(faces) == ([(0, 1, 2), [0, 1, 2], [2, 1, 3]], 3)
+    assert pydata_faces([(0, 1, 2, 3)]) == ([(0, 1, 2, 3)], 0)

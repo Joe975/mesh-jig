@@ -92,7 +92,7 @@ on a yes.
 
 - **Give it a ceiling and a budget.** Improvement can continue indefinitely. Set explicit attempt and cost limits.
 - **Inspect the final pictures.** A higher numeric score is not sufficient to accept a model.
-- **`mesh-jig agent` has the same rule as `--patience N`.** `mesh-jig agent <project> --model <id> --patience 3
+- **`mesh-jig agent --workflow numeric` has the same rule as `--patience N`.** `mesh-jig agent <project> --workflow numeric --model <id> --patience 3
   --attempts 30` runs an API model until three evaluated attempts in a row show no improvement, with `--attempts`
   as the ceiling and `--margin` as above. Every evaluation's result ends with what `mesh-jig streak` prints, and
   an evaluation after `STOP` is refused. `--max-cost`, `--max-wall` and `--max-turns` still end a run early.

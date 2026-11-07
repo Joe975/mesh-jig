@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from PIL import Image, ImageDraw
 
-from glbkit import box, cube, write_cubes, _pack
+from glbkit import box, cube, write_cubes, _pack, _empty, _adder
 from mesh_jig import brief, evaluate, glb, profile, project, render, resemblance, review, scoring, silhouette, standing
 
 
@@ -66,6 +66,7 @@ def test_standing_scale_axes_and_asymmetry_are_preserved(tmp_path):
     diff = standing.compare(reference, standing.from_mesh(model_box(), reference))
     assert diff["mae_mm"] == 0 and diff["height_error_mm"] == 0
     assert "belly" in profile.text(reference) and "min/max/width" in profile.compare_text(diff)
+    assert "min/max/width (along X: min the model's left side" in profile.compare_text(diff)
 
 
 def test_moved_belly_reports_the_known_station_and_missing_head_cannot_improve_mae(tmp_path):
@@ -214,9 +215,12 @@ def test_clearance_detects_torso_through_garment_and_floating_insert(tmp_path):
     assert not floating["checks"][0]["passed"]
     assert review.describe(good["checks"][0]) == "gap 20.0 to 20.0 mm"
     assert review.describe(bad["checks"][0]) == (
-        "gap -25.0 mm from skin out to vest on the ray from (0, 0, 0.5) m along +Y, allowed 5 to 30 mm; "
-        "gap -25.0 mm from skin out to vest on the ray from (0, 0, 0.5) m along -Y, allowed 5 to 30 mm")
+        "gap -25.0 mm from skin out to vest on the ray from (0, 0, 0.5) m along +Y, allowed 5 to 30 mm: move vest out "
+        "from skin (or skin in) by 30.0 mm or more there; "
+        "gap -25.0 mm from skin out to vest on the ray from (0, 0, 0.5) m along -Y, allowed 5 to 30 mm: move vest out "
+        "from skin (or skin in) by 30.0 mm or more there")
     assert review.describe(floating["checks"][0]).startswith("gap +100.0 mm from skin out to vest on the ray from")
+    assert review.describe(floating["checks"][0]).endswith("bring vest in towards skin by 70.0 mm or more there")
     gone = inspect_parts(tmp_path, [skin, ("Vest", (.1, .1, .1), (0, 2, 0))], cfg)       # a vest no probe meets
     assert review.describe(gone["checks"][0]).startswith("the ray from (0, 0, 0.5) m along +Y meets no vest; ")
 
@@ -244,6 +248,8 @@ def test_skin_diagnostics_warn_only_when_requested_and_allow_clothing_islands(tm
     rec = inspect_parts(tmp_path, parts, cfg)
     assert rec["diagnostics"]["skin"]["varying_corner_normal_fraction"] == 0
     assert rec["diagnostics"]["skin"]["position_welded_components"] == 2 and len(rec["warnings"]) == 2
+    pieces = next(w for w in rec["warnings"] if "joining is not fusion" in w)
+    assert "(the largest holds 50% of its triangles; 12 triangles from (" in pieces and ") m)" in pieces
     cfg["parts"]["skin"] = {"nodes": ["SkinA", "SkinB"]}
     assert inspect_parts(tmp_path, parts, cfg)["warnings"] == []
 
@@ -390,3 +396,122 @@ def test_explicit_ground_origin_supports_frozen_midheight_camera_contracts(tmp_p
     assert standing.compare(reference, standing.from_mesh(centered, reference))["mae_mm"] == 0
     with pytest.raises(ValueError, match="origin_m"):
         standing.measure(refs, spec, dict(config, origin_m=[0, 0, float("nan")]))
+
+
+def test_a_node_inside_another_is_named_with_what_hides_it(tmp_path):
+    """Eyes sunk in a head: a reviewer sees them missing, a builder cannot see why. Glb Y up, front at -Z."""
+    spec = {"stage_scale": 1.0,
+            "shots": [{"name": "front", "cam_pos": [0, 0, -3], "cam_target": [0, 0, 0], "ortho": 1.12},
+                      {"name": "side", "cam_pos": [-3, 0, 0], "cam_target": [0, 0, 0], "ortho": 1.12}]}
+    head, beak = cube(0.6), cube((0.08, 0.08, 0.1), (0, -0.05, -0.33))     # the beak out in front of the face
+    path = write_cubes(tmp_path / "owl.glb", [head, cube(0.1, (0.12, 0.1, -0.22)), beak])   # eye front at -0.27
+    found = review.hidden(path, spec, ["front", "side"])
+    assert [h["node"] for h in found] == ["node1"] and found[0]["behind"] == "node0"
+    assert found[0]["views"] == {"front": 0.0, "side": 0.0}
+    line = review.hidden_lines(found)[0]
+    assert line.startswith("node1: at most 0% of it shows in any view (front 0%, side 0%)") and "behind node0" in line
+    out = write_cubes(tmp_path / "out.glb", [head, cube(0.1, (0.12, 0.1, -0.32)), beak])
+    assert review.hidden(out, spec, ["front", "side"]) == [], "brought out in front of the face, it shows"
+
+
+def test_a_node_that_touches_no_other_is_named_with_its_gap_and_its_nearest(tmp_path):
+    """A tail 4 cm behind the body it grows from reads as a part in the pictures and is not attached."""
+    spec = {"height_m": 1.0}
+    body = cube(0.6)                                                   # its back face at z +0.3 (glTF, rear)
+    tail = cube((0.1, 0.1, 0.2), (0, -0.1, 0.44))                      # front face at z +0.34: 4 cm off
+    tuft = cube(0.08, (0.1, 0.33, 0))                                  # sitting in the top face
+    found = review.floating(write_cubes(tmp_path / "a.glb", [body, tail, tuft]), spec)
+    assert found == [{"node": "node1", "gap_m": 0.04, "nearest": "node0"}]
+    assert review.floating_lines(found)[0].startswith("node1: 4.0 cm sampled point separation from node0")
+    touching = cube((0.1, 0.1, 0.2), (0, -0.1, 0.39))
+    assert review.floating(write_cubes(tmp_path / "b.glb", [body, touching, tuft]), spec) == []
+    near = cube((0.1, 0.1, 0.2), (0, -0.1, 0.415))                     # 1.5 cm off: under the 2 cm the check allows
+    assert review.floating(write_cubes(tmp_path / "c.glb", [body, near, tuft]), spec) == []
+
+
+def test_a_piece_that_has_come_off_its_own_node_is_named_with_where_it_is(tmp_path):
+    """r13's tail tip, three bumps that lay apart on the ground behind the tail: one node, four pieces."""
+    def joined(*cubes):
+        pos, col, nrm, idx, base = [], [], [], [], 0
+        for p, c, n, i in cubes:
+            pos.append(p), col.append(c), nrm.append(n), idx.append(i + base)
+            base += len(p)
+        return (np.concatenate(pos), np.concatenate(col), np.concatenate(nrm), np.concatenate(idx).astype(np.uint16))
+    body = cube(0.6)
+    tail = joined(cube((0.1, 0.1, 0.2), (0, -0.1, 0.39)),          # touching the body's back face
+                  cube((0.06, 0.04, 0.06), (0, -0.45, 0.6)))       # its tip, lying apart: 8 cm below the blade
+    found = review.floating(write_cubes(tmp_path / "t.glb", [body, tail]), {"height_m": 1.0})
+    assert len(found) == 1 and found[0]["node"] == "node1" and found[0]["nearest"] in ("node1", "node0")
+    assert found[0]["piece"]["of"] == 2 and found[0]["piece"]["triangles"] == 12
+    assert found[0]["piece"]["centre_m"] == [0.0, -0.6, -0.45], "Blender metres: glTF z +0.6 is Blender Y -0.6"
+    assert "node1 (one of its 2 pieces, 12 triangles around (+0.00, -0.60, -0.45))" in review.floating_lines(found)[0]
+    whole = joined(cube((0.1, 0.1, 0.2), (0, -0.1, 0.39)), cube((0.06, 0.04, 0.06), (0, -0.1, 0.5)))
+    assert review.floating(write_cubes(tmp_path / "w.glb", [body, whole]), {"height_m": 1.0}) == [], "touching pieces"
+
+
+def _write_review_mesh(path, name, vertices, triangles):
+    gltf, blob = _empty(), bytearray()
+    add = _adder(gltf, blob)
+    attrs = {"POSITION": add(vertices.astype(np.float32), "VEC3", 5126)}
+    indices = add(triangles.astype(np.uint16).ravel(), "SCALAR", 5123)
+    gltf["meshes"].append({"name": name, "primitives": [{"attributes": attrs, "indices": indices}]})
+    gltf["nodes"].append({"name": name, "mesh": 0})
+    gltf["scenes"][0]["nodes"].append(0)
+    return _pack(gltf, blob, path)
+
+
+def test_a_node_the_camera_sees_the_back_of_is_named(tmp_path):
+    """Keep the mixed-node case: only the inward-wound second node should be reported."""
+    spec = {"stage_scale": 1.0,
+            "shots": [{"name": "front", "cam_pos": [0, 0, -3], "cam_target": [0, 0, 0], "ortho": 1.12},
+                      {"name": "side", "cam_pos": [-3, 0, 0], "cam_target": [0, 0, 0], "ortho": 1.12}]}
+    inside_out = cube(0.3, (0.3, 0, 0))
+    inside_out = (*inside_out[:3], inside_out[3].reshape(-1, 3)[:, ::-1].ravel().copy())
+    path = write_cubes(tmp_path / "o.glb", [cube(0.4), inside_out])
+    found = review.flipped(path, spec, ["front", "side"])
+    assert [item["node"] for item in found] == ["node1"]
+    assert found[0]["views"] == {"front": 1.0, "side": 1.0}
+    line = review.flipped_lines(found)[0]
+    assert "the camera sees the back of up to 100% of it (front 100%, side 100%)" in line
+    assert "single-sided rendering" in line and "Possible causes include" in line
+    assert "are wound inward" not in line and "Call bmesh.ops.recalc_face_normals" not in line
+    assert review.flipped(write_cubes(tmp_path / "ok.glb", [cube(0.4), cube(0.3, (0.3, 0, 0))]), spec,
+                          ["front", "side"]) == []
+
+
+def test_backface_feedback_does_not_infer_the_surface_cause_or_a_repair(tmp_path):
+    spec = {"stage_scale": 1.0,
+            "shots": [{"name": "front", "cam_pos": [0, 0, -3], "cam_target": [0, 0, 0], "ortho": 1.12},
+                      {"name": "rear", "cam_pos": [0, 0, 3], "cam_target": [0, 0, 0], "ortho": 1.12}]}
+    pos, _col, _nrm, indices = cube(0.8)
+    faces = indices.reshape(-1, 3)
+
+    def report(name, vertices, triangles):
+        path = _write_review_mesh(tmp_path / f"{name}.glb", name, vertices, triangles)
+        found = review.flipped(path, spec, ["front", "rear"])
+        assert [item["node"] for item in found] == [name]
+        return found[0]["views"], review.flipped_lines(found)[0]
+
+    # Inward closed shells read the same with shared or split vertices.
+    inverted = faces[:, ::-1].copy()
+    shared = np.unique(pos, axis=0)
+    lookup = {tuple(point): i for i, point in enumerate(shared)}
+    shared_faces = np.array([[lookup[tuple(pos[i])] for i in tri] for tri in inverted], dtype=np.uint16)
+    split_views, split_line = report("inverted_split", pos, inverted)
+    shared_views, _ = report("inverted_shared", shared, shared_faces)
+    assert split_views == shared_views and split_views["front"] > 0.99 and split_views["rear"] == 1.0
+
+    # A missing -Z wall exposes the back of the far wall; a deliberate one-sided plane has the same reading.
+    missing_views, missing_line = report("missing_wall", pos, faces[:-2])
+    plane = np.array([[-0.4, -0.4, 0], [0.4, -0.4, 0], [0.4, 0.4, 0], [-0.4, 0.4, 0]], np.float32)
+    plane_views, plane_line = report("open_plane", plane, np.array([[0, 1, 2], [0, 2, 3]]))
+    assert missing_views == plane_views == {"front": 1.0, "rear": 0.0}
+    assert missing_line.split(": ", 1)[1] == plane_line.split(": ", 1)[1]
+
+    assert "the camera sees the back of up to 100% of it (front 99%, rear 100%)" in split_line
+    for phrase in ("culled under single-sided rendering", "Possible causes include inward winding",
+                   "negative-scale mirrors", "missing surfaces", "inspect source topology and winding",
+                   "seam sharing", "welding appropriate shared seams", "will not fill a missing wall",
+                   "Intentional one-sided surfaces", "this view and the opposite/scored views"):
+        assert phrase in split_line
+    assert "are wound inward" not in split_line and "Call bmesh.ops.recalc_face_normals" not in split_line

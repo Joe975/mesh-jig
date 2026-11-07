@@ -1,6 +1,6 @@
-"""mesh-jig agent: a small tool loop that drives an API model through the same tools a coding agent gets.
+"""mesh-jig agent --workflow numeric: the legacy tool loop that drives an API model through the same tools a coding agent gets.
 
-    mesh-jig agent <project> --model <id> [--url <endpoint>] [--attempts 5] [--judge]
+    mesh-jig agent <project> --workflow numeric --model <id> [--url <endpoint>] [--attempts 5] [--judge]
 
 The model sees what Claude Code sees through `mesh-jig-mcp`: the brief and the reference views up front, then the
 MCP tool functions themselves (`evaluate`, `build`, `preview`, `paint`, and `judge` when asked for), called in
@@ -29,6 +29,7 @@ time budget (`max_wall`) it is called as chat_fn(messages, tools, left_s), with 
 from __future__ import annotations
 
 import base64
+import copy
 import inspect
 import json
 import re
@@ -40,6 +41,7 @@ from pathlib import Path
 from typing import Callable
 
 from . import agent_state
+from .checkpoint import atomic_write_text
 from . import evaluate as evaluate_mod, glb, llm, mcp_server, project as project_mod, silhouette, streak as streak_mod
 
 ChatFn = Callable[..., tuple[dict, dict]]      # (messages, tools) or, under a time budget, (messages, tools, left_s)
@@ -199,8 +201,13 @@ def edit_text(text: str, edits: list) -> tuple[str, list[int]]:
         raise ValueError("`edits` must be a non-empty list of {\"old\": ..., \"new\": ...}")
     lines = []
     for i, e in enumerate(edits, 1):
-        old, new = str(e.get("old", "")), str(e.get("new", ""))
         which = f"edit {i} of {len(edits)}: " if len(edits) > 1 else ""
+        # a sound run's edit spelt {"old": ..., "new2": ""}, and a missing `new` read as "" deleted the growl it named
+        stray = sorted(set(e) - {"old", "new"})
+        if "new" not in e or stray:
+            raise ValueError(f"{which}an edit is {{\"old\": ..., \"new\": ...}} (\"new\": \"\" to delete)"
+                             + (f", not {', '.join(stray)}" if stray else "") + "; nothing changed")
+        old, new = str(e.get("old", "")), str(e["new"])
         n = text.count(old) if old else 0
         if n != 1:
             why = "`old` is empty" if not old else "`old` was not found" if n == 0 else f"`old` matches {n} places"
@@ -234,6 +241,7 @@ class Report:
     stopped: str = ""                          # why `mesh_jig.streak`'s rule ended the run, when it did
     tool_calls: int = 0
     rejected_calls: int = 0
+    invalid_tool_batches: int = 0
     evaluations: int = 0                       # evaluate calls that built, held the contract and measured
     attempts: list = field(default_factory=list)   # {"name", "ok", "numeric_score"} per evaluate call
     best: dict | None = None                   # the measured attempt with the highest numeric score
@@ -255,6 +263,8 @@ class Report:
                 "cache_write_tokens": int(sent.get("cache_write_tokens") or 0),
                 "completion_tokens": int(usage.get("completion_tokens") or 0),
                 "reasoning_tokens": int(made.get("reasoning_tokens") or 0), "cost_usd": cost}
+        if "mesh_jig_completion" in usage:
+            call["mesh_jig_completion"] = copy.deepcopy(usage["mesh_jig_completion"])
         for k in ("prompt_tokens", "cached_tokens", "cache_write_tokens", "completion_tokens", "reasoning_tokens"):
             setattr(self, k, getattr(self, k) + call[k])
         self.cost_usd = round(self.cost_usd + cost, 6)
@@ -820,12 +830,12 @@ def run_dir(project: project_mod.Project, model: str) -> Path:
     return project.root / RUNS_DIR / f"{time.strftime('%Y%m%d-%H%M%S')}_{slug}"
 
 
-def write_run(out: Path, rep: Report, messages: list[dict]) -> None:
+def write_run(out: Path, rep: Report | dict, messages: list[dict]) -> None:
+    """Publish each file separately; a failed second write can leave different generations."""
     out.mkdir(parents=True, exist_ok=True)
-    (out / "report.json").write_text(json.dumps(asdict(rep), indent=1) + "\n", encoding="utf-8")
-    with open(out / "transcript.jsonl", "w", encoding="utf-8") as f:
-        for m in strip_images(messages):
-            f.write(json.dumps(m, ensure_ascii=False) + "\n")
+    atomic_write_text(out / "report.json", json.dumps(asdict(rep) if isinstance(rep, Report) else rep, indent=1) + "\n")
+    atomic_write_text(out / "transcript.jsonl",
+                      (json.dumps(m, ensure_ascii=False) + "\n" for m in strip_images(messages)))
 
 
 def over_cost(spent: float, dearest: float, max_cost: float) -> str:
@@ -851,7 +861,8 @@ def run(project: project_mod.Project, chat_fn: ChatFn, *, attempts: int = 5, max
         context_tokens: int = 0, reply_reserve: int = 8192, log: Callable[[str], None] = lambda s: None,
         clock: Callable[[], float] = time.time) -> Report:
     """Drive the model until it calls done(), the turn cap, the cost cap, the time budget, or a chat failure. Writes
-    report.json and transcript.jsonl to `out` after every turn, so a killed run still leaves what it spent.
+    report.json and transcript.jsonl to `out` after returned replies and tool results, and at turn end.
+    These checkpoints reduce interruption loss; they are not crash-proof or an automatic resume protocol.
 
     `max_cost` (USD, 0 for none) is held against the cost the endpoint reports with each reply's usage: see
     `over_cost`. An endpoint that reports no cost cannot be held to a cap, so the run ends after its first call.
@@ -880,6 +891,12 @@ def run(project: project_mod.Project, chat_fn: ChatFn, *, attempts: int = 5, max
     t0 = clock()
     nudged = False
     dearest = 0.0
+
+    def save():
+        rep.wall_s = round(clock() - t0, 1)
+        if out is not None:
+            write_run(out, rep, transcript)
+
     try:
         while rep.turns < max_turns:
             rep.error = over_cost(rep.cost_usd, dearest, max_cost) or over_wall(clock() - t0, max_wall)
@@ -905,15 +922,33 @@ def run(project: project_mod.Project, chat_fn: ChatFn, *, attempts: int = 5, max
                           else chat_fn(messages, schemas))
             cost = rep.count(usage)
             dearest = max(dearest, cost)
+            msg = {k: v for k, v in msg.items() if k in ("role", "content", "tool_calls", "reasoning_details")}
+            msg["role"] = "assistant"
+            # Save the returned reply before policy checks or potentially slow tools.
+            transcript.append(msg)
+            save()
             if max_cost and cost <= 0:
                 rep.error = ("stopped: the endpoint reported no cost for the call, so the cost cap "
                              f"(${max_cost:.2f}) cannot be held")
                 break
-            msg = {k: v for k, v in msg.items() if k in ("role", "content", "tool_calls", "reasoning_details")}
-            msg["role"] = "assistant"
+            calls = msg.get("tool_calls")
+            try:
+                parsed = llm.parse_tool_batch([] if calls is None else calls)
+            except (ValueError, TypeError) as failure:
+                rep.tool_calls += len(calls) if isinstance(calls, list) else 0
+                rep.invalid_tool_batches += 1
+                feedback = llm.rejected_tool_turn(msg, failure)
+                messages.extend(feedback)
+                # The audit keeps what the model actually returned; this raw
+                # rejected message is never replayed as provider history.
+                transcript.append(feedback[-1])
+                rep.wall_s = round(clock() - t0, 1)
+                if out is not None:
+                    write_run(out, rep, transcript)
+                continue
             messages.append(msg)
-            calls = msg.get("tool_calls") or []
-            if not calls:
+            before_reply = len(messages)
+            if not parsed:
                 if nudged:
                     rep.summary = str(msg.get("content") or "")[:4000]
                     rep.error = "stopped without done()"
@@ -922,16 +957,13 @@ def run(project: project_mod.Project, chat_fn: ChatFn, *, attempts: int = 5, max
                 nudged = True
                 messages.append({"role": "user", "content": "Use the tools. Call done(summary) when you are finished."})
                 transcript.extend(messages[before_reply:])
+                save()
                 continue
             shown: list = []
-            for tc in calls:
-                fn = tc.get("function") or {}
+            for tc, fn, args in parsed:
                 name = fn.get("name", "")
                 rep.tool_calls += 1
                 try:
-                    args = json.loads(fn.get("arguments") or "{}")
-                    if not isinstance(args, dict):
-                        raise ValueError("arguments must be a JSON object")
                     log(f"  {name}({json.dumps(args)[:160]})")
                     result, pics = tools.call(name, args)
                     shown += pics
@@ -942,8 +974,11 @@ def run(project: project_mod.Project, chat_fn: ChatFn, *, attempts: int = 5, max
                     result = f"ERROR: bad arguments: {e}"
                 except Exception as e:  # a tool bug: tell the model, keep going
                     result = f"ERROR: {type(e).__name__}: {e}"
-                log(f"  -> {result[:200]!r}")
                 messages.append({"role": "tool", "tool_call_id": tc.get("id", ""), "content": result})
+                transcript.extend(messages[before_reply:])
+                before_reply = len(messages)
+                save()
+                log(f"  -> {result[:200]!r}")
                 if rep.done:
                     break
             left = max_turns - rep.turns

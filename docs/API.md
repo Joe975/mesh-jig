@@ -33,9 +33,14 @@ mesh-jig doctor local-work/my-model
 mesh-jig agent local-work/my-model --attempts 5 --max-turns 40 --max-wall 600 --max-cost 1.50
 ```
 
-These are example limits, not a cost estimate. `--max-cost` uses provider-reported dollars **after**
-each call, so it can overshoot. Without positive reported cost it stops after the first, potentially
-billed call. Use provider-side spending limits where available; turn/time caps don't cap dollars.
+The default workflow is visual review: a builder and a fresh reviewer, five iterations
+([GAUNTLET.md](GAUNTLET.md)). `--workflow numeric` is the legacy tool loop.
+
+These are example limits, not a cost estimate. In the visual workflow `--max-cost` needs direct
+Anthropic (each request is reserved before it is sent) or OpenRouter (reported cost); other providers
+are refused. The numeric loop uses provider-reported dollars **after** each call, so it can overshoot,
+and without positive reported cost it stops after the first, potentially billed call. Use provider-side
+spending limits where available; turn/time caps don't cap dollars.
 
 ## Local endpoint
 
@@ -51,7 +56,7 @@ use attempt/turn/time limits rather than `--max-cost`.
 
 ## Judge, outputs and recovery
 
-The optional paid judge uses separate `MESH_JIG_JUDGE_*` settings; `--judge` enables extra calls.
+The optional paid judge uses separate `MESH_JIG_JUDGE_*` settings; `--judge` (numeric workflow) enables extra calls.
 Check [current provider compatibility and validation limits](GUIDE.md#versions-and-troubleshooting)
 before choosing a backend.
 
@@ -60,9 +65,9 @@ The runner prints its `agent/<timestamp>_<model>/` directory, containing `report
 Keep raw records private. Preserve interrupted runs; inspect the ledger and use `mesh-jig show`
 to read results without duplicating evaluations. Use a fresh frozen seed for an independent run.
 
-The agent can call [checkpoint](SELECTIONS.md) to freeze a sourced visual choice separately from
+The numeric agent can call [checkpoint](SELECTIONS.md) to freeze a sourced visual choice separately from
 its numerical best. The checkpoint tool makes no model calls and consumes no evaluation budget.
 
-For failures, check the base URL, model, key and image/tool/stream support. Set `--context-tokens`
-to the server's capacity; reserve reply space. Raise `--idle` for silent reasoning, not protocol errors.
+For failures, check the base URL, model, key and image/tool/stream support. With `--workflow numeric`, set
+`--context-tokens` to the server's capacity; reserve reply space. Raise `--idle` for silent reasoning, not protocol errors.
 Run `mesh-jig agent --help` for all controls.

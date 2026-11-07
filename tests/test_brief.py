@@ -154,3 +154,32 @@ def test_a_contract_whose_script_paints_its_texture_is_told_the_function_it_owes
     assert any("texture_size must be a whole number of pixels from 256 to 4096" in p for p in problems(texture_size=100))
     assert any('texture_mode "multiply" needs vertex colours' in p for p in problems(texture_mode="multiply"))
     assert not any("texture" in p for p in problems())
+
+
+def test_the_brief_says_which_paints_read_as_another_under_the_stage_light(monkeypatch):
+    from types import SimpleNamespace
+    from mesh_jig import brief as brief_mod
+    zones = (("I", "iron", (57, 58, 54)), ("B", "brass", (167, 130, 75)), ("C", "copper", (167, 99, 57)),
+             ("T", "trim", (200, 168, 108)))
+    side = {"name": "side", "cam_pos": [-3, 0, 0], "cam_target": [0, 0, 0], "ortho": 1.0}
+    monkeypatch.setattr(brief_mod, "scored_views", lambda p: (["side"], []))
+    stage = SimpleNamespace(zones=zones, spec={"shots": [side]})
+    said = brief_mod.lit_reading(stage)
+    assert said.startswith("- paint under this light") and "side: brass reads copper" in said
+    camera = SimpleNamespace(zones=zones, spec={"shots": [side], "light": "camera"})
+    assert brief_mod.lit_reading(camera) == "", "under the camera light every paint reads as itself"
+
+
+def test_the_palette_is_given_ready_to_paste_as_the_linear_values_a_float_colour_stores():
+    """Builders reading the hex themselves slipped (int("9a"), a character off) and lost attempts to it."""
+    import numpy as np
+
+    from mesh_jig import palette, render
+    hexes = {"brown": "#9a5432", "ivory": "#e9d2bb", "black": "#161718"}
+    text = brief.linear_palette(hexes)
+    scope: dict = {}
+    exec(text[text.index("PALETTE = {"):], scope)                  # the block runs as it is pasted
+    assert list(scope["PALETTE"]) == list(hexes)
+    for name, value in hexes.items():
+        back = render.linear_to_srgb(np.array(scope["PALETTE"][name][:3])) * 255
+        assert np.abs(back - palette.hex_rgb(value)).max() < 0.6 and scope["PALETTE"][name][3] == 1.0

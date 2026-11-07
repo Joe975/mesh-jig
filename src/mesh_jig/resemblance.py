@@ -52,8 +52,18 @@ REPORT = "resemblance.json"
 def normalised(img: str | Path | Image.Image, grid: int = GRID) -> tuple[np.ndarray, np.ndarray]:
     """(rgb float array grid x grid x 3, mask grid x grid): the subject cropped to its bounding box, scaled so the
     longer side is `grid`, centred; pixels outside the mask are 0."""
-    im = silhouette._load(img)
-    m = silhouette.mask(img)            # by path when it is one: the mask of this file may already be known
+    # the mask by path when it is one: the mask of this file may already be known
+    return _normalise(silhouette._load(img), silhouette.mask(img), grid)
+
+
+def normalised_colour(img: str | Path | Image.Image, colour: str | Path | Image.Image, grid: int = GRID) -> np.ndarray:
+    """`colour`, another picture of `img`'s frame (its unlit pass), cut, scaled and masked exactly as `normalised`
+    cuts `img`: the canvas the colour measures read under `colour_from: "albedo"`. The cut follows `img`'s mask, so
+    the two canvases line up pixel for pixel."""
+    return _normalise(silhouette._load(colour), silhouette.mask(img), grid)[0]
+
+
+def _normalise(im: Image.Image, m: np.ndarray, grid: int) -> tuple[np.ndarray, np.ndarray]:
     b = silhouette.bbox(m)
     rgb = np.zeros((grid, grid, 3), dtype=float)
     out_m = np.zeros((grid, grid), dtype=bool)
@@ -181,10 +191,13 @@ def structure_similarity(ha: np.ndarray, hb: np.ndarray, eps: float = EDGE_EPS) 
 
 
 def compare(render: str | Path | Image.Image, reference: str | Path | Image.Image, zones: tuple[Zone, ...] = (),
-            cell: int = CELL, grid: int = GRID) -> dict:
+            cell: int = CELL, grid: int = GRID, colour: str | Path | Image.Image | None = None) -> dict:
+    """zone, structure (edges), colour and their score for one view. `colour` is the render's unlit pass: when it
+    is given, zone and colour read the build's stored paint from it and structure still reads the lit render."""
     ra, ma = normalised(render, grid)
     rb, mb = normalised(reference, grid)
-    la, lb = cell_colours(ra, ma, cell), cell_colours(rb, mb, cell)
+    paint = normalised_colour(render, colour, grid) if colour is not None else ra
+    la, lb = cell_colours(paint, ma, cell), cell_colours(rb, mb, cell)
     zone = zone_agreement(letters(la, zones), letters(lb, zones)) if zones else None
     structure = structure_similarity(edge_histograms(ra, ma, cell), edge_histograms(rb, mb, cell))
     parts = [v for v in (zone, structure) if v is not None]
@@ -194,10 +207,11 @@ def compare(render: str | Path | Image.Image, reference: str | Path | Image.Imag
 
 def measure_views(renders: dict[str, str | Path], references: dict[str, str | Path], zones: tuple[Zone, ...] = (),
                   out_dir: Path | None = None, cell: int = CELL, grid: int = GRID,
-                  *, weights: dict[str, float] | None = None) -> dict:
+                  *, weights: dict[str, float] | None = None, colours: dict[str, str | Path] | None = None) -> dict:
     """view -> compare() for every render with a reference of the same name; `ortho` is the mean score over the
-    orthographic views present and `score` the mean over every view. Writes resemblance.json into out_dir."""
-    views = {name: compare(renders[name], references[name], zones, cell, grid)
+    orthographic views present and `score` the mean over every view. `colours` are the renders' unlit passes
+    (`colour_from: "albedo"`). Writes resemblance.json into out_dir."""
+    views = {name: compare(renders[name], references[name], zones, cell, grid, (colours or {}).get(name))
              for name in sorted(renders) if name in references}
     scored = {v: d["score"] for v, d in views.items() if d["score"] is not None}
     ortho = [scored[v] for v in ORTHO_VIEWS if v in scored]

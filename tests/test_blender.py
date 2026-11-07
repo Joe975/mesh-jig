@@ -40,6 +40,8 @@ def build():
 
 
 
+
+
 def test_a_textured_build_binds_the_painted_atlas(blender, tmp_path):
     spec = {"script": "tile.py", "glb": "tile.glb", "textured": True, "single_mesh": True}
     script = tmp_path / "tile.py"

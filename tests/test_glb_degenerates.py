@@ -24,7 +24,10 @@ def test_stats_separate_exact_and_small_positive_area_in_world_space(tmp_path):
     assert stats["degenerate_triangles"] == 2
     assert stats["triangles"] == 3
     assert glb.check(stats, {}) == [
-        "fixture.glb: 2 degenerate triangles of 3 (1 zero-area, 1 tiny positive-area)"]
+        "fixture.glb: 2 degenerate triangles of 3 (1 zero-area, 1 tiny positive-area); "
+        "in triangles 2 at heights 0.000 to 0.000 m" + glb.ZERO_AREA_HINT]
+    assert "remove_doubles" in glb.ZERO_AREA_HINT, "a zero-area triangle says how to merge it away"
+    assert stats["node_degenerate"] == [["triangles", 2, 0.0, 0.0]]
 
 
 @pytest.mark.parametrize("healthy,tiny,fails", [(198, 2, False), (197, 2, True)])
@@ -36,11 +39,24 @@ def test_tiny_positive_area_keeps_original_one_percent_gate(tmp_path, healthy, t
     issues = glb.check(stats, {})
     assert bool(issues) is fails
     if fails:
-        assert issues == ["fixture.glb: 2 degenerate triangles of 199 (0 zero-area, 2 tiny positive-area)"]
+        assert issues == ["fixture.glb: 2 degenerate triangles of 199 (0 zero-area, 2 tiny positive-area); "
+                          "in triangles 2 at heights 0.000 to 0.000 m"]
 
 
 def test_legacy_stats_remain_usable_without_inventing_an_area_breakdown(tmp_path):
     stats = fixture(tmp_path)
     stats.pop("zero_area_triangles", None)
     stats.pop("near_degenerate_triangles", None)
+    stats.pop("node_degenerate", None)
     assert glb.check(stats, {}) == ["fixture.glb: 2 degenerate triangles of 3"]
+
+
+def test_degenerate_triangles_are_named_by_node_and_height(tmp_path):
+    good = np.array([(0, 0, 0), (1, 0, 0), (0, 1, 0)], dtype=np.float32)
+    flat = np.array([(0, 0.5, 0), (1, 0.5, 0), (2, 0.5, 0)], dtype=np.float32)    # a line at 0.5 m up
+    path = write_glb(tmp_path / "two.glb", [
+        ("Body", (good, np.array([(0, 1, 2)] * 3, dtype=np.uint16)), (0, 0, 0)),
+        ("Tail", (flat, np.array([(0, 1, 2)] * 2, dtype=np.uint16)), (0, 0.2, 0))])
+    stats = glb.stats(path)
+    assert stats["node_degenerate"] == [["Tail", 2, 0.7, 0.7]]
+    assert glb.check(stats, {})[0].endswith("; in Tail 2 at heights 0.700 to 0.700 m" + glb.ZERO_AREA_HINT)

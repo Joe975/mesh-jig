@@ -56,9 +56,10 @@ class Backend:
     model: str
     key: str | None = None
     timeout_s: float = 300.0
+    provider: str | None = None    # OpenRouter only: the one endpoint every call goes to (an endpoint tag)
 
     def describe(self) -> str:
-        return f"{self.model} @ {self.url}"
+        return f"{self.model} @ {self.url}" + (f" via {self.provider} only" if self.provider else "")
 
 
 def load_env_file(path: str | None = None, env=os.environ) -> list[str]:
@@ -87,7 +88,7 @@ def provider_key_var(url: str) -> str:
 
 
 def resolve_backend(env=os.environ, *, load_file: bool = True, prefix: str = JUDGE_PREFIX, url: str | None = None,
-                    model: str | None = None) -> Backend:
+                    model: str | None = None, provider: str | None = None) -> Backend:
     """A backend from the environment under `prefix` (the judge's by default); `url` / `model` override the variables.
     LLMError when no model is named (the agent has no default) or no key is configured for a hosted endpoint."""
     if load_file:
@@ -103,8 +104,10 @@ def resolve_backend(env=os.environ, *, load_file: bool = True, prefix: str = JUD
     key = env.get(f"{prefix}_KEY") or env.get(key_var)
     if not key and not local:
         raise LLMError(f"{who} needs an API key for {url}: set {prefix}_KEY (or {key_var}); see .env.example")
+    if provider and not openrouter:
+        raise LLMError(f"a provider is chosen on OpenRouter only, not {url}")
     return Backend(name="openrouter" if openrouter else "local" if local else "openai-compatible", url=url, model=model,
-                   key=key)
+                   key=key, provider=provider or None)
 
 
 def reasoning_extra(backend: Backend) -> dict:
@@ -231,6 +234,44 @@ def _post(url: str, payload: dict, key: str | None, timeout_s: float, attempts: 
     raise LLMError(f"{last} (after {attempts} attempts)")
 
 
+def parse_tool_batch(calls):
+    """Validate a complete tool batch before side effects or provider history."""
+    def reject_constant(value):
+        raise ValueError(f"tool arguments contain a non-JSON constant: {value}")
+
+    if not isinstance(calls, list):
+        raise ValueError("tool_calls must be a list")
+    parsed = []
+    for tool in calls:
+        if not isinstance(tool, dict) or not isinstance(tool.get("id"), str) or not tool["id"]:
+            raise ValueError("each tool call needs a nonempty string id")
+        fn = tool.get("function")
+        if not isinstance(fn, dict) or not isinstance(fn.get("name"), str) or not fn["name"]:
+            raise ValueError("each tool call needs a function name")
+        raw = fn.get("arguments")
+        if raw is not None and not isinstance(raw, str):
+            raise ValueError("tool arguments must be a JSON string")
+        args = json.loads(raw or "{}", parse_constant=reject_constant)
+        if not isinstance(args, dict):
+            raise ValueError("tool arguments must be a JSON object")
+        json.dumps(args, allow_nan=False)
+        parsed.append((tool, fn, args))
+    return parsed
+
+
+def rejected_tool_turn(message, failure):
+    """Safe conversation feedback; the caller retains the raw response in its audit."""
+    messages = []
+    text = message.get("content")
+    if isinstance(text, str) and text:
+        messages.append({"role": "assistant", "content": text})
+    messages.append({"role": "user", "content":
+        "TOOL BATCH REJECTED: invalid tool-call arguments or structure. "
+        "No call in this batch was executed. Resend complete tool calls "
+        "with JSON-object arguments. Error: " + str(failure)[:300]})
+    return messages
+
+
 def shape_payload(backend: Backend, messages: list[dict], temperature: float | None, max_tokens: int | None) -> dict:
     """The base chat payload, adapted to what the endpoint accepts (see REASONING_MODEL_RE). A None temperature or
     max_tokens is left out, so the endpoint's own default applies."""
@@ -240,6 +281,10 @@ def shape_payload(backend: Backend, messages: list[dict], temperature: float | N
         payload["max_completion_tokens" if reasoning else "max_tokens"] = max_tokens
     if temperature is not None and not reasoning:
         payload["temperature"] = temperature
+    if backend.provider and backend.name == "openrouter":
+        # one model is served by many providers, at prices up to 8x apart and at fp4 to full precision: a pinned one
+        # keeps a run's cost and weights fixed. No fallback: a refusal says so
+        payload["provider"] = {"order": [backend.provider], "allow_fallbacks": False}
     return payload
 
 
@@ -270,6 +315,8 @@ def chat(backend: Backend, messages: list[dict], temperature: float | None = 0.3
 CHAT_IDLE_S = 90.0          # no chunk for this long and the attempt is dropped
 REASONING_TEXT_KEYS = ("text", "summary", "data")     # the fields of a reasoning_details item that arrive in pieces
 CHAT_RETRIES = 2            # attempts after the first
+UNAVAILABLE_WAIT_S = 600.0  # a server refusing connections or answering 503 (loading its model) is waited for this
+UNAVAILABLE_POLL_S = 10.0   # long in all, this often, without spending an attempt: a restart killed two owl runs
 TRANSPORT_SLACK_S = 30.0    # the socket timeout sits this far past the idle limit: it only reaps a dropped attempt
 CHAT_BEAT_S = 60.0          # a call still streaming says so in the log this often
 
@@ -323,12 +370,17 @@ def assemble_chunks(chunks: Iterable[dict], on_chunk: Callable[[dict], None] | N
     calls: dict[int, dict] = {}
     thoughts: dict[int, dict] = {}
     usage: dict = {}
+    finish_reasons: set[str] = set()
     for chunk in chunks:
         if on_chunk:
             on_chunk(chunk)
         if chunk.get("usage"):
             usage = dict(chunk["usage"])
         for choice in chunk.get("choices") or []:
+            index = choice.get("index", 0)
+            reason = choice.get("finish_reason")
+            if not isinstance(index, bool) and index == 0 and isinstance(reason, str) and reason.strip():
+                finish_reasons.add(reason)
             delta = choice.get("delta") or {}
             if delta.get("content"):
                 content.append(delta["content"])
@@ -352,6 +404,14 @@ def assemble_chunks(chunks: Iterable[dict], on_chunk: Callable[[dict], None] | N
         msg.update(content=text or None, tool_calls=[calls[i] for i in sorted(calls)])
     if thoughts:
         msg["reasoning_details"] = [thoughts[i] for i in sorted(thoughts)]
+    # Keep transport evidence outside the assistant message: providers must not
+    # receive our diagnostic fields on the next conversation turn. Missing or
+    # conflicting reasons do not certify completion, and no token-count guess
+    # substitutes for the endpoint's literal reason.
+    usage["mesh_jig_completion"] = {
+        "finish_reason": next(iter(finish_reasons)) if len(finish_reasons) == 1 else None,
+        "ambiguous": len(finish_reasons) > 1,
+    }
     return msg, usage
 
 
@@ -449,10 +509,11 @@ def chat_stream(backend: Backend, messages: list[dict], max_tokens: int | None =
     def out_of_time() -> OutOfTime:
         return OutOfTime(f"the {budget_s:.0f} s left for the model call ran out" + (f": {last}" if last else ""))
 
-    for i in range(retries + 1):
+    i, waited = 0, 0.0
+    while i <= retries:
         if left() <= 0:
             raise out_of_time()
-        delay = 2.0 ** (i + 1) + random.uniform(0, 1)
+        delay, down = 2.0 ** (i + 1) + random.uniform(0, 1), False
         try:
             msg, usage = consume_with_watchdog(open_stream, idle_s=idle_s, max_s=min(backend.timeout_s, left()),
                                                poll_s=poll_s, beat_s=beat_s, log=log)
@@ -464,18 +525,27 @@ def chat_stream(backend: Backend, messages: list[dict], max_tokens: int | None =
             last = LLMError(f"HTTP {e.code} from {url}: {body}")
             if e.code not in RETRY_STATUS:
                 raise last from e
+            down = e.code == 503
         except urllib.error.URLError as e:
             last = LLMError(f"cannot reach {url}: {e.reason}")
+            down = isinstance(e.reason, ConnectionRefusedError)
         except (OSError, http.client.HTTPException) as e:
             last = LLMError(f"the stream from {url} broke: {type(e).__name__}: {e}")
         except LLMError as e:
             last = e
         if left() <= 0:
             raise out_of_time()
+        if down and waited + UNAVAILABLE_POLL_S <= UNAVAILABLE_WAIT_S:
+            # a server starting or loading its model: wait for it without spending an attempt
+            log(f"  the server is not taking calls ({last}); waiting {UNAVAILABLE_POLL_S:.0f} s for it")
+            sleep(min(UNAVAILABLE_POLL_S, max(0.0, left())))
+            waited += UNAVAILABLE_POLL_S
+            continue
         if i < retries:
             log(f"  model call attempt {i + 1} failed ({last}); retrying" + (f" in {delay:.0f} s" if delay else ""))
             if delay:
                 sleep(delay)
+        i += 1
     hint = ("; an endpoint that thinks in silence before its first chunk needs a longer idle limit"
             if isinstance(last, ChatStalled) and last.idle else "")
     raise LLMError(f"{last} (after {retries + 1} attempts{hint})")

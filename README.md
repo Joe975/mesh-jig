@@ -84,6 +84,8 @@ The dashboard runs until Ctrl+C.
 Use [selection checkpoints](docs/SELECTIONS.md) to keep latest, numeric best and an explicit visual
 choice separately, with a comparison sheet made from saved renders.
 
+After modelling, [read engine readiness, rig the GLB and synthesise its sounds](docs/GUIDE.md#after-modelling).
+
 ![One view of an evaluation: the reference beside the build, and the outline diff](showcase/steampunk-mech-opus/image-02.png)
 
 ## See the models

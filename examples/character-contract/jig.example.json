@@ -21,6 +21,7 @@
   },
   "criteria": {
     "views": {"front": 1, "side": 1, "rear": 1, "right": 1, "top": 1},
+    "light": "camera",
     "outline": {
       "mode": "standing",
       "calibration": {

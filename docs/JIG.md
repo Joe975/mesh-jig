@@ -20,6 +20,8 @@
 | `model` | The build contract ([model](#model)). Required. |
 | `sheet` | Optional: cut `refs/` from one design sheet with `mesh-jig sheet` ([sheet](#sheet)). |
 | `criteria` | What this reference is judged on: the scored views, a calibrated outline table, gates and review ([Criteria](#criteria)). |
+| `target` | What a build is for: `quest`, `pcvr` or a name from `targets` ([Targets](#targets)). A command's `--target` says it for one run. Absent: no target, and everything is built and read as before. |
+| `targets` | A target's limits changed for this project, or a target of its own ([Targets](#targets)). |
 
 ## Reference views
 
@@ -93,9 +95,10 @@ Every key is optional.
 | `views` | The views overlap, zones, resemblance and the numeric score are taken over, each with a positive weight. Each needs a camera (`model.shots`, or a default shot) and a reference view of its name. A view not listed is still rendered and compared for you to look at. | **The fallback**: top, side and rear when the project has them, else every compared view. The brief, `doctor` and an evaluation's feedback say it's the fallback. |
 | `outline` | A calibrated outline table at heights you name, for a standing subject. Needs `model.height_m`. Fields in [ORGANIC.md](ORGANIC.md). | The table is read automatically: the craft table with `model.length_m` and top, side and rear views, else through the orthographic cameras ([Cameras](#cameras)). |
 | `gates` | Limits on the measures: `outline_mm_max` (outline error, mm), `zones_min` (zone agreement, 0..1), `resemblance_min` (0..1). Each is reported as passed or FAILED in the feedback and `eval.json`. | No limits. The numbers are still recorded. |
-| `review` | Named regions, mesh parts, landmarks, visibility and clearance probes. A region becomes an acceptance gate only with `min_iou` or `min_zone`; otherwise it is an observation. Fields in [ORGANIC.md](ORGANIC.md). Every region is also drawn enlarged beside the reference's (`compare/region_<name>.png`). | No regional checks. |
+| `review` | Named regions, mesh parts, landmarks, visibility, clearance probes and articulations (the parts a rig will bend, gated on how much of each stands free of the body). A region becomes an acceptance gate only with `min_iou` or `min_zone`; otherwise it is an observation. Fields in [ORGANIC.md](ORGANIC.md). Every region is also drawn enlarged beside the reference's (`compare/region_<name>.png`). | No regional checks. |
 | `score` | What the numeric score is a weighted mean of. Terms: `overlap`, `zones`, `colour` (how close each cell's colour is to the reference's in the same place, in Oklab: 1 the same, 0 from 0.25 apart; it needs no palette), `edges`, and `regions` (the mean over `review.regions` of each region's own colour and edges, read on a canvas twice as fine). A term at 0 is left out. `regions` needs marked regions and `zones` a palette. The first line of an evaluation names the mix. | Overlap and resemblance (zones and edges) in equal parts, which is overlap 2, zones 1, edges 1. Colour and regions are still measured and reported. |
-| `light` | How a build is lit when it is drawn. `"camera"`: white lights that turn with each camera, from its upper left, so a face that looks straight at a camera is drawn in exactly the colour it stores, in every view. Use it for anything with a front, a side and a rear. | `"stage"`: two fixed lights set for a craft seen from above. A face toward the `front` or `side` camera of an upright subject gets 0.63 of the light and one seen from above 1.15, so one paint reads as two colours. |
+| `colour_from` | Where the colour measures read the build's colour. `"albedo"`: an unlit drawing of each frame (`renders/albedo/<view>.png`, from the same rasterisation), so zones, colour, each region's colour and zones, and the zone reading see the colour each surface stores, whatever the light. Edges and the pictures keep the lit render. Measured against blind reviewers in `docs/KNOWN_GAPS.md` (Tried); not yet better enough to be the default. | `"render"`: the lit render, as before the key. |
+| `light` | How a build is lit when it is drawn. `"camera"`: white lights that turn with each camera, from its upper left, so a face that looks straight at a camera is drawn in exactly the colour it stores, in every view. Use it for every subject: `mesh-jig init` and the character template state it. | `"stage"`: two fixed lights set for a craft seen from above. A face toward the `front` or `side` camera of an upright subject gets 0.63 of the light and one seen from above 1.15, so one paint reads as two colours. It stays the default so that a project made before `light` keeps its recorded numbers; the brief and `doctor` say when it is not stated. |
 
 Two things outside the block also decide what's measured: `palette` turns on the zone measure, and the sizes in
 `model` (`length_m`, `span_m`, `height_m`) are the build contract and give the outline table its millimetres.
@@ -107,6 +110,29 @@ that covers little of the subject, an eye or a buckle, is read off its neighbour
 set by hand. Do it before the first attempt, since the zones are measured against the palette.
 
 A gate that fails doesn't fail the attempt: `ok` means built, in contract, rendered and measured.
+
+### Comparing evaluation histories
+
+New evaluations store `comparison_context`: a schema version, digest and optional
+target name. The digest covers the effective contract/target, folded criteria,
+palette, brief, reference-image bytes and package Python-source bytes. It names
+no machine path and does not change a score. A complete-score preview uses the
+same context as evaluation of those inputs. This is a conservative boundary:
+even an unrelated package-source change separates new records. It assumes the
+declared pinned runtime; it does not certify unrecorded environment state.
+
+`standing` excludes incompatible records from its best/gate comparisons and says
+how many were excluded. `streak` computes its plateau and best within the latest
+successful evaluation's context. Its max-attempts ceiling still counts every
+successful evaluation across all contexts, so changing a target cannot extend
+that resource budget. Failed builds remain excluded from measured attempts.
+
+Old records are not rewritten. Without a signature, only stored readiness target
+and triangle-cap facts can separate groups; unknown facts remain unknown. An
+all-legacy history keeps its earlier ranking within that limited group and reports
+that full historical provenance is unavailable. A signed record never silently
+matches an old unsigned one. Invalid or unsupported signatures make comparisons
+unavailable. The command does not reconstruct an old contract from today's jig.
 
 An unthresholded region is still measured and may contribute to `score.regions`, but cannot pass or fail:
 its review record has `observation: true` and `passed: null`. Feedback, the ledger, streak and viewer count only
@@ -185,11 +211,100 @@ extent floored at `1e-9` metres. The existing contract fails when the combined
 count exceeds 1% of the GLB's triangles. Passing it therefore does not promise
 zero collapsed faces. These diagnostic fields do not affect the numeric score.
 
+## Targets
+
+A target is what a model is for: the budget an engine gives it, and what the stages after modelling (a rig, a
+texture) need of its mesh. It is chosen per run, so one seed can be built for a headset and again for a PC:
+
+```
+mesh-jig agent runs/cat-quest --model <id> --target quest
+mesh-jig eval runs/cat-quest --script runs/cat-quest/attempts/a01/model.py --target quest
+mesh-jig ready runs/cat-quest a01 --target pcvr
+```
+
+`--target` is taken by `brief`, `build`, `check`, `eval`, `ready`, `agent` and `doctor`. A project's own `target`
+key is the default for every command and for the MCP tools, which take no option. Two targets ship with the
+package, for one character in Godot on a VR headset:
+
+| | `quest` (standalone mobile VR) | `pcvr` |
+|---|---:|---:|
+| `max_triangles` | 10,000 | 32,000 |
+| `max_materials` | 1 | 2 |
+| `texture_px` | 1024 | 2048 |
+| `max_buried` | 15% | 25% |
+| `max_pieces` | 6 | 6 |
+| `max_open_edges` | 1% | 1% |
+| `max_slivers` | 2% | 2% |
+| `min_symmetry` | 80% | 80% |
+
+The triangle and material limits follow VRChat's avatar performance ranks (Good on Quest, Excellent on PC). None
+of these numbers was measured on a headset here. `targets` changes them or adds a name:
+
+```json
+{"target": "quest",
+ "targets": {"quest": {"max_triangles": 8000},
+             "prop": {"for": "a held prop", "max_triangles": 1500, "max_pieces": 2}}}
+```
+
+A target of the project's own needs `max_triangles` and takes the package's surface limits for whatever it leaves
+out. With a target:
+
+- **`max_triangles` replaces the model block's** for that build, so a build over it fails the contract as any
+  build over its budget does. A `min_triangles` above it gives way.
+- **The brief says the target** and each limit, with what a builder does about it.
+- **Every evaluation holds the mesh to the rest** and records it under `readiness` in `eval.json`: each check, its
+  reading, its limit and whether it holds, and how many hold. These are reported beside the score and are not
+  gates: they do not fail a build, change the numeric score or enter `criteria.score`. The feedback prints them,
+  the visual builder is given them with its previous build from the second round on, and the results page lists
+  them under the attempt.
+
+Beside `readiness`, every evaluation records under `hidden` the nodes no scored camera sees much of
+(`review.hidden`): each node is drawn alone and then with the rest, and one showing under a quarter of itself in
+every scored view is listed with its share in each and the node covering most of it. Eyes sunk in a head read to
+a reviewer as missing, and the builder could not see why. A node covering under 12 of 320x180 pixels in a view is
+not read there. Under `floating` it records connected pieces whose sampled point separation exceeds 2% of
+the height (`review.floating`). Sampling targets a hundredth of the height, but caps each triangle at eight
+divisions and may further thin points for distant comparisons. The historical `gap_m` field stores the sampled
+separation rounded to millimetres: an upper bound before rounding on the true surface gap, not proof of
+detachment. `nearest` names the other node selected by sampling, which need not have the true nearest surface.
+Other pieces in the same node count; multi-piece nodes also record the piece's size and centre. Touching,
+intersecting or embedded geometry can still be flagged, and retessellation can change the result. More samples
+do not certify detachment. Inspect actual contact before moving geometry; only close a confirmed gap when
+attachment is intended. Under `flipped`
+it records the nodes a camera sees the back of (`review.flipped`): every triangle drawn from both sides, and a
+node whose pixels are more than 5% back faces in some scored view is listed with the share in each; those are
+holes, as the renderer and an engine cull by winding. None of the three is a
+gate or in the score; the feedback prints them and the visual builder is given them with its previous build.
+
+What is read, from the exported GLB alone (`readiness.measure`: no Blender, the same bytes for the same file).
+Without a target the readings are still taken and nothing is held to a limit.
+
+| Reading | What it is | Check |
+|---|---|---|
+| `cost.triangles` | Triangles in the default scene. | `triangles`: at most `max_triangles` (the contract's too) |
+| `cost.vertices`, `positions` | Vertices as the GPU gets them (split at colour, normal and UV seams), and distinct positions. | none |
+| `cost.mesh_nodes`, `primitives`, `bytes` | Mesh nodes, triangle primitives, file size. `nodes` lists each node's triangles. | none: the rigging stage joins them |
+| `cost.materials` | Materials in the file. A vertex-colour build has none. | `materials`: at most `max_materials` |
+| `surface.buried` | The share of triangles no outside view can see. The model is drawn from 26 directions as depth maps of points spread over its surface; a triangle is seen when one of its points is the nearest thing in its cell from a direction that faces it. A part sunk inside another and the hidden half of two overlapping shapes are buried. A surface less than about a 128th of the model under another reads as seen. | `buried`: at most `max_buried` |
+| `surface.pieces`, `pieces_90`, `largest_piece` | Connected pieces (corners at one position are one vertex; shapes that only intersect stay separate), how many of the largest hold nine tenths of the surface area, and the largest one's share. | `few pieces`: `pieces_90` at most `max_pieces` |
+| `surface.open_edges` | The share of edges with one face, or more than two: holes, loose plates and fins. | `closed`: at most `max_open_edges` |
+| `surface.slivers` | The share of triangles whose longest edge is over 20 times their height on it. | `slivers`: at most `max_slivers` |
+| `surface.symmetry` | The share of vertices with a twin mirrored across X = 0, to a millimetre. | `symmetry`: at least `min_symmetry` |
+| `surface_symmetry` (opt-in) | `mesh-jig ready --surface-symmetry` adds a separate approximate reading: area-weighted samples from each side are reflected across X = 0 and compared with the opposite triangle surface, with 1 mm tolerance. It reports both directional agreements, their conservative minimum and sample count. All triangle area contributes, including internal, overlapping or duplicate triangles; this is not visible-surface or union coverage, so large matching areas can mask small asymmetric features. This unsigned geometry observation cannot certify colour, winding, topology or rigging. The vertex-twin reading above is topology dependent, so retessellation can lower it while surface agreement remains high. Check the task's actual symmetry and topology requirements, inspect visible views, preserve the matching form, and allow intentional asymmetry; no construction technique is required. | none: diagnostic only |
+| `uv` | Present when a primitive has `TEXCOORD_0`: the share of triangles with UVs, outside the unit square, collapsed to a point or line, how uneven the texel density is, and the area the triangles use in the square (above 1 they overlap). | `uv`, on a `textured` contract only: at most 1% of triangles without UVs, outside the square or collapsed |
+| `rig` | Skins and animations in the file. | none: rigging is the stage after this one |
+
 ## Axes
 
-- The script: Blender metres, +Z up, the nose along **+Y**, mirror across X = 0, centred on the origin.
-- The GLB: glTF axes, Y up, the nose along **-Z**. The contract's `length_m` is the GLB's Z extent, `span_m` its X.
-- The outline tables: model axes in millimetres (+Y nose, +Z up, X across), origin at the bounding box centre.
+- The script: Blender metres, +Z up. Follow the brief's placement instructions: for a calibrated standing model,
+  preserve its fixed ground origin and do not recenter its bounding box. Without standing calibration, keep
+  the model centred on the origin. A craft's nose points along **+Y** and it mirrors across X = 0; the brief
+  says which way other subjects face.
+- The GLB: glTF axes, Y up, a craft's nose along **-Z**. The contract's `length_m` is the GLB's Z extent, `span_m` its X.
+- The outline tables: Blender axes (+Z up, X across; a craft's nose is +Y). Standing tables use millimetres
+  relative to the calibrated fixed ground origin; station heights and signed endpoints are relative to it.
+  Craft profile and generic orthographic tables use the bounding box centre. A generic table without a
+  declared physical extent uses thousandths of the subject's longest extent rather than millimetres.
 
 ## Cameras
 

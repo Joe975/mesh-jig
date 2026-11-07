@@ -23,8 +23,8 @@ INSTRUCTIONS = (
     "mesh-jig builds, renders and measures a Blender model script against reference views. Call `brief` first: it "
     "returns the contract, the reference's measured outlines and colour zones, and the reference views. Then write "
     "<project>/attempts/<name>/<script> yourself (one idea per attempt) and call `evaluate` on it: the numbers are "
-    "deterministic and free, so evaluate every attempt and read the ledger back. `judge` is a paid model call: use it "
-    "only once the numbers have moved, and treat only a DECISIVE verdict as a result. When you report, ask the user "
+    "deterministic and free, so evaluate every attempt and read the ledger back. Use fresh visual critique to guide changes; numeric scores are diagnostics. `judge` is a paid model call: use it "
+    "only when authorized, and treat only a DECISIVE verdict as a result. When you report, ask the user "
     "whether they want to see the results in the dashboard (`mesh-jig view <project> --open`, run in a shell). It "
     "serves a local page of every attempt beside the reference until it is stopped, so it is theirs to run, or yours "
     "to start in the background on a yes."
@@ -81,25 +81,36 @@ def evaluate(project: str, script: str, note: str = "", name: str = "", paint_pl
     project: the project directory. script: the model script, in its own attempt directory
     (<project>/attempts/<name>/model.py). note: what this attempt changed, for the ledger. paint_plan / atlas: a
     textured contract's atlas plan (JSON) or a ready PNG. judge_against: another attempt directory to also ask the
-    pairwise judge about (a paid model call; leave empty unless the numbers have moved)."""
+    pairwise judge about (a paid model call; leave empty unless paid pairwise judging is authorized)."""
     proj = project_mod.load(project)
     issues = proj.problems()
     if issues:
         return ["PROJECT PROBLEMS:\n" + "\n".join(f"- {i}" for i in issues)]
     backend = llm.resolve_backend() if judge_against else None
     out = _attempt(script)
+    replies, processed = [], False
+
+    def postprocess(rec):
+        nonlocal processed
+        if processed:
+            return
+        processed = True
+        evaluate_mod.append_ledger(proj.ledger, rec)
+        reply: list = [evaluate_mod.feedback(rec, evaluate_mod.standing(proj, out, rec))
+                       + f"\n-> {out / evaluate_mod.EVAL_FILE}; ledger {proj.ledger}"]
+        if rec.get("ok"):
+            reply += _pictures(rec.get("compare") or {}, "reference | your build,")
+            others = {v: p for v, p in rec["renders"].items() if v not in rec["compare"]}
+            reply += _pictures(others, "your build (no reference view),")
+        replies.extend(reply)
+
     rec = evaluate_mod.evaluate(proj, Path(script).resolve(), out, atlas=Path(atlas).resolve() if atlas else None,
                                 paint_plan=Path(paint_plan).resolve() if paint_plan else None, name=name, note=note,
                                 against=Path(judge_against).resolve() if judge_against else None, backend=backend,
-                                samples=samples, log=lambda *_: None)
-    evaluate_mod.append_ledger(proj.ledger, rec)
-    reply: list = [evaluate_mod.feedback(rec, evaluate_mod.standing(proj, out, rec))
-                   + f"\n-> {out / evaluate_mod.EVAL_FILE}; ledger {proj.ledger}"]
-    if rec.get("ok"):
-        reply += _pictures(rec.get("compare") or {}, "reference | your build,")
-        others = {v: p for v, p in rec["renders"].items() if v not in rec["compare"]}
-        reply += _pictures(others, "your build (no reference view),")
-    return reply
+                                samples=samples, log=lambda *_: None, _postprocess=postprocess)
+    if not processed:  # injected evaluators keep the established replaceable-tool seam
+        postprocess(rec)
+    return replies
 
 
 def build(project: str, script: str, paint_plan: str = "", atlas: str = "") -> list:

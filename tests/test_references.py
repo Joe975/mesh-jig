@@ -121,7 +121,9 @@ def test_the_report_names_each_camera_the_scale_between_standing_views_and_the_a
 def test_doctor_says_what_is_wrong_with_a_reference_view_and_refs_needs_some(tmp_path, capsys):
     proj = make(tmp_path / "p", {"front": ((200, 240), ([60, 0, 140, 220], BODY))}, {"shots": shots()})
     cli.main(["doctor", str(proj.root)])
-    assert "- reference front: the subject reaches the top edge of the picture" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "- reference front: the subject reaches the top edge of the picture" in out
+    assert "not project problems" in out and "a builder given the project as it is builds on" in out
     bare = make(tmp_path / "q", {}, {})
     assert cli.main(["refs", str(bare.root)]) == 2
 
@@ -183,3 +185,93 @@ def test_a_region_is_read_on_its_own_for_its_colour_and_its_edges(tmp_path):
     nothing = (np.zeros_like(rgb), np.zeros_like(mask))
     assert review.region_reading(*nothing, rgb, mask, region[0]["box"]) == {"colour": 0.0, "edges": 0.0, "score": 0.0}
     assert review.region_reading(rgb, mask, *nothing, region[0]["box"])["score"] is None
+
+
+def test_an_articulation_picked_on_a_view_is_its_path_in_blender_metres(tmp_path):
+    from types import SimpleNamespace
+    # a 200 px tall subject centred on x 150, standing on y 220, in a 1 m model: 5 mm a pixel
+    refs = {v: picture(tmp_path / f"{v}.png", (300, 240), ([100, 20, 200, 220], BODY)) for v in ("front", "side", "top")}
+    spec = {"height_m": 1.0, "shots": [{"name": "front", "cam_pos": [0, 0, -3]}, {"name": "side", "cam_pos": [-3, 0, 0]},
+                                       {"name": "top", "cam_pos": [0, 3, 0]}]}
+    proj = SimpleNamespace(references=refs, spec=spec, data={})
+    path, said = references.articulation_path(proj, "front", [(150, 120), (180, 170)])
+    # the front camera looks along +Y at the model's front: the picture's right is the model's left, X < 0
+    assert path == [[0.0, 0.0, 0.5], [-0.15, 0.0, 0.25]] and "middle of the subject's box" in said
+    side, _ = references.articulation_path(proj, "side", [(180, 120)])
+    assert side == [[0.0, -0.15, 0.5]], "the side camera sees the front on the left: the picture's right is behind"
+    moved, said = references.articulation_path(proj, "front", [(180, 120)], centre_px=170)
+    assert moved == [[-0.05, 0.0, 0.5]] and "given" in said
+    with pytest.raises(ValueError, match="looks up or down"):
+        references.articulation_path(proj, "top", [(150, 120)])
+    with pytest.raises(ValueError, match="needs model.height_m"):
+        references.articulation_path(SimpleNamespace(references=refs, spec={}, data={}), "front", [(1, 1)])
+
+
+def test_a_ruled_reference_draws_its_lines_at_the_blender_coordinates_a_pixel_reads_as(tmp_path):
+    from types import SimpleNamespace
+    # 200 px tall, centred on x 150, on the ground at y 220, in a 1 m model: 5 mm a pixel, lines every 0.1 m (20 px)
+    refs = {v: picture(tmp_path / f"{v}.png", (300, 240), ([100, 20, 200, 220], BODY)) for v in ("front", "side", "top")}
+    spec = {"height_m": 1.0, "shots": [{"name": "front", "cam_pos": [0, 0, -3]}, {"name": "side", "cam_pos": [-3, 0, 0]},
+                                       {"name": "top", "cam_pos": [0, 3, 0]}]}
+    data = {"criteria": {"outline": {"origin_m": [0, 0, -0.5]}}}
+    proj = SimpleNamespace(references=refs, spec=spec, data=data)
+    left, _below = references.RULE_MARGIN
+    front = np.asarray(references.ruled(proj, "front"))
+    assert tuple(front[5, left + 150]) == (220, 60, 60), "X = 0 is the centreline, in red"
+    # the front's picture right is -X: X -0.1 is 20 px right of the centre, and is the line the next one along
+    assert tuple(front[5, left + 170]) == (150, 160, 235) and tuple(front[5, left + 160]) != (150, 160, 235)
+    # up is Z from the ground at -0.5: Z 0 is 100 px above the ground line, and red; Z -0.4 is 20 px above it
+    assert tuple(front[120, 5 + left]) == (220, 60, 60) and tuple(front[200, 5 + left]) == (150, 160, 235)
+    side = np.asarray(references.ruled(proj, "side"))
+    assert tuple(side[5, left + 170]) == (150, 160, 235), "the side's picture right is -Y, ruled the same"
+    assert references.ruled(proj, "top") is None, "a camera looking down is not ruled"
+    assert references.ruled(SimpleNamespace(references=refs, spec={}, data={}), "front") is None, "no height, no scale"
+    assert set(references.write_ruled(proj, tmp_path / "out")) == {"front", "side"}
+    assert [references.rule_step(h) for h in (1.0, 1.2, 0.2, 3.0)] == [0.1, 0.1, 0.02, 0.5]
+
+
+def test_a_build_is_redrawn_in_the_references_own_pixels_so_one_ruling_reads_both(tmp_path):
+    from types import SimpleNamespace
+    # the reference: 5 mm a pixel, centreline x 150, ground y 220 at Blender Z -0.5
+    refs = {"front": picture(tmp_path / "front.png", (300, 240), ([100, 20, 200, 220], BODY))}
+    spec = {"height_m": 1.0, "stage_scale": 1.0,
+            "shots": [{"name": "front", "cam_pos": [0, 0, -3], "cam_target": [0, 0, 0], "ortho": 1.12}]}
+    proj = SimpleNamespace(references=refs, spec=spec, data={"criteria": {"outline": {"origin_m": [0, 0, -0.5]}}})
+    # the render: 560x280 at 250 px a unit, centred on the origin. A patch 0.1 to 0.2 m along the picture's right
+    # (the front's right is -X) and Z 0 to 0.2: columns 305 to 330, rows 90 to 140
+    render = Image.new("RGB", (560, 280), (220, 220, 215))
+    render.paste((200, 30, 30), (305, 90, 330, 140))
+    render.save(tmp_path / "render.png")
+    seen = np.asarray(references.in_frame(proj, "front", tmp_path / "render.png"))
+    assert seen.shape == (240, 300, 3)
+    # in the reference's pixels that patch is x 170 to 190 (150 + 0.1 / 0.005 ...) and y 80 to 120 (220 - 0.6 / 0.005)
+    assert tuple(seen[100, 180]) == (200, 30, 30) and tuple(seen[100, 160]) == (220, 220, 215)
+    assert tuple(seen[70, 180]) == (220, 220, 215) and tuple(seen[125, 180]) == (220, 220, 215)
+    pair = references.ruled_pair(proj, "front", tmp_path / "render.png")
+    assert pair.width > 2 * 300 and references.write_ruled_pairs(proj, {"front": str(tmp_path / "render.png"),
+                                                                       "hero": "x.png"}, tmp_path / "o") == {
+        "front": str(tmp_path / "o" / "ruled_front.png")}, "a view with no reference is not drawn"
+
+
+def test_refs_probe_prints_a_pixel_in_blender_metres(tmp_path, capsys):
+    from mesh_jig import cli
+    root = tmp_path / "p"
+    picture(root / "refs" / "front.png", (300, 240), ([100, 20, 200, 220], BODY))
+    (root / "jig.json").write_text(json.dumps({"name": "p", "refs": "refs", "model": {
+        "height_m": 1.0, "shots": [{"name": "front", "cam_pos": [0, 0, -3], "cam_target": [0, 0, 0]}]}}))
+    assert cli.main(["refs", str(root), "--probe", "front", "180", "120"]) == 0
+    assert "PROBE on front, pixel (180, 120): X -0.150, Z +0.500 m" in capsys.readouterr().out
+    assert cli.main(["refs", str(root), "--probe", "nowhere", "1", "1"]) == 2
+    assert "--probe nowhere: no reference view" in capsys.readouterr().err
+
+
+def test_refs_probe_on_a_project_with_no_size_answers_in_the_briefs_thousandths(tmp_path, capsys):
+    from mesh_jig import cli
+    root = tmp_path / "p"
+    picture(root / "refs" / "front.png", (300, 240), ([100, 20, 200, 220], BODY))   # 100 wide, 200 tall
+    (root / "jig.json").write_text(json.dumps({"name": "p", "refs": "refs", "model": {
+        "shots": [{"name": "front", "cam_pos": [0, 0, -3], "cam_target": [0, 0, 0], "ortho": 1.0}]}}))
+    assert cli.main(["refs", str(root), "--probe", "front", "150", "20", "--probe", "front", "175", "120"]) == 0
+    out = capsys.readouterr().out
+    assert "pixel (150, 20): Z +500 in thousandths of the subject's extent along Z" in out
+    assert "pixel (175, 120): X -125 in thousandths" in out, "the picture's right is the model's left, half way out"
