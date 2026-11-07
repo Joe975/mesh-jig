@@ -61,6 +61,15 @@ showcase/reference-cat/model-02.glb
 showcase/reference-cat/model-03.glb
 showcase/reference-cat/release.json
 showcase/reference-cat/summary.json
+showcase/reference-ninja/README.md
+showcase/reference-ninja/image-01.png
+showcase/reference-ninja/image-02.png
+showcase/reference-ninja/image-03.png
+showcase/reference-ninja/model-01.glb
+showcase/reference-ninja/model-02.glb
+showcase/reference-ninja/model-03.glb
+showcase/reference-ninja/release.json
+showcase/reference-ninja/summary.json
 showcase/steampunk-mech-opus/README.md
 showcase/steampunk-mech-opus/image-01.png
 showcase/steampunk-mech-opus/image-02.png
