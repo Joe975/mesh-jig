@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mesh-jig: reference sheets and the models built from them</title>
+<script type="module" src="vendor/model-viewer.min.js"></script>
+<style>
+body { font: 16px/1.5 system-ui, sans-serif; margin: 0 auto; max-width: 1100px; padding: 24px; color: #222; }
+h1 { font-size: 1.6em; margin-bottom: .2em; }
+h2 { margin-top: 2.2em; border-top: 1px solid #ddd; padding-top: 1em; }
+.sheet { width: 100%; height: auto; }
+.views { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin: 16px 0; }
+model-viewer { width: 100%; height: 380px; background: #ecebe8; border-radius: 6px; }
+.samples { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.samples img { width: 100%; height: auto; background: #ecebe8; border-radius: 4px; }
+figure { margin: 0; }
+figcaption { font-size: .85em; color: #555; margin-top: 4px; }
+.clips button { margin: 6px 6px 0 0; padding: 3px 10px; border: 1px solid #bbb; border-radius: 4px; background: #fff; cursor: pointer; }
+.clips button.on { background: #222; color: #fff; border-color: #222; }
+</style>
+<h1>Reference sheets and the models built from them</h1>
+<p>Each sheet was given to an AI model, which wrote a Blender script to build it in 3D using
+<a href="https://github.com/Joe975/mesh-jig">mesh-jig</a>, a set of tools that measure each build against the sheet.
+Best and worst are picked by eye from completed builds; the small pictures are other models' builds. Drag to turn a model.</p>
+<section>
+<h2>Pirate cat</h2>
+<img class="sheet" src="showcase/reference-cat/image-01.png" alt="Pirate cat reference sheet" loading="lazy">
+<div class="views"><figure><model-viewer src="showcase/reference-cat/model-01.glb" camera-controls touch-action="pan-y" loading="lazy" camera-orbit="180deg 78deg auto" shadow-intensity="1" exposure="1.1"></model-viewer><figcaption>Best: Opus 5.5, Claude Code</figcaption></figure><figure><model-viewer src="showcase/reference-cat/model-03.glb" camera-controls touch-action="pan-y" loading="lazy" camera-orbit="180deg 78deg auto" shadow-intensity="1" exposure="1.1" autoplay></model-viewer><div class="clips"></div><figcaption>Best, animated: rigged by Opus 5.5, Claude Code</figcaption></figure><figure><model-viewer src="showcase/reference-cat/model-02.glb" camera-controls touch-action="pan-y" loading="lazy" camera-orbit="180deg 78deg auto" shadow-intensity="1" exposure="1.1"></model-viewer><figcaption>Worst: Qwen3.5-9B, local</figcaption></figure></div>
+<div class="samples"><figure><img src="showcase/reference-cat/image-02.png" alt="" loading="lazy"><figcaption>Sonnet 5.5, Claude Code</figcaption></figure><figure><img src="showcase/reference-cat/image-03.png" alt="" loading="lazy"><figcaption>GPT-6.1 Sol, Codex</figcaption></figure><figure><img src="showcase/reference-cat/image-04.png" alt="" loading="lazy"><figcaption>Gemini 3.8 Flash, API</figcaption></figure><figure><img src="showcase/reference-cat/image-05.png" alt="" loading="lazy"><figcaption>Kimi K3.1 Pro, API</figcaption></figure><figure><img src="showcase/reference-cat/image-06.png" alt="" loading="lazy"><figcaption>Haiku 5.5, Claude Code</figcaption></figure><figure><img src="showcase/reference-cat/image-07.png" alt="" loading="lazy"><figcaption>Qwen3.8-27B, local</figcaption></figure></div>
+</section>
+<section>
+<h2>Steampunk mech</h2>
+<img class="sheet" src="showcase/reference-mech/image-01.png" alt="Steampunk mech reference sheet" loading="lazy">
+<div class="views"><figure><model-viewer src="showcase/reference-mech/model-01.glb" camera-controls touch-action="pan-y" loading="lazy" camera-orbit="180deg 78deg auto" shadow-intensity="1" exposure="1.1"></model-viewer><figcaption>Best: Opus 5.5, Claude Code</figcaption></figure><figure><model-viewer src="showcase/reference-mech/model-02.glb" camera-controls touch-action="pan-y" loading="lazy" camera-orbit="180deg 78deg auto" shadow-intensity="1" exposure="1.1"></model-viewer><figcaption>Worst: Qwen3.5-9B, local</figcaption></figure></div>
+<div class="samples"><figure><img src="showcase/reference-mech/image-02.png" alt="" loading="lazy"><figcaption>Sonnet 5.5, Claude Code</figcaption></figure><figure><img src="showcase/reference-mech/image-03.png" alt="" loading="lazy"><figcaption>GPT-6.1 Sol, Codex</figcaption></figure><figure><img src="showcase/reference-mech/image-04.png" alt="" loading="lazy"><figcaption>Gemini 3.8 Flash, API</figcaption></figure><figure><img src="showcase/reference-mech/image-05.png" alt="" loading="lazy"><figcaption>GPT-6 Astra, Codex</figcaption></figure><figure><img src="showcase/reference-mech/image-06.png" alt="" loading="lazy"><figcaption>GLM 5.3 Flash, API</figcaption></figure><figure><img src="showcase/reference-mech/image-07.png" alt="" loading="lazy"><figcaption>Qwen3.8-27B, local</figcaption></figure></div>
+</section>
+<section>
+<h2>Ninja</h2>
+<img class="sheet" src="showcase/reference-ninja/image-01.png" alt="Ninja reference sheet" loading="lazy">
+<div class="views"><figure><model-viewer src="showcase/reference-ninja/model-01.glb" camera-controls touch-action="pan-y" loading="lazy" camera-orbit="180deg 78deg auto" shadow-intensity="1" exposure="1.1"></model-viewer><figcaption>Best: GPT-6 Astra, Codex</figcaption></figure><figure><model-viewer src="showcase/reference-ninja/model-03.glb" camera-controls touch-action="pan-y" loading="lazy" camera-orbit="180deg 78deg auto" shadow-intensity="1" exposure="1.1" autoplay></model-viewer><div class="clips"></div><figcaption>Best, animated: rigged by Haiku 5.5, API</figcaption></figure><figure><model-viewer src="showcase/reference-ninja/model-02.glb" camera-controls touch-action="pan-y" loading="lazy" camera-orbit="180deg 78deg auto" shadow-intensity="1" exposure="1.1"></model-viewer><figcaption>Worst: GPT-6 Luna, Codex</figcaption></figure></div>
+<div class="samples"><figure><img src="showcase/reference-ninja/image-02.png" alt="" loading="lazy"><figcaption>GPT-6.1 Sol, Codex</figcaption></figure><figure><img src="showcase/reference-ninja/image-03.png" alt="" loading="lazy"><figcaption>GPT-6 Luna, Codex</figcaption></figure></div>
+</section>
+<script>
+for (const mv of document.querySelectorAll('model-viewer[autoplay]')) {
+  mv.addEventListener('load', () => {
+    const box = mv.parentElement.querySelector('.clips');
+    for (const name of mv.availableAnimations) {
+      const b = document.createElement('button');
+      b.textContent = name;
+      b.onclick = () => { mv.animationName = name; mv.play(); box.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); };
+      box.append(b);
+    }
+    const first = box.querySelector('button');
+    if (first) first.click();
+  });
+}
+</script>
+</html>

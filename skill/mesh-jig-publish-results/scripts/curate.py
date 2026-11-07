@@ -30,6 +30,7 @@ METRICS = {
     "cache_write_tokens": "cache_write_tokens", "completion_tokens": "completion_tokens",
     "reasoning_tokens": "reasoning_tokens",
 }
+CLIP_NAME = re.compile(r"[a-z][a-z0-9_-]{0,23}")
 GLTF_KEYS = set("""accessors animations asset bufferViews buffers cameras images materials meshes nodes samplers
 scene scenes skins textures version minVersion bufferView byteOffset componentType normalized count type max min
 sparse indices values byteLength byteStride target channels sampler input output interpolation node path
@@ -209,6 +210,9 @@ def glb_bytes(raw):
         if isinstance(value, dict):
             out = {}
             for field, child in value.items():
+                if field == "name" and key == "animations" and isinstance(child, str) and CLIP_NAME.fullmatch(child):
+                    out[field] = child          # a viewer lists a rig's clips by name
+                    continue
                 if field in {"name", "extras", "generator", "copyright"}:
                     continue
                 if field in {"extensions", "extensionsUsed", "extensionsRequired"} and not child:

@@ -2,6 +2,7 @@
 .claude/skills/mesh-jig/SKILL.md
 .env.example
 .gitattributes
+.github/workflows/pages.yml
 .gitignore
 AGENTS.md
 CLAUDE.md
@@ -53,6 +54,9 @@ showcase/steampunk-mech-opus/image-02.png
 showcase/steampunk-mech-opus/model-01.glb
 showcase/steampunk-mech-opus/release.json
 showcase/steampunk-mech-opus/summary.json
+site/index.html
+site/vendor/model-viewer.LICENSE
+site/vendor/model-viewer.min.js
 skill/mesh-jig-harness-loop/SKILL.md
 skill/mesh-jig-harness-loop/loop.gitignore
 skill/mesh-jig-harness-loop/review.md
@@ -182,6 +186,7 @@ tests/test_run_side.py
 tests/test_script_check.py
 tests/test_selection.py
 tests/test_silhouette.py
+tests/test_site.py
 tests/test_skill_placement.py
 tests/test_smoke_example.py
 tests/test_sound.py

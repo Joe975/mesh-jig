@@ -145,6 +145,29 @@ def test_glb_metadata_and_unused_buffer_bytes_are_removed_with_exact_geometry(tm
     assert glb.stats(before)["triangles"] == glb.stats(after)["triangles"]
 
 
+def test_a_rigs_clip_names_survive_and_every_other_name_is_removed(tmp_path):
+    """A published rig keeps the clip names a viewer lists (walk, run); nothing else carries a name."""
+    original = write_cubes(tmp_path / "base.glb", [cube()])
+    doc, blob = glb.read_glb(original)
+    private = "C:" + "/Users/" + "test/private"
+    doc["nodes"][0]["name"] = "Skin"
+    sampler = {"input": 0, "output": 0, "interpolation": "LINEAR"}
+    channel = {"sampler": 0, "target": {"node": 0, "path": "translation"}}
+    doc["animations"] = [{"name": clip, "samplers": [sampler], "channels": [channel], "extras": {"events": []}}
+                         for clip in ("walk", "run-fast", private, "Walk Cycle")]
+    doc["buffers"] = []
+    sanitized = curator.glb_bytes(_pack(doc, bytearray(blob), tmp_path / "raw.glb").read_bytes())
+    clean, _ = glb.read_glb(_write(tmp_path / "clean.glb", sanitized))
+    assert [a.get("name") for a in clean["animations"]] == ["walk", "run-fast", None, None]
+    assert "name" not in clean["nodes"][0] and private.encode() not in sanitized and b"events" not in sanitized
+    assert curator.glb_bytes(sanitized) == sanitized
+
+
+def _write(path, data):
+    path.write_bytes(data)
+    return path
+
+
 def test_embedded_texture_metadata_is_removed_and_texture_pixels_survive(tmp_path):
     before = textured_glb(tmp_path / "texture.glb", png=png(private=True))
     after = tmp_path / "clean.glb"; after.write_bytes(curator.glb_bytes(before.read_bytes()))
