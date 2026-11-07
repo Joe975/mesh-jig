@@ -74,6 +74,8 @@ showcase/reference-mech/image-07.png
 showcase/reference-mech/model-01.glb
 showcase/reference-mech/model-02.glb
 showcase/reference-mech/model-03.glb
+showcase/reference-mech/model-04.glb
+showcase/reference-mech/model-05.glb
 showcase/reference-mech/release.json
 showcase/reference-mech/summary.json
 showcase/reference-ninja/README.md
