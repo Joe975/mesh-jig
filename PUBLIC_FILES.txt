@@ -59,6 +59,8 @@ showcase/reference-cat/image-07.png
 showcase/reference-cat/model-01.glb
 showcase/reference-cat/model-02.glb
 showcase/reference-cat/model-03.glb
+showcase/reference-cat/model-04.glb
+showcase/reference-cat/model-05.glb
 showcase/reference-cat/release.json
 showcase/reference-cat/summary.json
 showcase/reference-mech/README.md
