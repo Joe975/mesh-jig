@@ -80,6 +80,17 @@ showcase/explore-caterpillar/model-07.glb
 showcase/explore-caterpillar/model-08.glb
 showcase/explore-caterpillar/release.json
 showcase/explore-caterpillar/summary.json
+showcase/explore-horror/README.md
+showcase/explore-horror/model-01.glb
+showcase/explore-horror/model-02.glb
+showcase/explore-horror/model-03.glb
+showcase/explore-horror/model-04.glb
+showcase/explore-horror/model-05.glb
+showcase/explore-horror/model-06.glb
+showcase/explore-horror/model-07.glb
+showcase/explore-horror/model-08.glb
+showcase/explore-horror/release.json
+showcase/explore-horror/summary.json
 showcase/explore-mech/README.md
 showcase/explore-mech/model-01.glb
 showcase/explore-mech/model-02.glb
