@@ -1,0 +1,36 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "agy subscription CLI",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "Gemini 4 Argon (High)",
+  "notes": [
+    "Five successful static evaluations; the builder selected a05-refinement, also the numeric leader.",
+    "15,292 of 16,000 triangles; 1 of 1 acceptance gates passed.",
+    "High effort through agy using an existing subscription; no paid API or API judge.",
+    "Numeric scores are contract-specific diagnostics, not finished visual quality or a general model ranking.",
+    "Static modeling completed. Rigging and animation were not started: subscription quota was exhausted before that stage. No animated Argon artifact is included."
+  ],
+  "result": {
+    "gates_passed": 1,
+    "gates_total": 1,
+    "numeric_score": 0.6544
+  },
+  "schema_version": 1,
+  "scope": "Five successful static evaluations in one independent run; selected static model and its hero render. Rigging is outside these completed metrics.",
+  "title": "Gemini 4 Argon High: Sky-whale manta"
+}
