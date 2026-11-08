@@ -82,6 +82,14 @@ showcase/explore-mech/model-09.glb
 showcase/explore-mech/model-10.glb
 showcase/explore-mech/release.json
 showcase/explore-mech/summary.json
+showcase/explore-ninja/README.md
+showcase/explore-ninja/model-01.glb
+showcase/explore-ninja/model-02.glb
+showcase/explore-ninja/model-03.glb
+showcase/explore-ninja/model-04.glb
+showcase/explore-ninja/model-05.glb
+showcase/explore-ninja/release.json
+showcase/explore-ninja/summary.json
 showcase/pirate-cat-opus/README.md
 showcase/pirate-cat-opus/image-01.png
 showcase/pirate-cat-opus/model-01.glb
