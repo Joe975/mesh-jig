@@ -66,6 +66,11 @@ showcase/reference-argon-caterpillar/image-01.png
 showcase/reference-argon-caterpillar/model-01.glb
 showcase/reference-argon-caterpillar/release.json
 showcase/reference-argon-caterpillar/summary.json
+showcase/reference-argon-horror/README.md
+showcase/reference-argon-horror/image-01.png
+showcase/reference-argon-horror/model-01.glb
+showcase/reference-argon-horror/release.json
+showcase/reference-argon-horror/summary.json
 showcase/reference-argon-sky-whale/README.md
 showcase/reference-argon-sky-whale/image-01.png
 showcase/reference-argon-sky-whale/model-01.glb
