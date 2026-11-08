@@ -71,6 +71,11 @@ showcase/reference-argon-horror/image-01.png
 showcase/reference-argon-horror/model-01.glb
 showcase/reference-argon-horror/release.json
 showcase/reference-argon-horror/summary.json
+showcase/reference-argon-pirate-cat/README.md
+showcase/reference-argon-pirate-cat/image-01.png
+showcase/reference-argon-pirate-cat/model-01.glb
+showcase/reference-argon-pirate-cat/release.json
+showcase/reference-argon-pirate-cat/summary.json
 showcase/reference-argon-sky-whale/README.md
 showcase/reference-argon-sky-whale/image-01.png
 showcase/reference-argon-sky-whale/model-01.glb
