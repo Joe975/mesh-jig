@@ -411,7 +411,8 @@ def texture(name, position, normal):
          {"op": "speckle", "box": [0.0, 0.5, 0.5, 0.85], "color": "gunmetal", "density": 0.02, "size": 0.003, "seed": 7}]}
 ```
 
-Coordinates, widths and sizes are 0..1 of the atlas, u right, v down. Colours are the project's palette names, the
+Coordinates, widths and sizes are 0..1 of the atlas, u right, v down. Blender's UV v runs up, so the script gives
+a face the UV (u, 1 - v) to show the plan's point (u, v). Colours are the project's palette names, the
 plan's own, `black`, `white`, or `#rrggbb`. Any op takes `"alpha"`. The same plan paints the same PNG on every
 machine.
 

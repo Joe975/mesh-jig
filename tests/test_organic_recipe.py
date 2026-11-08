@@ -47,6 +47,25 @@ def build():
     assert silhouette_nonempty(image)
 
 
+@pytest.mark.blender
+def test_the_recipe_paints_the_default_texture_contract_in_real_blender(blender, tmp_path):
+    """The painted texture is a new project's default, so the recipe agents are sent to has to colour under it."""
+    import numpy as np
+    from PIL import Image
+    script = tmp_path / "model.py"
+    script.write_text(RECIPE.read_text(encoding="utf-8"), encoding="utf-8")
+    spec = {"script": "model.py", "glb": "organic.glb", "textured": True, "texture_from": "script",
+            "texture_size": 256, "max_triangles": 11000, "join": False}
+    out = tmp_path / "out"
+    assert build.build_variants(script, out, spec) == ""
+    stats = glb.stats(out / "organic.glb")
+    assert not glb.check(stats, spec)
+    atlas = np.asarray(Image.open(out / glb.atlas_name(spec)).convert("RGB")).reshape(-1, 3).astype(int)
+    for linear in ((.8, .72, .5), (.02, .22, .18)):        # the recipe's CREAM belly and TEAL vest, as sRGB bytes
+        want = np.array([round(255 * (12.92 * c if c <= .0031308 else 1.055 * c ** (1 / 2.4) - .055)) for c in linear])
+        assert (np.abs(atlas - want).max(axis=1) <= 3).sum() > 50, f"no {want} in the atlas"
+
+
 def silhouette_nonempty(image):
     from mesh_jig.silhouette import mask
     return mask(image).sum() > 1000

@@ -131,22 +131,26 @@ command running, or there is nobody to answer, put the command in the report for
   preserve its fixed ground origin and do not recenter its bounding box; without standing calibration, keep it
   centred on the origin. A craft's nose points along **+Y** and it mirrors across X = 0;
   for anything else the brief says which way the model faces and where each camera stands.
-- Colour is a `CORNER` `FLOAT_COLOR` attribute, one palette colour per face, in **linear** RGBA (the palette in
-  `jig.json` is sRGB hex: convert it).
+- Colour comes from the contract the brief states. The default is a texture the script paints (below): colour is
+  a function of where a point is, and the triangles do not limit its edges. On a vertex-colour contract it is a
+  `CORNER` `FLOAT_COLOR` attribute, one palette colour per face, in **linear** RGBA (the palette in `jig.json` is
+  sRGB hex: convert it), and every colour boundary is a triangle edge.
 - Faces outward (`bmesh.ops.recalc_face_normals`), no zero-area faces.
 - `Vector((x, y, z))` takes one sequence. bmesh ops that delete or rebuild geometry invalidate faces you held.
 
 ## Textured contracts
 
-When the brief says TEXTURED CONTRACT: write `atlas_plan.json` beside the script, add `--paint <that file>` to
-`eval`, and author a UV layer in the script that maps each face onto the region painted for it. Paint the
-reference's own markings where the reference has them. Detail in the wrong place scores below no detail.
+A new project's default. When the brief says YOUR SCRIPT PAINTS THE TEXTURE there is no plan and no `--paint`:
+define `texture(name, position, normal)` beside `build()`, as the brief shows. It is handed numpy arrays of points
+on each object's surface and returns a colour for each, from the `PALETTE` global. Draw markings in the
+coordinates `build()` made each part from (along, around, chord, span), with normals as soft weights only, as the
+brief says. Author no UVs and no materials. A preview shows the painted model, so look at the paint as often as
+at the shape.
 
-When the brief says YOUR SCRIPT PAINTS THE TEXTURE there is no plan and no `--paint`: define
-`texture(name, position, normal)` beside `build()`, as the brief shows. It is handed numpy arrays of points on each
-object's surface and returns a colour for each, from the `PALETTE` global, so a marking is a test on where a
-point is ("inside this ellipsoid", "facing forward"). Author no UVs and no materials. A preview shows the painted
-model, so look at the paint as often as at the shape.
+When the brief says TEXTURED CONTRACT without that: write `atlas_plan.json` beside the script, add
+`--paint <that file>` to `eval`, and author a UV layer in the script that maps each face onto the region painted
+for it, as (u, 1 - v) of the plan's point: Blender's v runs up. Paint the reference's own markings where the
+reference has them. Detail in the wrong place scores below no detail.
 
 ## The judge
 
@@ -216,7 +220,7 @@ List all five orthographic views in `criteria.views` and inspect weak views; kee
 until its camera is calibrated. Omitted settings retain craft behavior and historical scores.
 
 The [safe worked recipe](../../examples/organic/recipe.py) demonstrates remesh fusion (joining alone is not
-fusion), bounded smoothing/decimation, final-topology CORNER color restoration, shaped ears/muzzle/digits,
+fusion), bounded smoothing/decimation, a painted `texture()`, shaped ears/muzzle/digits,
 transported curve frames and garments fitted to finished skin. Keep the existing script checker imports and
 denylist. Do not force intentional flat styles to smooth or fuse clothing/accessory islands into skin.
 

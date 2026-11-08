@@ -230,6 +230,21 @@ def test_a_ruled_reference_draws_its_lines_at_the_blender_coordinates_a_pixel_re
     assert [references.rule_step(h) for h in (1.0, 1.2, 0.2, 3.0)] == [0.1, 0.1, 0.02, 0.5]
 
 
+def test_with_no_stated_origin_the_ground_is_the_bottom_of_the_subject_the_cameras_centre_on():
+    """A project that states no outline `origin_m` (the six-limbed horror: cameras on the origin, a 1.55 m creature
+    centred there, the ground at Z -0.775 in its brief) was ruled from Z 0, drawing every build sunk to its waist."""
+    from types import SimpleNamespace
+    across = [{"name": "front", "cam_pos": [0, 0, -3], "cam_target": [0, 0, 0]}]
+    centred = SimpleNamespace(spec={"height_m": 1.55, "stage_scale": 0.5, "shots": across}, data={})
+    assert references.ground_z(centred, "front") == pytest.approx(-0.775)
+    # le-chonk: a 1 m cat whose cameras look at Z 0.5 stands on Z 0
+    raised = [{"name": "front", "cam_pos": [0, 0.5, -3], "cam_target": [0, 0.5, 0]}]
+    assert references.ground_z(SimpleNamespace(spec={"height_m": 1.0, "shots": raised}, data={}), "front") == 0.0
+    stated = SimpleNamespace(spec=centred.spec, data={"criteria": {"outline": {"origin_m": [0, 0, -0.5]}}})
+    assert references.ground_z(stated, "front") == -0.5, "a stated origin wins"
+    assert references.ground_z(SimpleNamespace(spec={}, data={}), "front") == 0.0, "no height, no subject to centre"
+
+
 def test_a_build_is_redrawn_in_the_references_own_pixels_so_one_ruling_reads_both(tmp_path):
     from types import SimpleNamespace
     # the reference: 5 mm a pixel, centreline x 150, ground y 220 at Blender Z -0.5

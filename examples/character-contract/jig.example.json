@@ -8,7 +8,9 @@
     "axis_tolerances": {"X": 0.08, "Z": 0.08},
     "stage_scale": 0.8333333333333334,
     "join": false,
-    "vertex_colors": true,
+    "textured": true,
+    "texture_from": "script",
+    "texture_size": 1024,
     "max_triangles": 65000,
     "shots": [
       {"name": "front", "cam_pos": [0, 0.5, -3], "cam_target": [0, 0.5, 0], "ortho": 1.2},

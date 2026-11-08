@@ -83,11 +83,17 @@ STANDING_SHOTS = [
 ]
 
 
+# The colour contract a new project starts with: a texture the script paints, 1024 px (the Quest atlas). It took
+# per-face vertex colour's triangle-edge sawtooth off every boundary, and unlike an atlas plan it asks the script
+# for no UVs, which weaker builders got wrong (docs/run-notes/overnight-horror-tex-20261108.md).
+PAINTED = {"textured": True, "texture_from": "script", "texture_size": 1024}
+
+
 def template(name: str, length_m: float, sheet_file: str = "", sheet_size: tuple[int, int] | None = None,
              height_m: float | None = None) -> dict:
-    """A jig.json to start from: a vertex-colour contract for a craft `length_m` long, nose along -Z, scored on its
-    top, side and rear views, under the lights that turn with each camera. The views and the light are stated in
-    `criteria`, so whoever changes the subject sees them to change.
+    """A jig.json to start from: a contract whose script paints its texture (PAINTED), for a craft `length_m`
+    long, nose along -Z, scored on its top, side and rear views, under the lights that turn with each camera. The
+    views and the light are stated in `criteria`, so whoever changes the subject sees them to change.
 
     With `height_m`, a standing subject's instead (a character, a mech, a figure): held to that height, centred at
     mid-height, its objects kept apart, the six cameras of STANDING_SHOTS scaled to it, scored on the five
@@ -99,7 +105,7 @@ def template(name: str, length_m: float, sheet_file: str = "", sheet_size: tuple
             "name": name, "brief": "brief.md", "refs": "refs", "palette": {},
             "model": {"script": "model.py", "glb": f"{name}.glb", "join": False, "height_m": height_m,
                       "height_tolerance": 0.05, "stage_scale": round(1 / height_m, 6), "max_triangles": 10000,
-                      "min_triangles": 100, "single_mesh": False, "vertex_colors": True, "min_colors": 3,
+                      "min_triangles": 100, "single_mesh": False, **PAINTED,
                       "shots": [dict(s) for s in STANDING_SHOTS]},
             "criteria": {"views": {v: 1 for v in STANDING_VIEWS if v != "hero"}, "light": "camera"},
         }
@@ -115,7 +121,7 @@ def template(name: str, length_m: float, sheet_file: str = "", sheet_size: tuple
         "palette": {},
         "model": {"script": "model.py", "glb": f"{name}.glb", "join": True, "length_m": length_m,
                   "length_tolerance": 0.05, "forward": "-Z", "max_triangles": 1500, "min_triangles": 100,
-                  "single_mesh": True, "vertex_colors": True, "min_colors": 2},
+                  "single_mesh": True, **PAINTED},
         "criteria": {"views": {"top": 1, "side": 1, "rear": 1}, "light": "camera"},
     }
     if sheet_file:

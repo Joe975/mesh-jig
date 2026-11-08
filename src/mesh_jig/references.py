@@ -240,16 +240,27 @@ def rule_step(height_m: float) -> float:
     return next(power * k for k in (1, 2, 5, 10) if power * k >= raw * 0.75)
 
 
-def ground_z(project) -> float:
-    """Blender Z of the ground the reference views stand on: the outline's `origin_m` Z, else 0."""
-    stated = ((project.data.get("criteria") or {}).get("outline") or (project.spec or {}).get("profile") or {})
-    return float((stated.get("origin_m") or (0, 0, 0))[2])
+def ground_z(project, view: str | None = None) -> float:
+    """Blender Z of the ground the reference views stand on: the outline's `origin_m` Z when the project states one,
+    else the bottom of a subject the cameras centre on (the camera target's height, `view`'s or the first camera's,
+    less half `model.height_m`), else 0. The reference is cropped to its subject, so its lowest pixel is the bottom
+    of a subject that size wherever the cameras aim."""
+    spec = project.spec or {}
+    stated = ((project.data.get("criteria") or {}).get("outline") or spec.get("profile") or {})
+    if stated.get("origin_m"):
+        return float(stated["origin_m"][2])
+    if not spec.get("height_m"):
+        return 0.0
+    shots = [s for s in render.shots_for(spec) if "cam_pos" in s]
+    shot = next((s for s in shots if s["name"] == view), shots[0] if shots else {})
+    target = float(shot.get("cam_target", (0, 0, 0))[1]) / render.stage_scale(spec)    # glTF Y is Blender Z
+    return target - float(spec["height_m"]) / 2
 
 
 def ruled(project, view: str, picture: Image.Image | None = None) -> Image.Image | None:
     """The reference view with lines at round Blender coordinates: across, the axis its picture's right runs along,
-    from the model's centreline (`across`); up, Blender Z, from the ground at the outline's `origin_m` Z (0 when the
-    project states none). A builder reads where a part of the reference sits in the coordinates its script writes,
+    from the model's centreline (`across`); up, Blender Z, from the ground at `ground_z` (the outline's `origin_m` Z,
+    else the bottom of the subject the cameras centre on). A builder reads where a part of the reference sits in the coordinates its script writes,
     which the side-by-sides, each cropped and scaled to its own subject, cannot show. Lines at 0 are red. None for a
     view `across` cannot read (no height, a camera looking up or down, no subject). `picture`, drawn in the
     reference's own pixels (`in_frame`), is ruled in place of the reference."""
@@ -257,7 +268,7 @@ def ruled(project, view: str, picture: Image.Image | None = None) -> Image.Image
         frame = across(project, view, who="ruled")
     except ValueError:
         return None
-    ground = ground_z(project)
+    ground = ground_z(project, view)
     axis = int(np.argmax(np.abs(frame["right"])))
     sign, name = float(np.sign(frame["right"][axis])), "XYZ"[axis]
     per_px, centre, ground_y = frame["per_px"], frame["centre"], frame["facts"]["ground_y"]
@@ -313,7 +324,7 @@ def in_frame(project, view: str, render_path: str | Path) -> Image.Image | None:
     f = frame["facts"]
     w, h = Image.open(project.references[view]).size
     xs = (np.arange(w) + 0.5 - frame["centre"]) * per_px                    # metres along the picture's right
-    zs = ground_z(project) + (f["ground_y"] - np.arange(h) - 0.5) * per_px    # Blender Z
+    zs = ground_z(project, view) + (f["ground_y"] - np.arange(h) - 0.5) * per_px    # Blender Z
     col = np.floor(width / 2 + (xs * scale - right @ eye) * px_per_unit).astype(int)
     row = np.floor(height / 2 - (zs * scale - up @ eye) * px_per_unit).astype(int)
     inside = (row[:, None] >= 0) & (row[:, None] < height) & (col[None] >= 0) & (col[None] < width)

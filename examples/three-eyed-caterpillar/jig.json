@@ -5,7 +5,7 @@
   "palette": {"indigo": "#343c83", "violet": "#6850b4", "teal": "#098f9c", "cyan": "#46cddd", "lilac": "#b889ed", "pale_lilac": "#d7c9ed", "eye_dark": "#061d27", "sparkle": "#e0fbff"},
   "model": {
     "script": "model.py", "glb": "three-eyed-caterpillar.glb",
-    "join": false, "vertex_colors": true, "min_colors": 5,
+    "join": false, "textured": true, "texture_from": "script", "texture_size": 1024,
     "min_triangles": 1000, "max_triangles": 32000,
     "height_m": 0.48908686, "height_tolerance": 0.05,
     "axis_extents_m": {"X": 0.67349666, "Z": 0.9},

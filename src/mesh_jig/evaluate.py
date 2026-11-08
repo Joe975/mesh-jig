@@ -754,13 +754,15 @@ def preview(project: Project, attempt: str | Path, views: list[str] | None = Non
     """A free look at an attempt that is built: its GLBs drawn and measured as an evaluation would, into
     <attempt>/preview/, with no build, no ledger line and no eval.json. The renders are the evaluation's size, so
     the numbers are the ones an evaluation of this build gives. The record has the fields `feedback` reads
-    (`numeric` only when every scored view was drawn; no outline table and no gates, which need the evaluation),
-    or {"ok": False, "error": ...}."""
+    (`numeric` only when every scored view was drawn; no outline table and no gates, which need the evaluation;
+    `contract`, what the contract gate says of the GLBs, since an evaluation refuses a build it names anything
+    against), or {"ok": False, "error": ...}."""
     attempt = Path(attempt).resolve()
     out = attempt / PREVIEW_DIR
     shot = render_fn(project.spec, attempt / "out", out, views=views or None)
     if shot.get("error"):
         return {"ok": False, "error": shot["error"]}
+    contract, _ = glb.check_dir(attempt / "out", project.spec)
     refs = project.references
     paired = {k: v for k, v in shot["renders"].items() if k in refs}
     from . import brief                         # brief reads the project; nothing in it reads this module
@@ -777,6 +779,7 @@ def preview(project: Project, attempt: str | Path, views: list[str] | None = Non
                  "compare": render.write_comparisons(paired, refs, out),
                  "overlays": {v: str(out / f"{silhouette.OVERLAY_PREFIX}{v}.png") for v in sil["views"]},
                  "silhouette": sil["views"], "resemblance": res["views"], "gates": [], "regions": marked,
+                 "contract": contract,
                  "numeric": numeric_measures(sil, res, {}, weights, mix=project.score_mix,
                                              regions=review.regions_score(marked)) if whole and paired else {}}
     if rec["numeric"].get("numeric_score") is not None:
@@ -807,15 +810,18 @@ def preview_text(project: Project, attempt: str | Path, rec: dict) -> str:
     scored = ([v for v in rec["scoring"]["weights"] if v in measured] if rec.get("scoring")
               else [v for v in ORTHO_VIEWS if v in measured])
     numeric = rec.get("numeric") or {}
+    refused = rec.get("contract") or []
+    lines = ([f"OUT OF CONTRACT: an evaluation would refuse this build ({'; '.join(refused)}). Fix the build before "
+              "you evaluate; the numbers below are of what it built."] if refused else [])
     if numeric.get("numeric_score") is not None:
-        lines = [f"[{rec['name']}] a free look, not an attempt (nothing is added to the ledger): "
-                 f"{numbers_text(numeric)}. An evaluation of this build gives these numbers, and the outline table "
-                 "and the gates besides."]
+        lines += [f"[{rec['name']}] a free look, not an attempt (nothing is added to the ledger): "
+                  f"{numbers_text(numeric)}." + ("" if refused else " An evaluation of this build gives these "
+                                                 "numbers, and the outline table and the gates besides.")]
         stands = standing(project, attempt, rec)
         lines += standing_lines(rec, stands, scored) if stands and (stands.get("best") or stands.get("excluded_incompatible")) else []
     else:
-        lines = [f"[{rec['name']}] a free look, not an attempt: not every scored view was drawn, so there is no "
-                 "score. Leave `views` out to have one."]
+        lines += [f"[{rec['name']}] a free look, not an attempt: not every scored view was drawn, so there is no "
+                  "score. Leave `views` out to have one."]
     lines += region_lines(rec)
     lines += view_lines(rec, scored)
     lines += zone_reading_lines(rec.get("zone_reading") or {}, scored)

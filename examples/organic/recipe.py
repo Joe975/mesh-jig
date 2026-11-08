@@ -7,6 +7,7 @@ remain within mesh-jig's existing allowlist. Exporting is the runner's responsib
 import bpy
 import bmesh
 import math
+import numpy as np
 from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 
@@ -101,6 +102,24 @@ def paint(obj, color, cream_front=False):
             co = obj.data.vertices[obj.data.loops[li].vertex_index].co
             cream = cream_front and co.y > .1 and (co.z > .75 or (.28 < co.z < .65 and abs(co.x) < .12))
             attr.data[li].color = CREAM if cream else color
+
+
+def srgb(linear):
+    """A linear colour above as the sRGB a painted texture takes."""
+    return tuple(12.92 * c if c <= .0031308 else 1.055 * c ** (1 / 2.4) - .055 for c in linear[:3])
+
+
+def texture(name, position, normal):
+    # The default contract (texture_from "script") calls this after build() for each object: colour is a test on
+    # where a point is, so the cream boundary follows the texture's pixels, not the remeshed triangles. paint()
+    # above is what a project that states vertex colours uses instead; on this contract its colours are ignored.
+    if name == "Vest":
+        return srgb(TEAL)
+    colour = np.tile(np.array(srgb(COAT)), (len(position), 1))
+    if name == "Skin":
+        x, y, z = position[:, 0], position[:, 1], position[:, 2]
+        colour[(y > .1) & ((z > .75) | ((z > .28) & (z < .65) & (np.abs(x) < .12)))] = srgb(CREAM)
+    return colour
 
 
 def fuse_skin(objects):

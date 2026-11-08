@@ -33,7 +33,7 @@ approximately Z=-0.24454343. No scene, floor, labels, backdrop or external image
   Indigo shadow, violet transitions, teal/cyan dorsal scales; fronds brighter
   lilac/cyan, mask pale lilac, pupils near black. Use the frozen palette in jig.json.
 
-Budget: 1,000–32,000 triangles, at least five vertex colours. Keep semantic node
+Budget: 1,000–32,000 triangles and one 1024 px texture the script paints. Keep semantic node
 names so the later rig can identify head/eyes, trunk, legs and eight fronds.
 Separate meshes or joined skin are allowed. No fixed construction recipe.
 All five orthographic views count equally; HERO is visual evidence only.

@@ -14,7 +14,7 @@ Use one master physical scale: the left profile's 463 px nose-to-tail extent is 
 
 Front elevation and top planform take precedence for a single coherent symmetric 3D fin curve. Side fin tips remain approximately 10–15 px lower in the drawing (43–65 mm at this scale); do not bend the fins differently for side cameras or alter the reference. Cyan line layout is approximate across views. Hero is a visual design check, excluded from numeric score.
 
-The asset budget is 100–16,000 triangles, vertex colors, four or more colors, with mesh nodes preserved for rigging. Closed finite-thickness surfaces and economical topology are preferred. Preserve enough fin-root and tail geometry for blended weights. Construction method is the builder's choice.
+The asset budget is 100–16,000 triangles and one 1024 px texture the script paints, with mesh nodes preserved for rigging. Closed finite-thickness surfaces and economical topology are preferred. Preserve enough fin-root and tail geometry for blended weights. Construction method is the builder's choice.
 
 ## Comparison protocol
 

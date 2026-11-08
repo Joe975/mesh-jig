@@ -9,7 +9,7 @@
     "span_m": 2.064795, "span_tolerance": 0.05,
     "height_m": 0.673866, "height_tolerance": 0.05,
     "forward": "-Z", "min_triangles": 100, "max_triangles": 16000,
-    "single_mesh": false, "vertex_colors": true, "min_colors": 4,
+    "single_mesh": false, "textured": true, "texture_from": "script", "texture_size": 1024,
     "shots": [
       {"name": "front", "cam_pos": [0,0,-3], "cam_target": [0,0,0], "ortho": 1.2},
       {"name": "side", "cam_pos": [-3,0,0], "cam_target": [0,0,0], "ortho": 1.2},

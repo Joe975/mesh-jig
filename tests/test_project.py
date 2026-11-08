@@ -184,5 +184,11 @@ def test_init_with_a_height_writes_a_standing_subjects_contract(tmp_path):
     assert list(proj.data["sheet"]["crops"]) == list(sheet.STANDING_VIEWS)
     assert len(sheet.write_refs(proj)) == 6
     assert project.load(tmp_path / "owl").problems() == [], "cut, it is a project every tool reads"
+    # a texture the script paints is the default colour contract: per-face vertex colour put every colour boundary on
+    # a triangle edge, and the atlas plan's UVs broke the weaker builders (docs/run-notes/overnight-horror-tex-20261108.md)
+    sheet.init(tmp_path / "craft", length_m=0.5)
+    for spec in (proj.spec, project.load(tmp_path / "craft").spec):
+        assert spec["textured"] is True and spec["texture_from"] == "script" and spec["texture_size"] == 1024
+        assert not spec.get("vertex_colors") and "min_colors" not in spec
     with pytest.raises(ValueError, match="positive"):
         sheet.init(tmp_path / "flat", height_m=0)

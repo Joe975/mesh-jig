@@ -17,7 +17,7 @@ Define `criteria.review.regions` for features that matter. Supply `min_iou` or `
 an acceptance gate; otherwise it is an observation. Named parts, landmark bounds, visibility and clearance
 probes need metadata that matches actual exported geometry. Run `doctor` and read every warning.
 
-The [construction recipe](../examples/organic/recipe.py) demonstrates shape fusion and colour storage.
+The [construction recipe](../examples/organic/recipe.py) demonstrates shape fusion and a painted texture (the default), with corner colours for a vertex-colour contract.
 It is a reusable technique, not a completed asset. Joining objects alone does not fuse their surfaces.
 Inspect silhouettes, depth, facial features, attachments and shading from several views. A score cannot
 establish clean topology, riggability or convincing anatomy.

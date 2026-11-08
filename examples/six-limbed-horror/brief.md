@@ -36,7 +36,7 @@ residual mismatches, and do not invent an anatomically idealized unseen design.
 Never reshape geometry per camera, repaint/repair the source, independently
 rescale a reference, or change the criteria to improve scores.
 
-Budget: 1,000-32,000 triangles and at least five vertex colours. Semantic node
+Budget: 1,000-32,000 triangles and one 1024 px texture the script paints. Semantic node
 names should identify torso, head, face and each of the six limbs and feet for
 later rigging. Separate nodes or joined skin are allowed. Avoid floating anatomy,
 joint gaps, accidental fused leg bridges and hidden duplicate limbs.

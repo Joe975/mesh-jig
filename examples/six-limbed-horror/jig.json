@@ -5,7 +5,7 @@
   "palette": {"skin": "#b58b70", "light_skin": "#d0ad94", "ridge": "#e0c4ae", "shadow": "#846048", "deep_recess": "#4d382b", "blush": "#a57764", "eye": "#342e25", "eye_light": "#c8bf9d"},
   "model": {
     "script": "model.py", "glb": "six-limbed-horror.glb",
-    "join": false, "vertex_colors": true, "min_colors": 5,
+    "join": false, "textured": true, "texture_from": "script", "texture_size": 1024,
     "min_triangles": 1000, "max_triangles": 32000,
     "height_m": 1.55, "height_tolerance": 0.05,
     "axis_extents_m": {"X": 1.54, "Z": 2.0},

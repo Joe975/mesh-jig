@@ -141,11 +141,17 @@ def test_a_contract_whose_script_paints_its_texture_is_told_the_function_it_owes
     assert "YOUR SCRIPT PAINTS THE TEXTURE" in said and "def texture(name, position, normal):" in said
     assert "one 512 px atlas" in said and "with NO conversion" in said and "Author no UVs" in said
     assert "write a paint PLAN" not in said and "COLOUR IS VERTEX COLOUR" not in said
+    # paint in the shape's own coordinates, normals as soft weights: a hard normal test was the brief's one example
+    # and gave the textured whale its hard-edged slabs (docs/run-notes/textured-creatures-20261108.md)
+    assert "the coordinates you built the shape in" in said and "soft weight" in said
+    assert "normal[:, 1] > " not in said
     (tmp_path / "refs").mkdir()
     proj = project.Project(tmp_path, {"model": model})
     assert "atlas_plan.json" not in brief.text(proj) and "--paint" not in brief.text(proj)
     plan = project.Project(tmp_path, {"model": {"glb": "cat.glb", "textured": True}})
     assert "write a paint PLAN" in brief.text(plan) and "--paint" in brief.text(plan)
+    # the plan's v runs down and Blender's UV v up: a builder that copied plan v painted every region upside down
+    assert "(u, 1 - v)" in brief.text(plan)
 
     def problems(**change):
         return project.Project(tmp_path, {"model": {**model, **change}}).problems()

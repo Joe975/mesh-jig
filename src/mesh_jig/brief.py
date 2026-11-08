@@ -161,7 +161,9 @@ def atlas_facts(spec: dict) -> str:
         '{"op": "speckle", "box": [...], "density": 0.02, "seed": 7}]}\n'
         "  Coordinates are 0..1 of the atlas, v DOWN; colours are the project's palette names or #rrggbb.\n"
         "  The SCRIPT must author a UV layer (mesh.uv_layers.new(); set uv for every loop) that maps each face onto the "
-        "region of the atlas painted for it; a mesh without UVs fails the build.\n"
+        "region of the atlas painted for it; a mesh without UVs fails the build. Blender's UV v runs UP, the plan's "
+        "DOWN: the plan point (u, v) is the UV (u, 1 - v). Copy plan v straight in and every region is painted upside "
+        "down on the model.\n"
         "  Paint the reference's OWN markings where the reference has them: colour zones are compared with the reference "
         "cell by cell, and detail in the wrong place scores below no detail at all.")
 
@@ -182,9 +184,17 @@ def painted_facts(spec: dict) -> str:
         "  The global PALETTE (already defined; never assign it) maps each palette name to its (r, g, b) in exactly "
         "those units: PALETTE['<name>'], with NO conversion. A texture is sRGB; only vertex colours are linear.\n"
         f"  The runner then unwraps every object into one {glb.texture_size(spec)} px atlas, asks texture about the "
-        "point each texel shows, and binds the image. So a colour is a function of where a point is on the model: a "
-        "marking is \"inside this ellipsoid\", \"above this height\", \"on the side that faces forward\" (normal[:, 1] > "
-        "0.3), tested with numpy on the whole array at once (boolean masks, np.where, np.linalg.norm), never a Python "
+        "point each texel shows, and binds the image. So a colour is a function of where a point is on the model.\n"
+        "  Paint in the coordinates you built the shape in, not in world boxes or one camera's picture. build() made "
+        "each part from its own parameters (distance along a body, angle around a lofted ring, chord and span across "
+        "a fin or wing, height up a limb); recover them in texture() for each position, from the same shared "
+        "constants, and draw the markings there: a stripe is a band of angle that wanders with distance along, an edge "
+        "band is a range of chord. A marking drawn that way follows the surface into every view; one drawn as a shape "
+        "in a single view's two axes is right in that view only. Use the normal as a soft weight (a dot product "
+        "clipped into a 0..1 blend), never a hard threshold: a hard \"faces forward\" test also catches every other "
+        "surface that happens to face that way, as a slab with a hard edge. A small feature that stands off the "
+        "surface (an eye, a horn, a claw) reads better modelled than painted.\n"
+        "  Test with numpy on the whole array at once (masks, np.where, np.clip, np.linalg.norm), never a Python "
         "loop over points. Name each object for what it is: texture is told the name. Use the same sizes and positions "
         "build() used, as shared constants, so the paint sits on the shape.\n"
         "  Paint the reference's OWN markings where the reference has them: colour zones are compared with the "
@@ -396,7 +406,7 @@ def text(project: Project) -> str:
         if articulation.brief_text(project.review):
             parts.append(articulation.brief_text(project.review))
     if project.palette:
-        parts.append("PALETTE (sRGB hex; convert to linear for vertex colours): "
+        parts.append("PALETTE (sRGB hex; a painted texture takes it as it is, vertex colours converted to linear): "
                      + ", ".join(f"{k} {v}" for k, v in project.palette.items()))
         if project.spec.get("vertex_colors"):
             parts.append(linear_palette(project.palette))

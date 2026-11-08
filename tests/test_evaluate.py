@@ -888,3 +888,19 @@ def test_a_regions_zone_picture_is_cut_to_its_box(tmp_path):
     orange = (np.abs(panel.astype(int) - (230, 120, 30)).sum(-1) < 30).sum()
     cream = (np.abs(panel.astype(int) - (240, 220, 180)).sum(-1) < 30).sum()
     assert cream > 0 and orange == 0, "a box on the cream half shows only cream"
+
+
+def test_a_preview_of_a_build_the_contract_refuses_says_so_and_does_not_promise_its_numbers(tmp_path):
+    """A builder previewed a build its contract had just refused (X extent out of tolerance) and was told an
+    evaluation of it would give those numbers: a preview read the GLBs and never the contract."""
+    proj = make_project(tmp_path)
+    s = script(tmp_path)
+    evaluate.evaluate(proj, s, s.parent, build_fn=fake_build(), render_fn=quick_render, log=lambda *_: None)
+    (s.parent / "out" / s.name).write_text(s.read_text())        # a real build leaves the script beside its GLB
+    fine = evaluate.preview(proj, s.parent, render_fn=quick_render)
+    assert fine["contract"] == [] and "An evaluation of this build gives" in evaluate.preview_text(proj, s.parent, fine)
+    strict = project.Project(proj.root, {**proj.data, "model": {**proj.data["model"], "max_triangles": 2}})
+    refused = evaluate.preview(strict, s.parent, render_fn=quick_render)
+    said = evaluate.preview_text(strict, s.parent, refused)
+    assert refused["contract"] and said.startswith("OUT OF CONTRACT: an evaluation would refuse this build")
+    assert "triangles" in said and "An evaluation of this build gives" not in said
