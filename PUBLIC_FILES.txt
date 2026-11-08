@@ -89,6 +89,7 @@ showcase/reference-cat/image-04.png
 showcase/reference-cat/image-05.png
 showcase/reference-cat/image-06.png
 showcase/reference-cat/image-07.png
+showcase/reference-cat/image-08.png
 showcase/reference-cat/model-01.glb
 showcase/reference-cat/model-02.glb
 showcase/reference-cat/model-03.glb
