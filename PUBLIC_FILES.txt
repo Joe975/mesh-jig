@@ -69,6 +69,17 @@ showcase/explore-cat/model-14.glb
 showcase/explore-cat/model-15.glb
 showcase/explore-cat/release.json
 showcase/explore-cat/summary.json
+showcase/explore-caterpillar/README.md
+showcase/explore-caterpillar/model-01.glb
+showcase/explore-caterpillar/model-02.glb
+showcase/explore-caterpillar/model-03.glb
+showcase/explore-caterpillar/model-04.glb
+showcase/explore-caterpillar/model-05.glb
+showcase/explore-caterpillar/model-06.glb
+showcase/explore-caterpillar/model-07.glb
+showcase/explore-caterpillar/model-08.glb
+showcase/explore-caterpillar/release.json
+showcase/explore-caterpillar/summary.json
 showcase/explore-mech/README.md
 showcase/explore-mech/model-01.glb
 showcase/explore-mech/model-02.glb
