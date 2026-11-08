@@ -82,9 +82,11 @@ showcase/reference-ninja/README.md
 showcase/reference-ninja/image-01.png
 showcase/reference-ninja/image-02.png
 showcase/reference-ninja/image-03.png
+showcase/reference-ninja/image-04.png
 showcase/reference-ninja/model-01.glb
 showcase/reference-ninja/model-02.glb
 showcase/reference-ninja/model-03.glb
+showcase/reference-ninja/model-04.glb
 showcase/reference-ninja/release.json
 showcase/reference-ninja/summary.json
 showcase/steampunk-mech-opus/README.md
