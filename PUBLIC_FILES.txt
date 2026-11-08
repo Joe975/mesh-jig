@@ -163,6 +163,7 @@ showcase/reference-sky-whale/image-02.png
 showcase/reference-sky-whale/image-03.png
 showcase/reference-sky-whale/image-04.png
 showcase/reference-sky-whale/image-05.png
+showcase/reference-sky-whale/image-06.png
 showcase/reference-sky-whale/model-01.glb
 showcase/reference-sky-whale/model-02.glb
 showcase/reference-sky-whale/model-03.glb
