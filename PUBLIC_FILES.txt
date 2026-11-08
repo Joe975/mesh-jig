@@ -75,6 +75,14 @@ showcase/reference-caterpillar/model-03.glb
 showcase/reference-caterpillar/model-04.glb
 showcase/reference-caterpillar/release.json
 showcase/reference-caterpillar/summary.json
+showcase/reference-horror/README.md
+showcase/reference-horror/image-01.png
+showcase/reference-horror/image-02.png
+showcase/reference-horror/model-01.glb
+showcase/reference-horror/model-02.glb
+showcase/reference-horror/model-03.glb
+showcase/reference-horror/release.json
+showcase/reference-horror/summary.json
 showcase/reference-mech/README.md
 showcase/reference-mech/image-01.png
 showcase/reference-mech/image-02.png
