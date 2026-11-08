@@ -1,0 +1,35 @@
+{
+  "name": "six-limbed-horror",
+  "brief": "brief.md",
+  "refs": "refs",
+  "palette": {"skin": "#b58b70", "light_skin": "#d0ad94", "ridge": "#e0c4ae", "shadow": "#846048", "deep_recess": "#4d382b", "blush": "#a57764", "eye": "#342e25", "eye_light": "#c8bf9d"},
+  "model": {
+    "script": "model.py", "glb": "six-limbed-horror.glb",
+    "join": false, "vertex_colors": true, "min_colors": 5,
+    "min_triangles": 1000, "max_triangles": 32000,
+    "height_m": 1.55, "height_tolerance": 0.05,
+    "axis_extents_m": {"X": 1.54, "Z": 2.0},
+    "axis_tolerances": {"X": 0.06, "Z": 0.05},
+    "stage_scale": 0.5,
+    "shots": [
+      {"name": "front", "cam_pos": [0,0,-3], "cam_target": [0,0,0], "ortho": 1.12},
+      {"name": "side", "cam_pos": [-3,0,0], "cam_target": [0,0,0], "ortho": 1.12},
+      {"name": "rear", "cam_pos": [0,0,3], "cam_target": [0,0,0], "ortho": 1.12},
+      {"name": "right", "cam_pos": [3,0,0], "cam_target": [0,0,0], "ortho": 1.12},
+      {"name": "top", "cam_pos": [0,3,0], "cam_target": [0,0,0], "cam_up": [0,0,1], "ortho": 1.12},
+      {"name": "hero", "cam_pos": [-2.4,1.35,-3.7], "cam_target": [0,0,0], "ortho": 1.12}
+    ]
+  },
+  "sheet": {"source": "../../showcase/reference-horror/image-01.png", "mask_sample_x": 8, "crops": {
+    "front": {"box": [30,55,458,480]}, "side": {"box": [487,67,1036,480]},
+    "rear": {"box": [1084,55,1502,480]}, "right": {"box": [17,575,525,993]},
+    "hero": {"box": [551,570,1047,995]},
+    "top": {"box": [1080,565,1495,1008], "mask": [[1447,655,1535,701]]}
+  }},
+  "criteria": {
+    "views": {"front": 1,"side": 1,"rear": 1,"right": 1,"top": 1},
+    "light": "camera", "score": {"overlap": 2,"zones": 1,"edges": 1},
+    "gates": {"resemblance_min": 0.4},
+    "review": {"regions": [{"name": "human-face", "view": "front", "box": [0.37,0.0,0.63,0.32]}]}
+  }
+}

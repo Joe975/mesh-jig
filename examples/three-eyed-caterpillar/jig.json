@@ -1,0 +1,38 @@
+{
+  "name": "three-eyed-caterpillar",
+  "brief": "brief.md",
+  "refs": "refs",
+  "palette": {"indigo": "#343c83", "violet": "#6850b4", "teal": "#098f9c", "cyan": "#46cddd", "lilac": "#b889ed", "pale_lilac": "#d7c9ed", "eye_dark": "#061d27", "sparkle": "#e0fbff"},
+  "model": {
+    "script": "model.py", "glb": "three-eyed-caterpillar.glb",
+    "join": false, "vertex_colors": true, "min_colors": 5,
+    "min_triangles": 1000, "max_triangles": 32000,
+    "height_m": 0.48908686, "height_tolerance": 0.05,
+    "axis_extents_m": {"X": 0.67349666, "Z": 0.9},
+    "axis_tolerances": {"X": 0.06, "Z": 0.05},
+    "stage_scale": 1.1111111111111112,
+    "shots": [
+      {"name": "front", "cam_pos": [0,0,-3], "cam_target": [0,0,0], "ortho": 1.12},
+      {"name": "side", "cam_pos": [-3,0,0], "cam_target": [0,0,0], "ortho": 1.12},
+      {"name": "rear", "cam_pos": [0,0,3], "cam_target": [0,0,0], "ortho": 1.12},
+      {"name": "right", "cam_pos": [3,0,0], "cam_target": [0,0,0], "ortho": 1.12},
+      {"name": "top", "cam_pos": [0,3,0], "cam_target": [0,0,0], "cam_up": [0,0,1], "ortho": 1.12},
+      {"name": "hero", "cam_pos": [-2.4,1.35,-3.7], "cam_target": [0,0,0], "ortho": 1.12}
+    ]
+  },
+  "sheet": {"source": "../../showcase/reference-caterpillar/image-01.png", "mask_sample_x": 8, "crops": {
+    "front": {"box": [20,75,460,465]}, "side": {"box": [472,75,1090,465]},
+    "rear": {"box": [1110,75,1514,465]}, "right": {"box": [19,550,529,940]},
+    "hero": {"box": [541,550,1096,950]}, "top": {"box": [1120,522,1508,1015]}
+  }},
+  "criteria": {
+    "views": {"front": 1,"side": 1,"rear": 1,"right": 1,"top": 1},
+    "light": "camera",
+    "score": {"overlap": 2,"zones": 1,"edges": 1},
+    "gates": {"resemblance_min": 0.4},
+    "review": {"regions": [
+      {"name": "three-eye-face", "view": "front", "box": [0.22,0.37,0.8,1.0]},
+      {"name": "frond-pairs", "view": "top", "box": [0,0.2,1,0.84]}
+    ]}
+  }
+}

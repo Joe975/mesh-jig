@@ -1,0 +1,10 @@
+{
+  "fps": 24, "max_influences": 4,
+  "bones": {"required": ["root", "head"], "max": 48},
+  "loop_mm_max": 2,
+  "clips": {
+    "idle": {"seconds": 3, "loop": true, "min_displacement_mm": 3, "ground_drop_mm_max": 8, "max_edge_ratio": 2.5, "stretch_area_max": 0.03},
+    "crawl": {"seconds": 2, "loop": true, "min_displacement_mm": 15, "ground_drop_mm_max": 8, "max_edge_ratio": 2.5, "stretch_area_max": 0.03},
+    "gentle_turn": {"seconds": 3, "loop": true, "min_displacement_mm": 12, "ground_drop_mm_max": 8, "max_edge_ratio": 2.5, "stretch_area_max": 0.03}
+  }
+}

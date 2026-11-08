@@ -1,0 +1,36 @@
+{
+  "name": "sky-whale-manta",
+  "brief": "brief.md",
+  "refs": "refs",
+  "palette": {"blue": "#0639CE", "deep_blue": "#062078", "cyan": "#12E6FC", "ivory": "#E8DDCB", "eye": "#081323", "highlight": "#F5EFE3"},
+  "model": {
+    "script": "model.py", "glb": "sky-whale-manta.glb", "join": false,
+    "length_m": 2.0, "length_tolerance": 0.05,
+    "span_m": 2.064795, "span_tolerance": 0.05,
+    "height_m": 0.673866, "height_tolerance": 0.05,
+    "forward": "-Z", "min_triangles": 100, "max_triangles": 16000,
+    "single_mesh": false, "vertex_colors": true, "min_colors": 4,
+    "shots": [
+      {"name": "front", "cam_pos": [0,0,-3], "cam_target": [0,0,0], "ortho": 1.2},
+      {"name": "side", "cam_pos": [-3,0,0], "cam_target": [0,0,0], "ortho": 1.2},
+      {"name": "rear", "cam_pos": [0,0,3], "cam_target": [0,0,0], "ortho": 1.2},
+      {"name": "right", "cam_pos": [3,0,0], "cam_target": [0,0,0], "ortho": 1.2},
+      {"name": "hero", "cam_pos": [-2.4,1.35,-3.7], "cam_target": [0,0,0], "ortho": 1.2},
+      {"name": "top", "cam_pos": [0,3,0], "cam_up": [0,0,1], "cam_target": [0,0,0], "ortho": 1.2}
+    ]
+  },
+  "sheet": {"source": "../../showcase/reference-sky-whale/image-01.png", "mask_sample_x": 1035, "crops": {
+    "front": {"box": [7,55,505,480]},
+    "side": {"box": [520,55,1016,480]},
+    "rear": {"box": [1030,55,1529,480]},
+    "right": {"box": [7,561,505,1015]},
+    "hero": {"box": [520,561,1016,1015]},
+    "top": {"box": [1030,520,1529,1016], "mask": [[1035,522,1140,560]]}
+  }},
+  "criteria": {
+    "views": {"front": 1, "side": 1, "rear": 1, "right": 1, "top": 1},
+    "light": "camera",
+    "score": {"overlap": 1, "colour": 1, "edges": 1},
+    "gates": {"resemblance_min": 0.5}
+  }
+}

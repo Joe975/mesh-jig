@@ -29,3 +29,14 @@ def test_the_page_stays_light():
     """Every viewer and picture loads lazily, as it scrolls into view; the cap bounds a reader who sees it all."""
     shown = re.findall(r'src="(showcase/[^"]+)"', PAGE.read_text(encoding="utf-8"))
     assert sum((ROOT / s).stat().st_size for s in shown) < 50_000_000
+
+
+def test_every_example_sheet_is_published():
+    """An example's jig.json names its sheet; the exporter carries no images, so it must be a published showcase file."""
+    import json
+    for jig in sorted((ROOT / "examples").glob("*/jig.json")):
+        source = json.loads(jig.read_text(encoding="utf-8")).get("sheet", {}).get("source")
+        if source:
+            sheet = (jig.parent / source).resolve()
+            assert sheet.is_file(), (jig, source)
+            assert sheet.relative_to(ROOT.resolve()).as_posix() in PUBLIC, (jig, source)
