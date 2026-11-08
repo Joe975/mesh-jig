@@ -101,6 +101,17 @@ showcase/explore-ninja/model-04.glb
 showcase/explore-ninja/model-05.glb
 showcase/explore-ninja/release.json
 showcase/explore-ninja/summary.json
+showcase/explore-sky-whale/README.md
+showcase/explore-sky-whale/model-01.glb
+showcase/explore-sky-whale/model-02.glb
+showcase/explore-sky-whale/model-03.glb
+showcase/explore-sky-whale/model-04.glb
+showcase/explore-sky-whale/model-05.glb
+showcase/explore-sky-whale/model-06.glb
+showcase/explore-sky-whale/model-07.glb
+showcase/explore-sky-whale/model-08.glb
+showcase/explore-sky-whale/release.json
+showcase/explore-sky-whale/summary.json
 showcase/pirate-cat-opus/README.md
 showcase/pirate-cat-opus/image-01.png
 showcase/pirate-cat-opus/model-01.glb
