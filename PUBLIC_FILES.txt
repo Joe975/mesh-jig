@@ -176,6 +176,7 @@ showcase/reference-caterpillar/image-03.png
 showcase/reference-caterpillar/image-04.png
 showcase/reference-caterpillar/image-05.png
 showcase/reference-caterpillar/image-06.png
+showcase/reference-caterpillar/image-07.png
 showcase/reference-caterpillar/model-01.glb
 showcase/reference-caterpillar/model-02.glb
 showcase/reference-caterpillar/model-03.glb
