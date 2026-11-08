@@ -61,6 +61,11 @@ showcase/pirate-cat-qwen-local/image-01.png
 showcase/pirate-cat-qwen-local/model-01.glb
 showcase/pirate-cat-qwen-local/release.json
 showcase/pirate-cat-qwen-local/summary.json
+showcase/reference-argon-caterpillar/README.md
+showcase/reference-argon-caterpillar/image-01.png
+showcase/reference-argon-caterpillar/model-01.glb
+showcase/reference-argon-caterpillar/release.json
+showcase/reference-argon-caterpillar/summary.json
 showcase/reference-argon-sky-whale/README.md
 showcase/reference-argon-sky-whale/image-01.png
 showcase/reference-argon-sky-whale/model-01.glb
