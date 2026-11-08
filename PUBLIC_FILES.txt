@@ -111,6 +111,15 @@ showcase/reference-mech/model-04.glb
 showcase/reference-mech/model-05.glb
 showcase/reference-mech/release.json
 showcase/reference-mech/summary.json
+showcase/reference-nav/README.md
+showcase/reference-nav/image-01.png
+showcase/reference-nav/image-02.png
+showcase/reference-nav/image-03.png
+showcase/reference-nav/image-04.png
+showcase/reference-nav/image-05.png
+showcase/reference-nav/image-06.png
+showcase/reference-nav/release.json
+showcase/reference-nav/summary.json
 showcase/reference-ninja/README.md
 showcase/reference-ninja/image-01.png
 showcase/reference-ninja/image-02.png
