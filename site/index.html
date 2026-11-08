@@ -27,9 +27,12 @@ h1 { font: 650 clamp(2rem, 4.2vw, 3.1rem)/1.08 "Segoe UI Variable Display", "Seg
   letter-spacing: -0.025em; margin: 0 0 18px; max-width: 20ch; text-wrap: balance; }
 .lede { color: var(--muted); max-width: 62ch; margin: 0 0 24px; text-wrap: pretty; }
 .lede a { color: var(--text); }
-nav { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: .95rem; }
-nav a { color: var(--text); text-decoration: none; border-bottom: 1px solid var(--rule); padding-bottom: 2px; }
-nav a:hover { border-color: var(--signal); }
+nav { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; font-size: .9rem; }
+nav a { color: var(--text); text-decoration: none; display: block; }
+nav img { display: block; width: 100%; height: auto; aspect-ratio: 1; border-radius: 10px;
+  border: 2px solid transparent; background: var(--plate); }
+nav a:hover img, nav a:focus-visible img { border-color: var(--signal); }
+nav span { display: block; margin-top: 6px; }
 section { padding: 64px 0 8px; }
 h2 { font: 650 1.75rem/1.2 "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; letter-spacing: -0.015em; margin: 0 0 20px; }
 h3 { font-size: 1rem; font-weight: 600; color: var(--muted); margin: 36px 0 12px; }
@@ -62,6 +65,7 @@ footer .wrap { padding-top: 22px; padding-bottom: 40px; color: var(--muted); fon
   model-viewer { height: 300px; }
   .views { gap: 28px; }
   .samples { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  nav { grid-template-columns: repeat(3, 1fr); gap: 12px; }
 }
 </style>
 <header><div class="wrap">
@@ -70,7 +74,7 @@ footer .wrap { padding-top: 22px; padding-bottom: 40px; color: var(--muted); fon
 <a href="https://github.com/Joe975/mesh-jig">mesh-jig</a>, tools that measure each build against the sheet.
 Each company's best and the overall worst are picked by eye from completed builds. Time and cost are for the
 whole run; subscription tools don't report a cost. Drag a model to turn it.</p>
-<nav aria-label="Sections"><a href="#cat">Pirate cat</a><a href="#mech">Steampunk mech</a><a href="#ninja">Ninja</a><a href="#caterpillar">Three-eyed caterpillar</a><a href="#sky-whale">Sky-whale manta</a><a href="#horror">Six-limbed horror</a></nav>
+<nav aria-label="Sections"><a href="#cat"><img src="showcase/reference-nav/image-01.png" alt="" width="140" height="140"><span>Pirate cat</span></a><a href="#mech"><img src="showcase/reference-nav/image-02.png" alt="" width="140" height="140"><span>Steampunk mech</span></a><a href="#ninja"><img src="showcase/reference-nav/image-03.png" alt="" width="140" height="140"><span>Ninja</span></a><a href="#caterpillar"><img src="showcase/reference-nav/image-04.png" alt="" width="140" height="140"><span>Three-eyed caterpillar</span></a><a href="#sky-whale"><img src="showcase/reference-nav/image-05.png" alt="" width="140" height="140"><span>Sky-whale manta</span></a><a href="#horror"><img src="showcase/reference-nav/image-06.png" alt="" width="140" height="140"><span>Six-limbed horror</span></a></nav>
 </div></header>
 <main class="wrap">
 <section id="cat">
