@@ -37,7 +37,7 @@ import shutil
 import sys
 from pathlib import Path
 
-from . import __version__, agent, brief as brief_mod, build, criteria, evaluate, glb, judge as judge_mod, llm, paint
+from . import __version__, agent, brief as brief_mod, build, cpu, criteria, evaluate, glb, judge as judge_mod, llm, paint
 from . import palette, project, readiness, references, render, rig, selection, sheet, silhouette, streak, target, viewer
 
 PREVIEW_DIR = "preview"
@@ -883,6 +883,10 @@ def cmd_doctor(a) -> int:
     blender = build.find_blender()
     print(f"Blender: {blender or 'NOT FOUND (put `blender` on PATH or set ' + build.BLENDER_ENV + ')'}")
     try:
+        print(f"CPU: {cpu.describe(cpu.decide())}")
+    except ValueError as e:
+        print(f"CPU: not applied: {e}")
+    try:
         print(f"judge: {llm.resolve_backend().describe()} (key set)")
     except llm.LLMError as e:
         print(f"judge: not configured ({e}); everything but `judge` works without it")
@@ -1234,6 +1238,7 @@ def main(argv: list[str] | None = None) -> int:
         except (AttributeError, ValueError):
             pass
     a = parser().parse_args(argv)
+    cpu.govern()                                # before any work: everything started later inherits it
     try:
         return a.fn(a)
     except (project.ProjectError, ValueError) as e:

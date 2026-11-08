@@ -34,7 +34,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable
 
-from . import build, comparison_context, criteria, glb, harness, judge as judge_mod, paint, profile, readiness, render, resemblance
+from . import build, comparison_context, cpu, criteria, glb, harness, judge as judge_mod, paint, profile, readiness, render, resemblance
 from . import references, review, silhouette
 from .project import Project
 
@@ -616,7 +616,8 @@ def _evaluate_locked(project: Project, script: str | Path, out_dir: str | Path, 
     out_dir.mkdir(parents=True, exist_ok=True)
     spec = project.spec
     rec: dict = {"name": name or out_dir.name, "script": str(script), "note": note, "ok": False, "stage": "",
-                 "started": time.strftime("%Y-%m-%d %H:%M:%S"), "harness": harness.version()}
+                 "started": time.strftime("%Y-%m-%d %H:%M:%S"), "harness": harness.version(),
+                 "cpu": cpu.current()}
     try:
         source_bytes = Path(script).read_bytes()
         source_error = None
@@ -670,6 +671,7 @@ def _evaluate_locked(project: Project, script: str | Path, out_dir: str | Path, 
         return fail("build", "the model block is `textured`: give an atlas PNG or a paint plan")
     err = build_fn(script, built, spec, **({"atlas": atlas} if atlas is not None else {}),
                    **({"palette": project.palette} if painted else {}))
+    rec["cpu"] = cpu.current()                  # what the build ran under: it checks again before Blender starts
     if err:
         return fail("build", err)
     shot = render_fn(spec, built, out_dir / "renders")

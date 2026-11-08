@@ -1,8 +1,8 @@
-"""Keep every test offline and off the machine it runs on: no personal secrets file, no judge or agent configured, and no
-Blender unless a test asks for the real one."""
+"""Keep every test offline and off the machine it runs on: no personal secrets file, no judge or agent configured, no
+machine CPU limit, and no Blender unless a test asks for the real one."""
 import pytest
 
-from mesh_jig import build, llm
+from mesh_jig import build, cpu, llm
 
 JUDGE_VARS = ("MESH_JIG_JUDGE_URL", "MESH_JIG_JUDGE_MODEL", "MESH_JIG_JUDGE_KEY", "MESH_JIG_ENV_FILE",
               "MESH_JIG_AGENT_URL", "MESH_JIG_AGENT_MODEL", "MESH_JIG_AGENT_KEY",
@@ -12,8 +12,9 @@ JUDGE_VARS = ("MESH_JIG_JUDGE_URL", "MESH_JIG_JUDGE_MODEL", "MESH_JIG_JUDGE_KEY"
 @pytest.fixture(autouse=True)
 def offline(monkeypatch, tmp_path):
     monkeypatch.setattr(llm, "DEFAULT_ENV_FILE", str(tmp_path / "no-such-llm.env"))
-    for name in JUDGE_VARS:
+    for name in JUDGE_VARS + (cpu.CPUS_ENV, cpu.YIELD_ENV, cpu.PRIORITY_ENV):
         monkeypatch.delenv(name, raising=False)
+    monkeypatch.setattr(cpu, "_last", {})
 
 
 @pytest.fixture

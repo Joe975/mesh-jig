@@ -12,7 +12,7 @@ import shutil
 import sys
 import time
 
-from . import agent, articulation, brief, evaluate, glb, llm, project, readiness, references
+from . import agent, articulation, brief, cpu, evaluate, glb, llm, project, readiness, references
 from . import review as review_mod
 
 MODEL = "claude-haiku-5-5"
@@ -561,6 +561,7 @@ def comparison(source: project.Project, out: Path, chat_fn, *, iterations=10, ma
 
 
 def main(argv=None) -> int:
+    cpu.govern()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=("run", "compare"))
     parser.add_argument("project", type=Path)

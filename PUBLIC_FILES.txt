@@ -119,6 +119,7 @@ src/mesh_jig/build.py
 src/mesh_jig/checkpoint.py
 src/mesh_jig/cli.py
 src/mesh_jig/comparison_context.py
+src/mesh_jig/cpu.py
 src/mesh_jig/criteria.py
 src/mesh_jig/evaluate.py
 src/mesh_jig/gauntlet.py
@@ -181,6 +182,7 @@ tests/test_character.py
 tests/test_checkpoint_writes.py
 tests/test_comparison_context.py
 tests/test_completion_evidence_transfer.py
+tests/test_cpu.py
 tests/test_criteria.py
 tests/test_evaluate.py
 tests/test_evaluation_ownership.py

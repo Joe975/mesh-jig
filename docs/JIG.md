@@ -427,3 +427,8 @@ machine.
 | `MESH_JIG_AGENT_MODEL` | Model for `mesh-jig agent` (`--model` wins). No default. |
 | `MESH_JIG_AGENT_KEY` | Else the provider's own key, chosen by the URL's host: `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY` (api.anthropic.com), `GEMINI_API_KEY` (generativelanguage.googleapis.com), else `OPENAI_API_KEY`. The judge falls back the same way. |
 | `MESH_JIG_ENV_FILE` | A `KEY=VALUE` file that fills unset variables. Default `.env` in the directory mesh-jig is run from, when it exists (`.env.example` is the template). |
+| `MESH_JIG_CPUS` | Logical CPUs mesh-jig keeps to while limited, such as `12-15`. Unset: no limit. Every command, the MCP server and every Blender build apply it to mesh-jig's own process, so Blender and the sound runner inherit it, and Blender is given `--threads` to match. It changes how long work takes, never what it makes. Set it in your user environment, not the `.env` file: it is read before anything else. |
+| `MESH_JIG_YIELD_TO` | Limit only while one of these processes runs, comma separated, such as `vrcompositor.exe,vrserver.exe`. Checked again before every build. Unset with `MESH_JIG_CPUS` set: always limited. |
+| `MESH_JIG_PRIORITY` | Priority while limited: `below_normal` (default) or `idle`. |
+
+`mesh-jig doctor` prints the CPU limit in force, and each `eval.json` records the one its build ran under (`cpu`).

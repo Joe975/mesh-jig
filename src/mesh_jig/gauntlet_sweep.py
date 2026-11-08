@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 import time
 
-from . import agent, evaluate, gauntlet, project, sheet
+from . import agent, cpu, evaluate, gauntlet, project, sheet
 
 ARMS = {"gauntlet": "none", "mesh-jig": None,
         "checks-builder": "builder", "checks-both": "both"}
@@ -222,6 +222,7 @@ def sweep(source, out, *, iterations=10, workers=4, model=gauntlet.MODEL, effort
 
 
 def main(argv=None):
+    cpu.govern()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source", type=Path)
     parser.add_argument("--out", type=Path, required=True)

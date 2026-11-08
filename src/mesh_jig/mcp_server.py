@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from . import __version__, brief as brief_mod, build as build_mod, evaluate as evaluate_mod, glb, judge as judge_mod, llm, paint as paint_mod
-from . import project as project_mod, render, selection, silhouette
+from . import cpu, project as project_mod, render, selection, silhouette
 
 INSTRUCTIONS = (
     "mesh-jig builds, renders and measures a Blender model script against reference views. Call `brief` first: it "
@@ -259,6 +259,7 @@ def serve():
 
 
 def main() -> None:
+    cpu.govern()
     serve().run()
 
 

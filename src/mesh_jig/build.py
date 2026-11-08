@@ -15,7 +15,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import glb, script_check
+from . import cpu, glb, script_check
 
 RUNNER = Path(__file__).resolve().parent / "blender_runner.py"
 BLENDER_ENV = "MESH_JIG_BLENDER"
@@ -87,9 +87,11 @@ def build_variants(script: str | Path, out_dir: str | Path, spec: dict, *, blend
     if painted:
         (out_dir / PALETTE_FILE).write_text(json.dumps(palette or {}), encoding="utf-8")
 
+    limit = cpu.govern()                        # re-checked every build: a long-lived server follows the machine
+
     def one(item):
         variant, name = item
-        argv = [blender, "--background", "--factory-startup", "--python", str(RUNNER), "--", "--script", str(held),
+        argv = [blender, "--background", "--factory-startup", *cpu.blender_threads(limit), "--python", str(RUNNER), "--", "--script", str(held),
                 "--out", str(out_dir / name), "--variant", variant] + atlas_arg
         if spec.get("join"):
             argv += ["--join", "1"]
