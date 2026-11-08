@@ -11,8 +11,10 @@ def test_every_file_the_page_names_is_published_and_deployed():
     text = PAGE.read_text(encoding="utf-8")
     names = re.findall(r'(?:src|href)="([^":#]+)"', text)
     assert names
+    deployed = ("showcase/reference-", "showcase/explore-")      # what .github/workflows/pages.yml copies
     for name in names:
-        repo_path = name if name.startswith("showcase/reference-") else "site/" + name
+        repo_path = name if name.startswith("showcase/") else "site/" + name
+        assert not name.startswith("showcase/") or name.startswith(deployed), f"{name} is not deployed"
         assert repo_path in PUBLIC, f"the page names {name}, which is not published"
         assert (ROOT / repo_path).is_file(), name
 
