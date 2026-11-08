@@ -89,6 +89,8 @@ showcase/explore-horror/model-05.glb
 showcase/explore-horror/model-06.glb
 showcase/explore-horror/model-07.glb
 showcase/explore-horror/model-08.glb
+showcase/explore-horror/model-09.glb
+showcase/explore-horror/model-10.glb
 showcase/explore-horror/release.json
 showcase/explore-horror/summary.json
 showcase/explore-mech/README.md
