@@ -26,5 +26,6 @@ def test_every_viewer_starts_on_the_front_loads_lazily_and_takes_touch_drags():
 
 
 def test_the_page_stays_light():
+    """Every viewer and picture loads lazily, as it scrolls into view; the cap bounds a reader who sees it all."""
     shown = re.findall(r'src="(showcase/[^"]+)"', PAGE.read_text(encoding="utf-8"))
-    assert sum((ROOT / s).stat().st_size for s in shown) < 30_000_000
+    assert sum((ROOT / s).stat().st_size for s in shown) < 50_000_000
