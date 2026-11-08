@@ -1,0 +1,18 @@
+{
+  "files": {
+    "README.md": "4fae51daaf95ffcc6819faeee254e9db2f57fa43a6570dd586bef3250d41dfda",
+    "image-01.png": "4e426e5689e7fb7ca56b405f1602764c103c197c17439a4c794646b56e46e6ff",
+    "image-02.png": "968f37b03dacbab8dcb06347855865dee726f684419752086c7c630e12b62642",
+    "image-03.png": "2c785cda97d289463056199efcc882cd513e4c13d6ad57a5c0268293a21cd3db",
+    "image-04.png": "b64d1fd3726acad1cb2c8b167054878b4f91ad137b14d7a0af507c3dca870f23",
+    "image-05.png": "102bb72f9071ccd01dab7890afe1208e1f42b15863e51ee73cfc5bd3c42f7bc1",
+    "image-06.png": "e3a267755adccb3a6dd1afef112cc866312f4ec33fc1eeacb60f7818e8370d9e",
+    "image-07.png": "7d7cfdf7522f1ead6b5cd6f64fa792c887b4cadf0cdfcd21ab01e8733f9b8b97",
+    "model-01.glb": "b56c61bc7e539b67db8d25b71d95cea9df3e15d96df8346a73b4be4188262549",
+    "model-02.glb": "80969710101ddf244fa288d4da68a3e0e4e57165db1847369cee4337ee3adb3b",
+    "model-03.glb": "bfeb8e1eb7b912eef78e5f623c91e3a9ce2d9fe4f83dc842f51e924413c6586e",
+    "model-04.glb": "e96edebc963bbe767eb880b9683afe2807b92fc073ad43ec3ace8174b85847eb",
+    "summary.json": "1d739bc108698b05d4d4b873ee88892403de4f050e6acf3e036ba1caad0e77d2"
+  },
+  "schema_version": 1
+}

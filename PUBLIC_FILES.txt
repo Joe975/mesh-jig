@@ -190,6 +190,7 @@ showcase/reference-horror/image-03.png
 showcase/reference-horror/image-04.png
 showcase/reference-horror/image-05.png
 showcase/reference-horror/image-06.png
+showcase/reference-horror/image-07.png
 showcase/reference-horror/model-01.glb
 showcase/reference-horror/model-02.glb
 showcase/reference-horror/model-03.glb
