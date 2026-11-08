@@ -3,7 +3,7 @@ name: pages
 on:
   push:
     branches: [main]
-    paths: ["site/**", "showcase/reference-*/**", ".github/workflows/pages.yml"]
+    paths: ["site/**", "showcase/reference-*/**", "showcase/explore-*/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:
@@ -27,7 +27,7 @@ jobs:
         run: |
           mkdir -p _site/showcase
           cp -r site/. _site/
-          cp -r showcase/reference-* _site/showcase/
+          cp -r showcase/reference-* showcase/explore-* _site/showcase/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

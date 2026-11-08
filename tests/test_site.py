@@ -40,3 +40,14 @@ def test_every_example_sheet_is_published():
             sheet = (jig.parent / source).resolve()
             assert sheet.is_file(), (jig, source)
             assert sheet.relative_to(ROOT.resolve()).as_posix() in PUBLIC, (jig, source)
+
+
+def test_every_model_the_explorer_can_load_is_published():
+    import html
+    import json
+    blocks = re.findall(r'data-explore="([^"]+)"', PAGE.read_text(encoding="utf-8"))
+    assert blocks
+    for block in blocks:
+        for pick in json.loads(html.unescape(block)):
+            assert pick["src"].startswith("showcase/explore-") and pick["src"] in PUBLIC, pick["src"]
+            assert (ROOT / pick["src"]).is_file(), pick["src"]
