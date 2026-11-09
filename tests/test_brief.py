@@ -79,6 +79,20 @@ def test_the_agents_prompt_and_the_skill_leave_the_projects_facts_to_the_brief(t
         assert not any(phrase in text for phrase in CRAFT_ONLY), [p for p in CRAFT_ONLY if p in text]
 
 
+def test_the_brief_and_the_skill_agree_on_what_a_preview_is_for(tmp_path):
+    """The skill says the numbers diagnose and do not choose a winner. The brief every builder reads went on telling
+    it to "edit, build and preview an attempt until it is ahead of your best one", the numeric climb that blind
+    reviews ranked last, and the skill's own sentence could be read either way."""
+    proj = make(tmp_path / "p", {"front": (100, 200)}, {"shots": [FRONT]})
+    loop = brief.text(proj).split("THE LOOP:")[1]
+    assert "until it is ahead of your best" not in loop
+    assert "not to push its numeric" in loop and "decide what to change from the comparison pictures" in loop
+    skill = " ".join(SKILL.read_text(encoding="utf-8").split())
+    assert "do not repeat previews until" not in skill
+    assert "do not run preview after preview on a candidate just to push its numeric score past the previous" in skill
+    assert "use numbers to diagnose defects, not choose a visual winner" in skill
+
+
 def test_the_agents_prompt_gives_the_renderers_conversion_where_a_palette_is_painted_on_corners(tmp_path):
     views, model = {"front": (100, 200)}, {"shots": [FRONT]}
     painted = agent.system_prompt(make(tmp_path / "p", views, model, palette={"red": "#96372d"}), 5, 40, False)

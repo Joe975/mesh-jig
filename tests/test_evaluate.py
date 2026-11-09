@@ -583,6 +583,25 @@ def test_each_view_is_one_line_scored_views_first_and_the_pictures_directory_is_
             "sil_rear.png; not scored: sil_hero.png") in text
 
 
+def test_the_feedback_names_the_ruled_pairs_an_evaluation_wrote(tmp_path):
+    """Every evaluation of a project with a height wrote ruled_<view>.png beside the comparisons and the feedback
+    named the comparisons, the outline diffs and the close-ups: a builder with a shell was never pointed at the one
+    picture that puts its build and the reference on the same lines."""
+    rec = run(make_project(tmp_path), tmp_path, build_fn=fake_build())
+    assert "at ONE scale" not in evaluate.feedback(rec), "a project that draws none is told of none"
+    compare = tmp_path / "proj" / "attempts" / "a01" / "compare"
+    rec["ruled"] = {"side": str(compare / "ruled_side.png"), "hero": str(compare / "ruled_hero.png"),
+                    "top": str(compare / "ruled_top.png")}
+    text = evaluate.feedback(rec)
+    assert ("the same views at ONE scale on lines at round Blender metres (reference left, your build right: compare "
+            "where each part starts and ends against the lines), same directory: ruled_top.png, ruled_side.png; "
+            "not scored: ruled_hero.png") in text
+    assert text.count(str(compare)) == 1
+    lines = text.splitlines()
+    assert lines.index(next(x for x in lines if x.startswith("LOOK AT"))) + 1 == \
+        lines.index(next(x for x in lines if x.startswith("the same views at ONE scale")))
+
+
 def test_an_attempt_is_told_where_it_stands_among_the_others(tmp_path):
     proj = make_project(tmp_path, profile_mae_max=2.0)
     at = lambda name: tmp_path / "proj" / "attempts" / name    # noqa: E731

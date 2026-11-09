@@ -255,6 +255,24 @@ def test_the_default_env_file_is_dot_env_where_it_is_run_and_never_one_in_the_ho
     assert fresh.resolve_backend({"MESH_JIG_ENV_FILE": str(named)}).key == "from-named", "the named file wins"
 
 
+def test_env_file_names_a_shared_key_file_read_first(tmp_path):
+    shared, deeper = tmp_path / "shared.env", tmp_path / "deeper.env"
+    deeper.write_text("DEEPER=never\n")
+    shared.write_text(f"ANTHROPIC_API_KEY=central\nMESH_JIG_ENV_FILE={deeper}\n")
+    project = tmp_path / ".env"
+    project.write_text(f"MESH_JIG_ENV_FILE={shared}\nANTHROPIC_API_KEY=stale\nMESH_JIG_AGENT_MODEL=m\n")
+    env = {}
+    llm.load_env_file(str(project), env)
+    assert env["ANTHROPIC_API_KEY"] == "central", "the shared file's key wins over one left in the project file"
+    assert env["MESH_JIG_AGENT_MODEL"] == "m", "the project file still supplies its settings"
+    assert "DEEPER" not in env, "only one level is followed"
+    kept = {"ANTHROPIC_API_KEY": "set"}
+    llm.load_env_file(str(project), kept)
+    assert kept["ANTHROPIC_API_KEY"] == "set", "the environment still wins"
+    project.write_text(f"MESH_JIG_ENV_FILE={tmp_path / 'missing.env'}\nANTHROPIC_API_KEY=local\n")
+    assert llm.load_env_file(str(project), (env := {})) and env["ANTHROPIC_API_KEY"] == "local"
+
+
 def test_chat_shapes_the_payload_and_reads_the_reply():
     sent = {}
 

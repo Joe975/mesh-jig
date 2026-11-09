@@ -42,6 +42,11 @@ are refused. The numeric loop uses provider-reported dollars **after** each call
 and without positive reported cost it stops after the first, potentially billed call. Use provider-side
 spending limits where available; turn/time caps don't cap dollars.
 
+A direct Anthropic reservation counts a full input context and the whole reply cap (`--max-tokens`, thinking
+included, 128,000 by default on those models): at that default $0.87 a call on Haiku 5.5, $3.48 on Sonnet 5.5,
+$6.96 on Opus 5.5 and $13.92 on Fable 5.2. A run stops once less than one reservation is left, and a
+`--max-cost` below one makes no call. A smaller `--max-tokens` reserves less, at the risk of a reply cut short.
+
 ## Local endpoint
 
 Start your own compatible server, then substitute its loaded model ID and port:

@@ -442,7 +442,8 @@ def text(project: Project) -> str:
         + (f" --paint {root}/attempts/<name>/atlas_plan.json" if glb.texture_from(spec) == "plan" else "")
         + f", then mesh-jig preview {root} {root}/attempts/<name>\n"
         "  is a free look: the overlap, colour zones, resemblance and numeric score an evaluation of that build gives,\n"
-        "  with nothing added to the ledger. Edit, build and preview an attempt until it is ahead of your best one;\n"
+        "  with nothing added to the ledger. Use it to repair a candidate before it counts, not to push its numeric\n"
+        "  score past your best one's: decide what to change from the comparison pictures;\n"
         f"- mesh-jig eval {root} --script {root}/attempts/<name>/{glb.script_name(spec)}"
         + (f" --paint {root}/attempts/<name>/atlas_plan.json" if glb.texture_from(spec) == "plan" else "")
         + ' --note "<what you changed>"\n'

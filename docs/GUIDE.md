@@ -47,10 +47,15 @@ mesh-jig preview local-work/my-model local-work/my-model/attempts/a00
 mesh-jig check local-work/my-model local-work/my-model/attempts/a00
 mesh-jig eval local-work/my-model --script local-work/my-model/attempts/a00/model.py --note "initial volumes"
 mesh-jig show local-work/my-model a00
+mesh-jig review-brief local-work/my-model a00
 mesh-jig streak local-work/my-model
 ```
 
-Inspect comparisons, silhouette overlays, regional closeups and gates. Copy the best script to a new
+Inspect comparisons, the ruled pairs (reference and build at one scale on lines at round Blender metres),
+silhouette overlays, regional closeups and gates. `review-brief` prints what to hand a fresh reviewer of
+an evaluated attempt: the instructions the API workflow gives its own reviewer, the design brief and the
+pictures to open. It calls no model; a coding agent passes it to a subagent that has seen nothing else and
+saves the answer as the attempt's `review.md`. Copy the best script to a new
 attempt and fix the largest error. Keep evaluated attempts intact; failed builds aren't successful
 evaluations. GLBs are in `attempts/<name>/out/`, Y up, front along -Z.
 

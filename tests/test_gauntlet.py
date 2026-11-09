@@ -285,6 +285,121 @@ def test_files_confine_writes_and_block_metric_reads(seed):
             files.call("read_file", {"path": path})
     files.call("write_file", {"path": "attempts/a02/model.py", "text": "def build(): pass"})
     assert (current / "model.py").read_text() == "def build(): pass"
+    # what the builder is told it can read is what it can: an earlier round's script, and no ledger or record.
+    # Two runs in two asked for attempts/ledger.md and an eval.json in every round and were refused
+    (seed.attempts_dir / "a01").mkdir()
+    (seed.attempts_dir / "a01" / "model.py").write_text("def build(): old", encoding="utf-8")
+    assert "def build(): old" in files.call("read_file", {"path": "attempts/a01/model.py"})
+    said = " ".join(gauntlet.IMPLEMENTOR.split())
+    assert "The only files you can read are the model scripts and atlas plans under attempts/" in said
+    assert "there is no ledger or evaluation record to read" in said
+
+
+def test_the_review_brief_hands_a_reviewer_what_the_loops_own_reviewer_is_given(seed, capsys):
+    """A builder with a shell was told to "obtain a fresh visual critique" and no more: runs reviewed their own
+    work, left no review.md, or gave a subagent a prompt of the builder's own with neither the ruled pairs nor the
+    close-ups. One list of pictures and one set of instructions now serve both reviewers."""
+    from mesh_jig import cli, evaluate
+    attempt = seed.attempts_dir / "a01"
+    (attempt / "compare").mkdir(parents=True)
+    pictures = {"compare": {"front": "compare/front_vs_reference.png"}, "ruled": {"front": "compare/ruled_front.png"},
+                "closeups": {"face": "compare/region_face.png"}}
+    for paths in pictures.values():
+        for path in paths.values():
+            Image.new("RGB", (16, 16), "green").save(attempt / path)
+    (attempt / "eval.json").write_text(json.dumps({"ok": True, "name": "a01", "numeric": {"numeric_score": 0.4321},
+                                                    **pictures}), encoding="utf-8")
+    sent = []
+
+    def chat(messages, schemas):
+        if not schemas:
+            sent.append(messages)
+            return {"content": "Fix tail."}, {}
+        if messages[-1]["role"] == "tool":
+            return tool("submit"), {}
+        return tool("write_file", path="attempts/run-a01/model.py", text="def build(): pass"), {}
+
+    def evaluate_fn(proj, script, out, **kwargs):
+        return dict(evaluate.read(attempt), name=out.name)      # the loop's build has the pictures a01's record has
+
+    result = gauntlet.run(seed, chat, iterations=1, out=seed.root / "run", evaluate_fn=evaluate_fn, log=lambda s: None)
+    assert result["done"], result["error"]
+    loop_captions = [part["text"] for part in sent[0][1]["content"][1:] if part["type"] == "text"]
+
+    assert cli.main(["review-brief", str(seed.root), "a01"]) == 0
+    said = capsys.readouterr().out
+    head, body = said.split("-" * 78 + "\n")
+    assert "nothing else: no scores, no notes of yours, no earlier review" in head
+    assert str(attempt.resolve() / "review.md") in head
+    assert body.startswith(gauntlet.REVIEWER) and "A green creature with a long tail." in body
+    assert "0.4321" not in said
+    listed = [line[2:] for line in body.splitlines() if line.startswith("- ")]
+    assert [line.rsplit(": ", 1)[0] for line in listed] == loop_captions
+    assert listed[0] == f"Reference: front: {seed.references['front']}"
+    assert listed[2].endswith(str(Path("compare") / "ruled_front.png")) and "at ONE scale" in listed[2]
+    assert all(Path(line.rsplit(": ", 1)[1]).is_file() for line in listed)
+
+    assert cli.main(["review-brief", str(seed.root), "nothing-here"]) == 2
+    (attempt / "eval.json").write_text(json.dumps({"ok": False, "stage": "build", "error": "bad"}), encoding="utf-8")
+    assert cli.main(["review-brief", str(seed.root), "a01"]) == 1
+    assert "nothing to review" in capsys.readouterr().err
+    skill = (Path(__file__).resolve().parents[1] / "skill" / "mesh-jig" / "SKILL.md").read_text(encoding="utf-8")
+    assert "`mesh-jig review-brief <project> <attempt>`" in skill
+
+
+def rounds(openings, plan=False, script=lambda n: f"def build(): return 'round {n}'"):
+    """A builder that writes its script (and a plan) at each conversation's opening, then submits."""
+    def chat(messages, schemas):
+        if not schemas:
+            return {"content": "Fix tail."}, {}
+        if len(messages) > 2 and messages[-1]["role"] == "tool" and not (plan and len(messages) == 4):
+            return tool("submit"), {}
+        if len(messages) == 2:
+            openings.append(user_text(messages))
+            return tool("write_file", path=f"attempts/a{len(openings):02d}/model.py", text=script(len(openings))), {}
+        return tool("write_file", path=f"attempts/a{len(openings):02d}/atlas_plan.json",
+                    text=json.dumps({"ops": [], "round": len(openings)})), {}
+    return chat
+
+
+def test_from_round_two_the_opening_carries_the_previous_script_in_full(seed):
+    """Told only that the script was copied, a builder read its 693 lines back 200 at a call: three turns, each
+    sending every picture again, before it changed a line."""
+    openings = []
+    result = gauntlet.run(seed, rounds(openings), iterations=2, evaluate_fn=fake_eval, log=lambda s: None)
+    assert result["done"] and len(openings) == 2
+    first, second = openings[0].split("Round 1/2")[1], openings[1].split("Round 2/2")[1]
+    assert "Create your first complete model." in first and "def build()" not in first
+    assert "Your previous script is already copied here and shown below, after the feedback. Revise it." in second
+    assert "attempts/a02/model.py, in full as it is on disk now (a copy of attempts/a01/model.py)" in second
+    assert "def build(): return 'round 1'" in second
+    assert "atlas_plan.json" not in second          # no plan in this project: none is named for the builder to seek
+    assert second.index("Fix tail.") < second.index("def build(): return 'round 1'")
+
+
+def test_the_opening_carries_a_plan_that_was_copied_in_and_only_names_a_script_too_long_to_show(seed, monkeypatch):
+    seed.data["model"].update(textured=True, texture_from="plan")
+    openings = []
+    assert gauntlet.run(seed, rounds(openings, plan=True), iterations=2, evaluate_fn=fake_eval,
+                        log=lambda s: None)["done"]
+    second = openings[1].split("Round 2/2")[1]
+    assert "Your previous script and plan are already copied here and shown below, after the feedback. Revise them." in second
+    assert "attempts/a02/atlas_plan.json, in full as it is on disk now (a copy of attempts/a01/atlas_plan.json)" in second
+    assert '\\"round\\": 1' in second
+
+    root = seed.root.with_name("long")
+    root.mkdir()
+    for name in ("jig.json", "brief.md"):
+        (root / name).write_text((seed.root / name).read_text(), encoding="utf-8")
+    (root / "refs").mkdir()
+    Image.new("RGB", (16, 16), "green").save(root / "refs" / "front.png")
+    monkeypatch.setattr(agent, "MAX_FILE_READ", 40)
+    openings = []
+    assert gauntlet.run(project.load(root), rounds(openings, script=lambda n: "def build(): pass" + "  # pad" * 9),
+                        iterations=2, evaluate_fn=fake_eval, log=lambda s: None)["done"]
+    second = openings[1].split("Round 2/2")[1]
+    assert "attempts/a02/model.py is too long to show here: read it before you change it." in second
+    assert "# pad" not in second
 
 
 def test_comparison_identical_fresh_seeds_and_same_model_budget(seed, tmp_path):
@@ -719,3 +834,50 @@ def test_the_builder_hears_which_objects_of_its_last_build_show_their_backs(seed
     assert gauntlet.run(seed, chat, iterations=2, evaluate_fn=evaluate_fn, log=lambda s: None)["done"]
     assert "WOUND THE WRONG WAY" not in builder_saw[0]
     assert "body: the camera sees the back of up to 55% of it (front 55%, side 40%)" in builder_saw[2]
+
+
+def test_a_reply_cut_at_the_output_cap_is_left_out_and_the_builder_is_told(seed):
+    """A first call that spent its whole reply thinking came back empty and was answered as if the builder had only
+    forgotten its tools; a write_file cut in two ended the run."""
+    seen = []
+    cut = {"mesh_jig_completion": {"finish_reason": "max_tokens", "ambiguous": False}}
+
+    def chat(messages, schemas):
+        if not schemas:
+            return {"content": "Fix tail."}, {}
+        seen.append(json.loads(json.dumps(agent.strip_images(messages))))
+        if len(seen) == 1:
+            return tool("write_file", path="attempts/a01/model.py", text="def build(): half of"), cut
+        if len(seen) == 2:
+            return tool("write_file", path="attempts/a01/model.py", text="def build(): pass"), {}
+        return tool("submit"), {}
+
+    result = gauntlet.run(seed, chat, iterations=1, max_turns=5, max_tokens=4096, evaluate_fn=fake_eval,
+                          log=lambda s: None)
+    assert result["done"], result["error"]
+    assert (seed.attempts_dir / "a01" / "model.py").read_text() == "def build(): pass"    # the cut call never ran
+    assert len(seen[1]) == 2 and seen[1][1]["role"] == "user"       # the cut turn is not in the conversation
+    assert "cut off at the output limit of 4096 tokens" in json.dumps(seen[1])
+    assert "cut off" not in json.dumps(seen[0])
+    assert result["recoveries"] == [{"round": 1, "turn": 1, "kind": "reply-cut", "ok": False}]
+    assert result["turns"] == 3
+
+
+def test_a_refusal_stops_the_run_and_says_so(seed):
+    turns = []
+
+    def chat(messages, schemas):
+        turns.append(1)
+        return {"role": "assistant", "content": ""}, {"mesh_jig_completion": {"finish_reason": "refusal"}}
+
+    result = gauntlet.run(seed, chat, iterations=1, evaluate_fn=fake_eval, log=lambda s: None)
+    assert not result["done"] and "refusal" in result["error"] and len(turns) == 1
+
+
+def test_a_review_cut_at_the_output_cap_is_recorded(seed):
+    replies = iter([(tool("write_file", path="attempts/a01/model.py", text="def build(): pass"), {}),
+                    (tool("submit"), {}),
+                    ({"role": "assistant", "content": "1. Lengthen the"},
+                     {"mesh_jig_completion": {"finish_reason": "length", "ambiguous": False}})])
+    result = gauntlet.run(seed, lambda *args: next(replies), iterations=1, evaluate_fn=fake_eval, log=lambda s: None)
+    assert result["done"] and result["recoveries"] == [{"round": 1, "kind": "review-cut", "ok": True}]

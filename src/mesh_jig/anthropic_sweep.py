@@ -16,8 +16,12 @@ import urllib.request
 
 from . import gauntlet, llm
 
-RATES = {"claude-opus-5-5": (4., 20.), "claude-sonnet-5-5": (2., 10.),
+RATES = {"claude-fable-5-2": (8., 40.), "claude-opus-5-5": (4., 20.), "claude-sonnet-5-5": (2., 10.),
          "claude-haiku-5-5": (.5, 2.5)}  # Haiku's maximum (long-context) rates for reservations
+# What every model in RATES can write in one reply, thinking included. At high effort the thinking alone has taken
+# 50,000 to 63,000 tokens before a script was written, so a cap of 65,536 leaves a reply almost no room.
+MAX_OUTPUT_TOKENS = 128_000
+CUT = "max_tokens"      # the stop reason of a reply that ran into the output cap
 
 
 class Budget:
@@ -157,8 +161,11 @@ def payload(messages, schemas, history, model, max_tokens, effort="high"):
 
 
 def read_stream(response):
+    """-> (content blocks, usage, serving model, stop reason). A reply cut at the output cap (`CUT`) can end in the
+    middle of a tool call: that call's input is left as it started and the caller runs none of the reply's calls.
+    Broken tool input in a reply that was not cut is still an error."""
     blocks, partial, usage = {}, {}, {}
-    model, stopped = None, False
+    model, stopped, stop_reason = None, False, None
     for raw in response:
         if not raw.startswith(b"data:"):
             continue
@@ -186,6 +193,7 @@ def read_stream(response):
                 partial[index] = partial.get(index, "") + delta["partial_json"]
         elif kind == "message_delta":
             usage.update(event.get("usage", {}))
+            stop_reason = (event.get("delta") or {}).get("stop_reason") or stop_reason
         elif kind == "message_stop":
             stopped = True
             break
@@ -199,12 +207,18 @@ def read_stream(response):
         try:
             blocks[index]["input"] = json.loads(value)
         except json.JSONDecodeError as error:
+            if stop_reason == CUT:
+                continue
             raise llm.LLMError(f"invalid Anthropic tool input JSON at block {index}; no automatic retry") from error
-    return [blocks[i] for i in sorted(blocks)], usage, model
+    return [blocks[i] for i in sorted(blocks)], usage, model, stop_reason
 
 
 def chat_for(api, budget, label, *, max_tokens=65536, opener=urllib.request.urlopen,
              log=lambda text: None, effort="high"):
+    """The chat function over the native Messages API. `usage["mesh_jig_completion"]` carries the endpoint's own
+    stop reason, as `llm.assemble_chunks` does for the other transport. A reply cut at the output cap comes back
+    with its text and no tool call (`llm.cut_short(usage)` says so): a call that may have lost its end is not run,
+    and the reply's thinking is not kept for the next request, which never sees the cut turn."""
     if api.model not in RATES or api.url != "https://api.anthropic.com/v1":
         raise ValueError("native transport requires a supported direct Anthropic 5.5 model")
     if effort not in (None, "low", "medium", "high"):
@@ -225,7 +239,7 @@ def chat_for(api, budget, label, *, max_tokens=65536, opener=urllib.request.urlo
         try:
             timeout = api.timeout_s if left_s is None else max(1.0, min(api.timeout_s or left_s, left_s))
             with opener(request, timeout=timeout) as response:
-                blocks, raw_usage, served = read_stream(response)
+                blocks, raw_usage, served, stop_reason = read_stream(response)
             if served != api.model:
                 raise llm.LLMError(f"unexpected serving model {served}")
             if budget is not None:
@@ -235,8 +249,9 @@ def chat_for(api, budget, label, *, max_tokens=65536, opener=urllib.request.urlo
                 budget.failed(ticket)
             raise
         message = {"role": "assistant", "content": "".join(b["text"] for b in blocks if b["type"] == "text")}
-        calls = [{"id": b["id"], "type": "function", "function": {"name": b["name"],
-                  "arguments": json.dumps(b["input"])}} for b in blocks if b["type"] == "tool_use"]
+        calls = [] if stop_reason == CUT else [
+            {"id": b["id"], "type": "function", "function": {"name": b["name"], "arguments": json.dumps(b["input"])}}
+            for b in blocks if b["type"] == "tool_use"]
         if calls:
             message["tool_calls"] = calls
             history[identity(message)] = copy.deepcopy(blocks)
@@ -244,7 +259,9 @@ def chat_for(api, budget, label, *, max_tokens=65536, opener=urllib.request.urlo
         usage = {"prompt_tokens": raw_usage["input_tokens"] + cached,
                  "completion_tokens": raw_usage["output_tokens"],
                  "prompt_tokens_details": {"cached_tokens": cached},
-                 "native_usage": raw_usage, "served_model": served}
-        log(f"native call completed in {time.monotonic()-start:.1f}s")
+                 "native_usage": raw_usage, "served_model": served,
+                 "mesh_jig_completion": {"finish_reason": stop_reason, "ambiguous": False}}
+        log(f"native call completed in {time.monotonic()-start:.1f}s"
+            + (f"; cut at the {max_tokens}-token output cap" if stop_reason == CUT else ""))
         return message, usage
     return chat

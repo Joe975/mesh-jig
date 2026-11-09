@@ -251,3 +251,25 @@ def test_a_run_the_harness_breaks_still_delivers_its_last_build(root):
     rep = rig_agent.run(root, chat, builds=3, reviewer=False, log=lambda s: None)
     assert rep["error"] == "RuntimeError: the harness broke" and rep["final"] == "a01"
     assert (root / "animated.glb").is_file()
+
+
+@pytest.mark.parametrize("model,url,asked,given", [
+    ("claude-haiku-5-5", "https://api.anthropic.com/v1", None, 128_000),
+    ("claude-haiku-5-5", "https://api.anthropic.com/v1", 40000, 40000),
+    ("local", "http://localhost:1234/v1", None, 65536),
+])
+def test_a_native_rig_run_gets_the_models_whole_reply_unless_a_cap_is_asked_for(root, monkeypatch, model, url, asked, given):
+    """Thinking and the reply share the cap: at 65,536 three Haiku rig replies were all thinking, and a visual run
+    ended on a write cut in two."""
+    from mesh_jig import agent, anthropic_sweep, llm
+    caps = []
+
+    def factory(api, *args, **kwargs):
+        caps.append(kwargs["max_tokens"])
+        return lambda *a: pytest.fail("no model call is made here")
+    monkeypatch.setattr(anthropic_sweep, "chat_for", factory)
+    monkeypatch.setattr(agent, "chat_for", factory)
+    monkeypatch.setattr(rig_agent, "run", lambda *a, **kw: {"final": None})
+    rig_agent.drive(root, llm.Backend("test", url, model, "key"), max_tokens=asked, log=lambda s: None)
+    assert caps == [given]
+    assert anthropic_sweep.MAX_OUTPUT_TOKENS == 128_000

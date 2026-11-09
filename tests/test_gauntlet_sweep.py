@@ -58,6 +58,7 @@ def test_sweep_clones_identical_seeds_routes_arms_and_keeps_partial_results(tmp_
     def chat_for(api, **kwargs):
         assert api.timeout_s == 1800
         assert kwargs["idle_s"] == 900
+        assert kwargs["max_tokens"] == gauntlet_sweep.gauntlet.MAX_TOKENS     # the compatibility endpoint's, unchanged
         return lambda *a: ({"content": "ok"}, {"prompt_tokens": 10, "completion_tokens": 5})
     monkeypatch.setattr(agent, "chat_for", chat_for)
     if model == "claude-opus-5-5":
@@ -65,15 +66,20 @@ def test_sweep_clones_identical_seeds_routes_arms_and_keeps_partial_results(tmp_
         def native_chat_for(api, budget, label, **kwargs):
             assert budget.limit == 44
             assert label in gauntlet_sweep.ARMS
-            assert kwargs["max_tokens"] == gauntlet_sweep.gauntlet.MAX_TOKENS
+            # the native transport gets the model's whole reply: at 65,536 a visual run's fourth round ended on a
+            # write cut at the cap
+            assert kwargs["max_tokens"] == anthropic_sweep.MAX_OUTPUT_TOKENS == 128_000
             return lambda *a: ({"content": "ok"}, {"prompt_tokens": 10, "completion_tokens": 5})
         monkeypatch.setattr(anthropic_sweep, "chat_for", native_chat_for)
         def wrong_transport(*a, **kw):
             pytest.fail("Opus high must use the native transport")
         monkeypatch.setattr(agent, "chat_for", wrong_transport)
 
+    cap = 128_000 if model == "claude-opus-5-5" else gauntlet_sweep.gauntlet.MAX_TOKENS
+
     def fake_run(proj, chat, **kwargs):
         assert kwargs["model"] == model
+        assert kwargs.get("max_tokens", cap) == cap      # the visual arms are told the cap their replies really have
         seen[proj.root.name] = kwargs.get("checks", "control")
         assert not proj.attempts_dir.exists()
         chat([], [{}])
@@ -94,6 +100,7 @@ def test_sweep_clones_identical_seeds_routes_arms_and_keeps_partial_results(tmp_
                                   idle_s=900, call_timeout_s=1800,
                                   budget_usd=44 if model == "claude-opus-5-5" else None)
     assert result["idle_s"] == 900 and result["call_timeout_s"] == 1800
+    assert result["max_tokens"] == cap
     assert result["model"] == model
     assert result["effort"] == (effort or "provider default")
     assert result["status"] == "incomplete"

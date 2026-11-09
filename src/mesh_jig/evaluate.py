@@ -1164,6 +1164,13 @@ def picture_lines(rec: dict, scored: list[str]) -> list[str]:
     folder, names = listed(rec.get("compare") or {})
     if names:
         lines.append("LOOK AT (reference left, your build right)" + (f" in {folder}" if folder else "") + ": " + names)
+    # written by every evaluation that can draw them and, until this line, named to no builder with a shell: the
+    # pictures above are each scaled to their own subject, so only these show where a part ends
+    at, pairs = listed(rec.get("ruled") or {})
+    if pairs:
+        where = ", same directory" if at and at == folder else f" in {at}" if at else ""
+        lines.append("the same views at ONE scale on lines at round Blender metres (reference left, your build right: "
+                     f"compare where each part starts and ends against the lines){where}: {pairs}")
     over, diffs = listed(rec.get("overlays") or {})
     if diffs:
         where = ", same directory" if over and over == folder else f" in {over}" if over else ""

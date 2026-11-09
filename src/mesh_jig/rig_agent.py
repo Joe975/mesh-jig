@@ -645,7 +645,8 @@ def drive(root: Path, backend: llm.Backend, *, builds: int = 8, max_turns: int =
     native = backend.url == gauntlet.URL and backend.model in anthropic_sweep.RATES
     if max_cost and not native:
         raise ValueError("a reserved spend cap needs a direct Anthropic Haiku/Sonnet/Opus 5.5 endpoint")
-    max_tokens = max_tokens or gauntlet.MAX_TOKENS
+    # as the visual workflow: thinking and the reply share the cap, and three Haiku rig replies were all thinking
+    max_tokens = max_tokens or (anthropic_sweep.MAX_OUTPUT_TOKENS if native else gauntlet.MAX_TOKENS)
     slug = re.sub(r"[^A-Za-z0-9._-]+", "-", backend.model).strip("-") or "model"
     out = root / agent.RUNS_DIR / f"{time.strftime('%Y%m%d-%H%M%S')}_{slug}_rig"
     budget = anthropic_sweep.Budget(out / "budget.json", max_cost, backend.model) if max_cost else None

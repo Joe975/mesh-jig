@@ -191,3 +191,24 @@ def test_the_reviewer_can_think_at_its_own_effort(seed, monkeypatch):
     visual_agent.run(seed, backend(), attempts=1, effort="low", log=lambda s: None)
     assert {c for c in calls} == {("builder", "low"), ("reviewer", "low")}, "unset, the reviewer thinks as the builder"
     assert cli.parser().parse_args(["agent", "p", "--review-effort", "high"]).review_effort == "high"
+
+
+@pytest.mark.parametrize("model,url,asked,given", [
+    ("claude-fable-5-2", gauntlet.URL, None, anthropic_sweep.MAX_OUTPUT_TOKENS),
+    ("claude-fable-5-2", gauntlet.URL, 40000, 40000),
+    ("local", "http://localhost:1234/v1", None, gauntlet.MAX_TOKENS),
+])
+def test_a_native_run_gets_the_models_whole_reply_unless_a_cap_is_asked_for(seed, monkeypatch, model, url, asked, given):
+    """At 65,536 a first call's thinking left 14,000 tokens for the script and a later rewrite 2,300."""
+    caps = []
+
+    def factory(api, *args, **kwargs):
+        caps.append(kwargs["max_tokens"])
+
+        def chat(*a):
+            raise llm.LLMError("stop here")
+        return chat
+    monkeypatch.setattr(anthropic_sweep, "chat_for", factory)
+    monkeypatch.setattr(agent, "chat_for", factory)
+    result, _ = visual_agent.run(seed, backend(model, url), max_tokens=asked, log=lambda s: None)
+    assert caps == [given] and result["max_tokens"] == given

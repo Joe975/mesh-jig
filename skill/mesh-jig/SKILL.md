@@ -31,7 +31,8 @@ a denied command is not a sign that the next one will be.
    has nothing to copy: `mesh-jig new <project> a01-baseline` makes its directory and you write `model.py` there
    (an upright character can start from `mesh-jig docs recipe`).
 4. Build a complete candidate. Optional `mesh-jig build` and `mesh-jig preview` can help repair it, but do not
-   repeat previews until its numeric score beats the previous attempt. A preview has no outline table: for a free
+   run preview after preview on a candidate just to push its numeric score past the previous attempt's. A preview
+   has no outline table: for a free
    draft that has one, `mesh-jig eval ... --no-ledger --short` measures it all and adds nothing to the ledger. `build` is quick and prints the triangle
    count against the ceiling and the nodes holding the most: run it before `eval` when near the ceiling, and before
    the first `eval` of a script you have changed a lot, since an `eval` that fails the build or the contract still
@@ -44,7 +45,9 @@ a denied command is not a sign that the next one will be.
    numbers, each gate that FAILED and what it needed, where the attempt stands against your best one and which
    views moved); the views, the colours and every row of the outline table follow. Open the `*_vs_reference.png`
    files it names (reference left, your build right) and the `sil_*.png` outline diffs (red: add body here, blue:
-   remove body here). When the project marks regions it also names `region_*.png` close-ups: each marked region
+   remove body here). Where it names `ruled_*.png` pairs, open those too: the reference and your build at one
+   scale on lines at round Blender metres, which is where to read how far a part of yours ends from where the
+   reference's does. When the project marks regions it also names `region_*.png` close-ups: each marked region
    cut from the reference and from your build and enlarged, side by side. A face or a small part is read there,
    not in the whole view, and a preview draws them too. To read an evaluation again run
    `mesh-jig show <project> <attempt>`, never `eval` a second time: that adds a second line to the ledger. The
@@ -53,8 +56,11 @@ a denied command is not a sign that the next one will be.
    each gate, where it stands and which score terms moved) and leaves the rest to that file; read the rest when
    the verdict does not say what to change.
 7. Obtain a fresh visual critique from the brief, references, comparison views and close-ups, without builder
-   reasoning or numeric scores. Use a separate reviewer when available; label self-review honestly when it is
-   not. Save the critique in the attempt's `review.md`: up to five concrete fixes and features to preserve.
+   reasoning or numeric scores. `mesh-jig review-brief <project> <attempt>` prints what to hand a reviewer: the
+   instructions `mesh-jig agent` gives its own reviewer, the design brief and every picture to open. Start a
+   separate reviewer (a subagent that has seen nothing of your work) with that text and those pictures and
+   nothing else; when you cannot start one, review from the same text yourself and label it self-review at the
+   top. Save the critique in the attempt's `review.md`: up to five concrete fixes and features to preserve.
    Fix the largest visible mismatch first and go to 3. Do not restart the model without a structural reason.
 
 Start with a baseline that gets the overall proportions right. Use five evaluated attempts unless the user

@@ -11,6 +11,7 @@
     mesh-jig docs organic|contract|recipe                                 print a file the skill links to
     mesh-jig eval <project> --script <attempt>/model.py --note "..."      build + render + measure + ledger line
     mesh-jig show <project> <attempt>                                     what eval said of it, read back
+    mesh-jig review-brief <project> <attempt>                             what to hand a fresh reviewer of it
     mesh-jig build <project> --script <attempt>/model.py                  build and contract check only
     mesh-jig check <project> <attempt>                                    the contract check alone
     mesh-jig paint <project> --plan plan.json --out atlas.png             paint an atlas plan
@@ -684,6 +685,25 @@ def cmd_show(a) -> int:
     return 0
 
 
+def cmd_review_brief(a) -> int:
+    """What a fresh reviewer of an evaluated attempt is given: the instructions `mesh-jig agent` gives its own
+    reviewer, the design brief and the pictures to open. It calls no model and writes nothing."""
+    from . import gauntlet
+    proj = project.load(a.project, getattr(a, "target", None))
+    attempt = a.attempt if a.attempt.is_dir() else proj.attempts_dir / a.attempt
+    if not (attempt / evaluate.EVAL_FILE).is_file():
+        print(f"no {evaluate.EVAL_FILE} under {a.attempt}: give an attempt directory, or its name under "
+              f"{proj.attempts_dir}, that `mesh-jig eval` has measured", file=sys.stderr)
+        return 2
+    attempt = attempt.resolve()
+    try:
+        print(gauntlet.review_brief(proj, evaluate.read(attempt), attempt))
+    except ValueError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    return 0
+
+
 def cmd_judge(a) -> int:
     proj = project.load(a.project, getattr(a, "target", None))
     if not a.self_check and not a.b:
@@ -1089,6 +1109,12 @@ def parser() -> argparse.ArgumentParser:
     s.add_argument("project", type=Path)
     s.add_argument("attempt", type=Path, help="an attempt directory, or its name under <project>/attempts/")
     s.set_defaults(fn=cmd_show)
+
+    s = subs.add_parser("review-brief", help="what to hand a fresh reviewer of an evaluated attempt: the reviewer's "
+                        "instructions, the design brief and the pictures to open. Calls no model")
+    s.add_argument("project", type=Path)
+    s.add_argument("attempt", type=Path, help="an attempt directory, or its name under <project>/attempts/")
+    s.set_defaults(fn=cmd_review_brief)
 
     s = subs.add_parser("build", help="build and contract check only")
     s.add_argument("project", type=Path)

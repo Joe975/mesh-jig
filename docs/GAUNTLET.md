@@ -23,6 +23,13 @@ evaluation or ledger files. Deterministic mesh-jig measurements still run on eve
 but agents see only build failures and the reviewer's visual critique. Failed builds are repairable within the
 iteration's turn ceiling and do not count as iterations.
 
+From the second round the implementor's opening message carries its previous script (and atlas plan) in full,
+and its instructions say which files it can read.
+
+Thinking and the visible reply share one output cap. A builder's reply that runs into it is left out of the
+conversation, the builder is told, and `report.json` lists it under `recoveries` as `reply-cut`. Through
+`mesh-jig agent` the cap on the direct Anthropic models defaults to 128,000 tokens; `--max-tokens` changes it.
+
 A note left at `<project>/steer.md` reaches the builder before its next turn, once, and never the reviewer.
 
 A round that cannot build is not lost at once:

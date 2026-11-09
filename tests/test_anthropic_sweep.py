@@ -49,7 +49,8 @@ def test_stream_empty_tool_delta_preserves_initial_input_and_usage():
     response = events()
     response[3]["content_block"]["name"] = "submit"
     response[4]["delta"]["partial_json"] = ""
-    blocks, usage, model = native.read_stream(stream_events(response))
+    blocks, usage, model, stop = native.read_stream(stream_events(response))
+    assert stop is None
     assert blocks[1]["input"] == {}
     assert blocks[0]["signature"] == "opaque"
     assert usage == {"input_tokens": 20, "output_tokens": 100}
@@ -58,7 +59,7 @@ def test_stream_empty_tool_delta_preserves_initial_input_and_usage():
 
 def test_stream_empty_data_line_is_ignored():
     response = io.BytesIO(b"data: \n\n" + stream_events(events()).getvalue())
-    blocks, usage, _ = native.read_stream(response)
+    blocks, usage, _, _ = native.read_stream(response)
     assert blocks[1]["input"] == {"path": "brief.md"}
     assert usage["output_tokens"] == 100
 
@@ -140,11 +141,12 @@ def test_budget_waits_for_inflight_usage_before_refusing(tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize("model,reserved,settled", [
+    ("claude-fable-5-2", 11.42144, .048),
     ("claude-sonnet-5-5", 2.85536, .012),
     ("claude-haiku-5-5", .71384, .0006),
 ])
 def test_model_specific_reservations_and_usage(tmp_path, model, reserved, settled):
-    budget = native.Budget(tmp_path / "budget.json", 10, model)
+    budget = native.Budget(tmp_path / "budget.json", 20, model)
     ticket = budget.reserve(65536, "both roles")
     assert budget.committed() == pytest.approx(reserved)
     budget.settle(ticket, {"input_tokens": 1000, "output_tokens": 1000})
@@ -184,3 +186,57 @@ def test_unexpected_serving_model_keeps_full_reservation(tmp_path):
         native.chat_for(api, budget, "test", opener=opener)([{"role": "user", "content": "hi"}], [])
     assert budget.committed() == pytest.approx(5.71072)
     assert budget.entries[0]["state"] == "unknown_charge_reserved"
+
+
+def cut_events():
+    """A reply that ran into the output cap in the middle of a tool call: text, then half of a write_file."""
+    response = events()
+    response[3]["content_block"]["name"] = "write_file"
+    response[4]["delta"]["partial_json"] = '{"path": "attempts/a01/model.py", "text": "def build():'
+    response[5] = {"type": "message_delta", "delta": {"stop_reason": "max_tokens"}, "usage": {"output_tokens": 65536}}
+    response[3:3] = [{"type": "content_block_start", "index": 2, "content_block": {"type": "text", "text": ""}},
+                     {"type": "content_block_delta", "index": 2, "delta": {"type": "text_delta", "text": "Writing it."}}]
+    return response
+
+
+def test_the_stop_reason_is_read_and_a_reply_that_ended_itself_runs_its_calls():
+    response = events()
+    response[5] = {"type": "message_delta", "delta": {"stop_reason": "tool_use"}, "usage": {"output_tokens": 100}}
+    api = SimpleNamespace(model="claude-opus-5-5", url="https://api.anthropic.com/v1", key="test", timeout_s=900)
+    msg, usage = native.chat_for(api, None, "test", opener=lambda *a, **kw: stream_events(response))(
+        [{"role": "user", "content": "hi"}], [])
+    assert usage["mesh_jig_completion"] == {"finish_reason": "tool_use", "ambiguous": False}
+    assert not llm.cut_short(usage) and msg["tool_calls"][0]["function"]["name"] == "read_file"
+
+
+def test_a_reply_cut_at_the_output_cap_runs_no_call_and_its_thinking_is_not_sent_back():
+    """Before this the half-written tool input was an error that ended the run, and nothing said the cap was hit."""
+    requests = []
+
+    def opener(req, **kwargs):
+        requests.append(json.loads(req.data))
+        return stream_events(cut_events())
+    api = SimpleNamespace(model="claude-opus-5-5", url="https://api.anthropic.com/v1", key="test", timeout_s=900)
+    chat = native.chat_for(api, None, "test", opener=opener)
+    msgs = [{"role": "user", "content": "build"}]
+    msg, usage = chat(msgs, [])
+    assert llm.cut_short(usage) and llm.finish_reason(usage) == "max_tokens"
+    assert msg == {"role": "assistant", "content": "Writing it."}
+    chat(msgs + [msg, {"role": "user", "content": "again"}], [])
+    assert requests[1]["messages"][1] == {"role": "assistant", "content": [{"type": "text", "text": "Writing it."}]}
+
+
+def test_broken_tool_input_in_a_reply_that_was_not_cut_is_still_an_error():
+    response = cut_events()
+    response[7] = {"type": "message_delta", "delta": {"stop_reason": "tool_use"}, "usage": {"output_tokens": 100}}
+    with pytest.raises(llm.LLMError, match="tool input JSON"):
+        native.read_stream(stream_events(response))
+
+
+@pytest.mark.parametrize("usage,cut", [({"mesh_jig_completion": {"finish_reason": "length"}}, True),
+                                       ({"mesh_jig_completion": {"finish_reason": "max_tokens"}}, True),
+                                       ({"mesh_jig_completion": {"finish_reason": "stop"}}, False),
+                                       ({"mesh_jig_completion": {"finish_reason": None, "ambiguous": True}}, False),
+                                       ({}, False), (None, False)])
+def test_a_cut_reply_is_named_by_the_endpoints_own_reason_and_never_guessed(usage, cut):
+    assert llm.cut_short(usage) is cut

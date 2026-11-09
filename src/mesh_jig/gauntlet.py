@@ -27,7 +27,10 @@ reference. Preserve what works. You receive the previous
 script and review each round; do not restart from primitives unless that solves a stated structural problem.
 Use the file tools to write or edit the current attempt, then call submit. A failed build may be repaired within
 this round. submit is the only build operation; a successful submission ends your round automatically.
-Only the current attempt's model script and atlas_plan.json may be changed. No shell or external files.
+Only the current attempt's model script and atlas_plan.json may be changed. The only files you can read are the
+model scripts and atlas plans under attempts/, earlier rounds' included: there is no ledger or evaluation record
+to read, and all you are given about the previous build is in the round's opening message. No shell or external
+files.
 The harness exports and renders your model. Follow the supplied script contract exactly."""
 REVIEWER = """You are an independent adversarial art reviewer. Compare the supplied reference views against
 the candidate renders: comparison images have REFERENCE LEFT, CANDIDATE RIGHT. Inspect every view and close-up.
@@ -52,6 +55,12 @@ RULED_CAPTION = ("Reference, ruled in Blender metres (the lines are round coordi
 RULED_PAIR_CAPTION = ("Previous build beside the reference, both at one scale on the same Blender-metre lines "
                       "(reference left, yours right): where a part of yours ends against a line, compare where the "
                       "reference's ends")
+# A reply that ran into the output cap is left out of the conversation and the builder is told why. Thinking and
+# the reply share the cap: one first call spent 32,768 tokens thinking and wrote nothing, and a second-round rewrite
+# took 63,234 of 65,536.
+CUT_NOTE = ("[Your last reply was cut off at the output limit of {cap} tokens, which your thinking and your reply "
+            "share. Nothing in it was kept or run. Settle on the next step with less deliberation and act on it; "
+            "send a long script in parts, a write_file of the first part and edit_file calls that add the rest.]")
 STEER = "steer.md"          # a note from the person running the loop, in the project directory
 STEER_HEAD = ("NOTE FROM THE PERSON RUNNING THIS BUILD (they are watching your builds; where this note and the "
               "reviewer disagree, follow this note):\n")
@@ -125,6 +134,46 @@ def visual_brief(proj: project.Project) -> str:
                "preserve exact declared node names):\n" + json.dumps(proj.review)
                if proj.review else "")
             + ("\n" + articulation.brief_text(proj.review) if articulation.brief_text(proj.review) else ""))
+
+
+# What a reviewer is shown of a build, after the plain references: the key of the evaluation's record and the caption.
+# The ruled pairs are the same views at one scale on fixed lines: where a part ends, which the comparison pictures
+# (each scaled to its own subject) cannot show. The close-ups are the marked regions enlarged.
+REVIEW_PICTURES = (
+    ("compare", "Reference left, candidate right"),
+    ("ruled", "Reference left, candidate right, at ONE scale on the same fixed lines: compare where each part starts "
+              "and ends against the lines"),
+    ("closeups", "Region close-up: reference left, candidate right"))
+
+
+def review_pictures(proj: project.Project, rec: dict) -> list[tuple[str, dict]]:
+    """Every picture a reviewer of this build is shown, in order, as (caption, name -> path). One list for the loop's
+    own reviewer and for `review_brief`, so a reviewer started any other way is shown what the loop's is."""
+    return [("Reference", dict(proj.references))] + [(caption, rec.get(key) or {}) for key, caption in REVIEW_PICTURES]
+
+
+def review_brief(proj: project.Project, rec: dict, attempt: Path) -> str:
+    """The loop's reviewer for a builder that is not in the loop: the reviewer's instructions, the design brief and
+    the pictures to open, as text to hand to a fresh reviewer (a coding agent's subagent, a person). Builders with a
+    shell were told only to "obtain a fresh visual critique", and several runs reviewed their own work or left no
+    review. ValueError for an attempt with no evaluation that passed."""
+    if not rec.get("ok") or not rec.get("compare"):
+        raise ValueError(f"{attempt.name} has no evaluation that built and rendered: there is nothing to review")
+    shown = [f"- {caption}: {name}: {path}" for caption, paths in review_pictures(proj, rec)
+             for name, path in sorted(paths.items())]
+    return "\n".join([
+        f"REVIEW BRIEF for {attempt.name}. Give a fresh reviewer everything below the line and the pictures it lists, "
+        "and nothing else: no scores, no notes of yours, no earlier review, no other attempt. A reviewer that has "
+        "seen your reasoning repeats it. This is what `mesh-jig agent` gives its own reviewer.",
+        f"Save the reviewer's answer, as it gave it, in {attempt / 'review.md'}.",
+        "-" * 78,
+        REVIEWER,
+        "",
+        "DESIGN BRIEF:",
+        proj.brief.strip(),
+        "",
+        "PICTURES (open every one, in this order):",
+        *shown])
 
 
 class Files:
@@ -259,6 +308,18 @@ def run(proj: project.Project, chat_fn, *, iterations=10, max_turns=24, model=MO
                     if rec and rec.get("ok"):
                         return rec, ""
                 raise
+            usage = report["calls"][-1]["usage"]
+            if llm.finish_reason(usage) == "refusal":
+                raise RuntimeError("the model declined the request (stop reason: refusal); nothing was built from it")
+            if llm.cut_short(usage):
+                # the turn stays out of the conversation (the transcript has it): a tool call in it may have lost
+                # its end, and thinking that was cut cannot be sent back
+                tell(messages, CUT_NOTE.format(cap=max_tokens))
+                report["recoveries"].append({"round": index, "turn": turn + 1, "kind": "reply-cut", "ok": False})
+                log(f"gauntlet round {index}: the builder's reply was cut at the {max_tokens}-token output cap; "
+                    "it is told so and asked again")
+                save()
+                continue
             message = {k: v for k, v in message.items() if k in ("role", "content", "tool_calls")}
             message["role"] = "assistant"
             try:
@@ -362,11 +423,28 @@ def run(proj: project.Project, chat_fn, *, iterations=10, max_turns=24, model=MO
                         shutil.copy2(source, attempt / filename)
             files = Files(proj, attempt)
 
-            def opening(text):
+            def carried():
+                """The files copied in from the previous round, in full. Left to read_file, which gives 200 lines a
+                call, a 693-line script took three turns to read before a line of it was changed."""
+                said = []
+                for filename in (script_file, "atlas_plan.json"):
+                    path = attempt / filename
+                    if not path.is_file():
+                        continue
+                    source = path.read_text(encoding="utf-8", errors="replace")
+                    where = f"attempts/{name}/{filename}"
+                    said.append(f"{where} is too long to show here: read it before you change it."
+                                if len(source) > agent.MAX_FILE_READ else
+                                f"{where}, in full as it is on disk now (a copy of attempts/{previous['name']}/"
+                                f"{filename}):\n{source}")
+                return said
+
+            def opening(text, files_shown=()):
                 parts = [{"type": "text", "text": visual_brief(proj)}] + pictures(
                     {v: p for v, p in proj.references.items() if v not in ruled}, "Reference")
                 parts += pictures(ruled, RULED_CAPTION)
                 parts += [{"type": "text", "text": text + ("\nADVERSARIAL FEEDBACK:\n" + feedback if previous else "")}]
+                parts += [{"type": "text", "text": shown} for shown in files_shown]
                 if previous:
                     metric = previous.get("ruled") or {}
                     parts += pictures({v: p for v, p in (previous.get("compare") or {}).items() if v not in metric},
@@ -408,10 +486,13 @@ def run(proj: project.Project, chat_fn, *, iterations=10, max_turns=24, model=MO
                 return parts
 
             log(f"gauntlet round {index}/{iterations}: implementor")
+            shown = carried() if previous else []
             rec, error = conversation(index, attempt, files, opening(
                 f"Round {index}/{iterations}. Current directory: attempts/{name}/. "
-                + ("Your previous script and plan are already copied here. Read them, then revise."
-                   if previous else "Create your first complete model.")))
+                + (("Your previous script and plan are" if len(shown) > 1 else "Your previous script is")
+                   + " already copied here and shown below, after the feedback. Revise "
+                   + ("them." if len(shown) > 1 else "it.")
+                   if previous else "Create your first complete model."), shown))
             for _again in range(1, CONVERSATIONS):
                 if rec:
                     break
@@ -447,13 +528,8 @@ def run(proj: project.Project, chat_fn, *, iterations=10, max_turns=24, model=MO
                 continue
             log(f"gauntlet round {index}/{iterations}: adversarial reviewer")
             review_parts = [{"type": "text", "text": proj.brief}]
-            review_parts += pictures(proj.references, "Reference")
-            review_parts += pictures(rec.get("compare") or {}, "Reference left, candidate right")
-            # the same views at one scale on fixed lines: where a part ends, which the pictures above (each scaled to
-            # its own subject) cannot show
-            review_parts += pictures(rec.get("ruled") or {}, "Reference left, candidate right, at ONE scale on the "
-                                     "same fixed lines: compare where each part starts and ends against the lines")
-            review_parts += pictures(rec.get("closeups") or {}, "Region close-up: reference left, candidate right")
+            for caption, paths in review_pictures(proj, rec):
+                review_parts += pictures(paths, caption)
             reviewer_prompt = REVIEWER
             if checks == "both":
                 review_parts += [{"type": "text", "text": "JIG CHECKS FOR CURRENT BUILD:\n"
@@ -468,6 +544,11 @@ def run(proj: project.Project, chat_fn, *, iterations=10, max_turns=24, model=MO
             review_messages = [{"role": "system", "content": reviewer_prompt}, {"role": "user", "content": review_parts}]
             response = call("reviewer", review_messages, [])
             feedback = response.get("content") or ""
+            if llm.cut_short(report["calls"][-1]["usage"]):
+                # what there is of it still goes to the builder; the report says it is not the whole review
+                report["recoveries"].append({"round": index, "kind": "review-cut",
+                                             "ok": bool(isinstance(feedback, str) and feedback.strip())})
+                log(f"gauntlet round {index}: the review was cut at the {max_tokens}-token output cap")
             if not isinstance(feedback, str) or not feedback.strip():
                 raise RuntimeError("reviewer returned no critique; refusing to advance without feedback")
             (attempt / "review.md").write_text(feedback + "\n", encoding="utf-8")

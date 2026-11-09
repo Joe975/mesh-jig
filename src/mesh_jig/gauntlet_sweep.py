@@ -40,6 +40,8 @@ def estimate_cost(usage, model=gauntlet.MODEL):
         input_rate, output_rate, cache_rate = 2., 10., .10
     elif model == "claude-opus-5-5":
         input_rate, output_rate, cache_rate = 4., 20., .20
+    elif model == "claude-fable-5-2":
+        input_rate, output_rate, cache_rate = 8., 40., .20
     else:
         return None
     return round(((prompt - cached) * input_rate + cached * cache_rate + output * output_rate) / 1_000_000, 8)
@@ -160,9 +162,13 @@ def sweep(source, out, *, iterations=10, workers=4, model=gauntlet.MODEL, effort
     source_hashes = {p.relative_to(repo).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
                      for folder in ("src", "skill") for p in (repo / folder).rglob("*")
                      if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc"}
+    # a budget means the native transport, which takes the models' whole reply (thinking and the reply share the
+    # cap); the compatibility endpoint keeps the cap its sweeps were run at
+    from .anthropic_sweep import MAX_OUTPUT_TOKENS
+    max_tokens = MAX_OUTPUT_TOKENS if budget_usd is not None else gauntlet.MAX_TOKENS
     manifest = {"status": "running", "started_utc": datetime.now(timezone.utc).isoformat(),
                 "model": model, "endpoint": gauntlet.URL, "iterations": iterations,
-                "workers": workers, "max_tokens": gauntlet.MAX_TOKENS, "max_turns_per_iteration": 24,
+                "workers": workers, "max_tokens": max_tokens, "max_turns_per_iteration": 24,
                 "effort": effort or "provider default", "effort_control": effort_source,
                 "idle_s": idle_s, "call_timeout_s": call_timeout_s,
                 "cache_requested": False,
@@ -183,9 +189,9 @@ def sweep(source, out, *, iterations=10, workers=4, model=gauntlet.MODEL, effort
                 f.write(text + "\n")
         if budget is not None:
             from .anthropic_sweep import chat_for
-            chat = chat_for(api, budget, arm, max_tokens=gauntlet.MAX_TOKENS, log=log)
+            chat = chat_for(api, budget, arm, max_tokens=max_tokens, log=log)
         else:
-            chat = agent.chat_for(api, max_tokens=gauntlet.MAX_TOKENS, idle_s=idle_s, log=log)
+            chat = agent.chat_for(api, max_tokens=max_tokens, idle_s=idle_s, log=log)
         meter = Meter(chat, proj.root, model)
         print(f"START {arm}", flush=True)
         if arm == "mesh-jig":
@@ -193,7 +199,8 @@ def sweep(source, out, *, iterations=10, workers=4, model=gauntlet.MODEL, effort
                                      model=model, url=gauntlet.URL,
                                      out=proj.root / "agent" / "control", log=log))
         else:
-            result = gauntlet.run(proj, meter, iterations=iterations, checks=ARMS[arm], model=model, log=log)
+            result = gauntlet.run(proj, meter, iterations=iterations, checks=ARMS[arm], model=model,
+                                  max_tokens=max_tokens, log=log)
         result["effort"] = effort or "provider default"
         result["effort_control"] = effort_source
         account = meter.summary()

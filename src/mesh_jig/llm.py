@@ -10,8 +10,9 @@ prefix (MESH_JIG_JUDGE_*, MESH_JIG_AGENT_*):
     <PREFIX>_KEY     else the provider's own variable, chosen by the URL's host (KEY_BY_HOST), else OPENAI_API_KEY
 
 Unset variables are filled from an env file first: $MESH_JIG_ENV_FILE, else `.env` in the directory mesh-jig is run
-from, when it exists (KEY=VALUE lines; `.env.example` is the template). Variables already in the environment win,
-nothing is ever exported to a shell, and no file outside that is looked for.
+from, when it exists (KEY=VALUE lines; `.env.example` is the template). That file may name a shared key file with
+MESH_JIG_ENV_FILE, read first. Variables already in the environment win, nothing is ever exported to a shell, and no
+file outside those is looked for.
 """
 from __future__ import annotations
 
@@ -62,13 +63,8 @@ class Backend:
         return f"{self.model} @ {self.url}" + (f" via {self.provider} only" if self.provider else "")
 
 
-def load_env_file(path: str | None = None, env=os.environ) -> list[str]:
-    """Fill UNSET env vars from a KEY=VALUE file (blanks and comments ignored, empty values skipped). Existing env
-    vars win. Returns the names it set."""
-    path = path or env.get(ENV_FILE_VAR) or DEFAULT_ENV_FILE
-    if not os.path.exists(path):
-        return []
-    set_names = []
+def _read_env_file(path: str) -> dict[str, str]:
+    values = {}
     with open(path, encoding="utf-8") as f:
         for ln in f:
             ln = ln.strip()
@@ -76,9 +72,28 @@ def load_env_file(path: str | None = None, env=os.environ) -> list[str]:
                 continue
             k, v = ln.split("=", 1)
             k, v = k.strip(), v.strip().strip('"').strip("'")
-            if k and v and not env.get(k):
-                env[k] = v
-                set_names.append(k)
+            if k and v:
+                values[k] = v
+    return values
+
+
+def load_env_file(path: str | None = None, env=os.environ) -> list[str]:
+    """Fill UNSET env vars from a KEY=VALUE file (blanks and comments ignored, empty values skipped). Existing env
+    vars win. Returns the names it set.
+
+    The file may name another with MESH_JIG_ENV_FILE (a shared key file kept outside the checkout): that one is read
+    first, so its keys win over any the first file also holds. One level only; it is not followed further."""
+    path = path or env.get(ENV_FILE_VAR) or DEFAULT_ENV_FILE
+    if not os.path.exists(path):
+        return []
+    values = _read_env_file(path)
+    named = values.get(ENV_FILE_VAR)
+    files = [_read_env_file(named)] if named and os.path.exists(named) else []
+    set_names = []
+    for k, v in [kv for vals in files + [values] for kv in vals.items()]:
+        if not env.get(k):
+            env[k] = v
+            set_names.append(k)
     return set_names
 
 
@@ -413,6 +428,21 @@ def assemble_chunks(chunks: Iterable[dict], on_chunk: Callable[[dict], None] | N
         "ambiguous": len(finish_reasons) > 1,
     }
     return msg, usage
+
+
+CUT_REASONS = ("length", "max_tokens")     # the output cap, as OpenAI-style endpoints and Anthropic's own name it
+
+
+def finish_reason(usage: dict | None) -> str | None:
+    """The endpoint's own word for why a reply ended, from the usage a chat function returns; None when it gave
+    none or gave two."""
+    return ((usage or {}).get("mesh_jig_completion") or {}).get("finish_reason")
+
+
+def cut_short(usage: dict | None) -> bool:
+    """Whether the reply ran into the output cap. Thinking and the visible reply share that cap, so a cut reply can
+    be all thinking and no text, or a tool call that lost its end."""
+    return finish_reason(usage) in CUT_REASONS
 
 
 def consume_with_watchdog(open_stream: Callable[[], tuple[Iterable[dict], Callable[[], None] | None]], *,

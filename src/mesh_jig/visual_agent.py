@@ -23,7 +23,8 @@ def run(proj, backend, *, attempts=5, checks="none", max_turns=0, max_tokens=Non
     if max_cost and not (native or reported):
         raise ValueError("a spend cap needs direct Anthropic Haiku/Sonnet/Opus 5.5 (reserved) or OpenRouter "
                          "(the cost it reports); pricing is not verified for this endpoint/model")
-    max_tokens = max_tokens or gauntlet.MAX_TOKENS
+    # the native models all write up to 128,000 tokens a reply; elsewhere the limit is the endpoint's own business
+    max_tokens = max_tokens or (anthropic_sweep.MAX_OUTPUT_TOKENS if native else gauntlet.MAX_TOKENS)
     out = agent.run_dir(proj, backend.model)
     out = out.with_name(out.name + "_visual_" + uuid.uuid4().hex[:8])
     budget = anthropic_sweep.Budget(out / "budget.json", max_cost, backend.model) if max_cost and native else None
