@@ -1,0 +1,34 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex native subscription",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "gpt-6.1-sol",
+  "notes": [
+    "Five successful static evaluations and three passing rig candidates. Visual selection, numeric best and latest all score 0.4369. All five miss resemblance 0.40.",
+    "29 bones and one 1024 px script-painted texture. Idle, crawl, gentle_turn and sprint pass declared rig gates. Original geometry, UVs, materials and embedded texture were preserved before sanitizing metadata.",
+    "Mannequin-like face, round feet and shoulder seams remain. In-place crawl slides about 146 mm per foot per cycle; sprint about 238 mm. Dense samples show 0.205 mm maximum ground penetration and under 0.8 percent whole-limb volume loss."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 1,
+    "numeric_score": 0.4369
+  },
+  "schema_version": 1,
+  "scope": "One independent five-evaluation static run, selected geometry and animation; all four clips included. Completed protocol, not production quality.",
+  "title": "Latest textured horror: Sol high"
+}

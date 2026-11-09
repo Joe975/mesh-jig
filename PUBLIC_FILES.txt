@@ -85,6 +85,11 @@ showcase/explore-horror-textured-astra-20261109/image-01.png
 showcase/explore-horror-textured-astra-20261109/model-01.glb
 showcase/explore-horror-textured-astra-20261109/release.json
 showcase/explore-horror-textured-astra-20261109/summary.json
+showcase/explore-horror-textured-sol-20261109/README.md
+showcase/explore-horror-textured-sol-20261109/image-01.png
+showcase/explore-horror-textured-sol-20261109/model-01.glb
+showcase/explore-horror-textured-sol-20261109/release.json
+showcase/explore-horror-textured-sol-20261109/summary.json
 showcase/explore-horror/README.md
 showcase/explore-horror/model-01.glb
 showcase/explore-horror/model-02.glb
