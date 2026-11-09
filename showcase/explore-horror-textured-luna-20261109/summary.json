@@ -1,0 +1,34 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex native subscription",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "gpt-6-luna",
+  "notes": [
+    "Five successful static evaluations in six submissions, then three passing rigs in four submissions. Selected geometry scores 0.4084; latest scores 0.3889. All static candidates miss resemblance 0.40.",
+    "24 bones and one 1024 px script-painted texture. Selected rig passes idle, crawl, gentle_turn and sprint limits, with about 6.7 mm maximum sampled ground drop against 8 mm allowed.",
+    "Primitive capsule-like anatomy and moving-part joint gaps remain. Rigid single-bone skinning, in-place treadmill gait and a restrained faster sprint are not realistic full-body locomotion. Foot locking was visually reviewed, not quantitatively certified."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 1,
+    "numeric_score": 0.4084
+  },
+  "schema_version": 1,
+  "scope": "One independent five-evaluation static run, selected geometry and animation; all four clips included. Completed protocol, not production quality.",
+  "title": "Latest textured horror: Luna high"
+}
