@@ -51,6 +51,11 @@ showcase/bruce-owl-comparison/model-06.glb
 showcase/bruce-owl-comparison/model-07.glb
 showcase/bruce-owl-comparison/release.json
 showcase/bruce-owl-comparison/summary.json
+showcase/explore-cat-fable-claude-code-20261110/README.md
+showcase/explore-cat-fable-claude-code-20261110/image-01.png
+showcase/explore-cat-fable-claude-code-20261110/model-01.glb
+showcase/explore-cat-fable-claude-code-20261110/release.json
+showcase/explore-cat-fable-claude-code-20261110/summary.json
 showcase/explore-cat/README.md
 showcase/explore-cat/model-01.glb
 showcase/explore-cat/model-02.glb
