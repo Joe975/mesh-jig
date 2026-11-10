@@ -330,7 +330,12 @@ showcase/steampunk-mech-opus/image-02.png
 showcase/steampunk-mech-opus/model-01.glb
 showcase/steampunk-mech-opus/release.json
 showcase/steampunk-mech-opus/summary.json
+site/gif-core.js
+site/gif-export.js
+site/gif-worker.js
 site/index.html
+site/vendor/gifenc.LICENSE
+site/vendor/gifenc.js
 site/vendor/model-viewer.LICENSE
 site/vendor/model-viewer.min.js
 skill/mesh-jig-harness-loop/SKILL.md
@@ -428,6 +433,7 @@ tests/test_framing_feedback.py
 tests/test_gauntlet.py
 tests/test_gauntlet_sweep.py
 tests/test_gauntlet_tool_history.py
+tests/test_gif_export.py
 tests/test_glb.py
 tests/test_glb_degenerates.py
 tests/test_glb_world_positions.py

@@ -7,6 +7,19 @@ PAGE = ROOT / "site" / "index.html"
 PUBLIC = set((ROOT / "PUBLIC_FILES.txt").read_text(encoding="utf-8").split())
 
 
+def test_gif_export_assets_are_bundled_and_each_viewer_has_its_own_controls():
+    page = PAGE.read_text(encoding='utf-8')
+    assert page.count('class="gif-export"') == page.count('<model-viewer')
+    assert page.count('class="gif-cancel"') == page.count('<model-viewer')
+    for name in ('gif-export.js', 'gif-core.js', 'gif-worker.js', 'vendor/gifenc.js', 'vendor/gifenc.LICENSE'):
+        assert 'site/' + name in PUBLIC
+        assert (ROOT / 'site' / name).is_file()
+    exporter = (ROOT / 'site/gif-export.js').read_text()
+    assert 'idealAspect: false' in exporter
+    assert 'visibilitychange' in exporter
+    assert "{type: 'module'}" in exporter
+
+
 def test_every_file_the_page_names_is_published_and_deployed():
     text = PAGE.read_text(encoding="utf-8")
     names = re.findall(r'(?:src|href)="([^":#]+)"', text)
