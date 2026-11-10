@@ -1,0 +1,37 @@
+{
+  "completed": false,
+  "cost": {
+    "amount_usd": 19.80808,
+    "kind": "estimated"
+  },
+  "driver": "Anthropic API model and initial rig; local Codex export and rig repairs",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 3,
+    "model_calls": 15,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "claude-fable-5-2",
+  "notes": [
+    "The API experiment stopped early. The delivered texture export and rig repairs are local edits, not additional Fable outputs.",
+    "Selected static a03 score 0.6785; 53814 triangles within the 65000 cap, a script-painted 1024 pixel texture, 18 joints and four influences.",
+    "Idle 2 s, walk 1 s, run 0.6 s and leap 1.5 s all pass the unchanged motion gates sampled at 60 Hz. Leap travels 0.6 m and clears 323 mm.",
+    "Static face, eye-patch and right-eye regional colour gates remain below target; likeness and small facial details remain simplified.",
+    "Known recorded API usage estimate is US$19.80808 across modeling and rigging. A separate US$13.92 reservation is unresolved and is not a settled charge. No additional paid calls were made for local recovery.",
+    "All three original static evaluations were successful. The API request after two settled rig calls failed with HTTP 400; its response body was unavailable, so the cause is unproven."
+  ],
+  "result": {
+    "gates_passed": 16,
+    "gates_total": 19,
+    "numeric_score": 0.6785
+  },
+  "schema_version": 1,
+  "scope": "Three static API evaluations; selected a03 with a separately repaired rig and four animations",
+  "title": "Pirate cat: Fable 5.2 high API a03 with local repairs"
+}
