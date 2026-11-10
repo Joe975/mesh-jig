@@ -5,6 +5,22 @@ description: Keep mesh-jig runs private by default and prepare selected public s
 
 # Share selected results
 
+## Reference-site publishing
+
+For any agent republishing the reference site, the explorer must be the sheet's **immediate next element**.
+Never put section prose, provenance, comparison caveats or other blocks between them. Preserve needed facts in
+existing model captions/public reports or collapsed context below the viewer; keep model-specific warnings visible.
+
+Start from the latest authoritative source and fetched public commit. Check leases and concurrent work; use isolated
+worktrees and preserve all current selections, GLBs, framing, clip labels, links, comparison and GIF controls.
+Change the generator and regenerate the page: a shortened data note, CSS hiding rule or generated-HTML-only edit
+cannot enforce this invariant. Run source regression tests with a long-note fixture, public checks for every section,
+browser checks at desktop/mobile sizes and the privacy/pre-push guards. Review the narrow diff, publish only when
+authorized, then verify the exact remote commit, Pages deployment and live layout. Keep private tools/docs and raw
+artifacts out of the public inventory. In the private source checkout, `docs/REFERENCE_SITE.md` has the build commands.
+
+## Selected result packages
+
 Keep the complete run private. Publish a small, newly generated package under `showcase/<slug>/`.
 The helper copies only explicitly selected inputs; it never copies a run directory, transcript or raw report.
 It does not commit or push.

@@ -1,5 +1,7 @@
 # Developing mesh-jig
 
+Republishing the reference site: follow the shared [reference-site publishing rules](skill/mesh-jig-publish-results/SKILL.md#reference-site-publishing).
+
 Read README.md, docs/JIG.md and docs/KNOWN_GAPS.md. Production code lives under src/mesh_jig;
 skills hold the model-building and harness workflows. Tests use synthetic inputs and temporary directories.
 For modeling rather than development, use the included `.claude/skills/mesh-jig` entry or read

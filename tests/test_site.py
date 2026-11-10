@@ -7,6 +7,24 @@ PAGE = ROOT / "site" / "index.html"
 PUBLIC = set((ROOT / "PUBLIC_FILES.txt").read_text(encoding="utf-8").split())
 
 
+def test_every_reference_sheet_leads_directly_to_its_explorer():
+    sections = re.findall(r'<section id="([^"]+)">(.*?)</section>', PAGE.read_text(encoding='utf-8'), re.S)
+    assert sections
+    for name, body in sections:
+        gap = re.search(r'<img class="sheet"[^>]*>(.*?)<div class="explore"', body, re.S)
+        assert gap and not gap.group(1).strip(), f'{name}: a block was inserted between the sheet and viewer'
+        context = re.search(r'<details class="section-context">.*?</details>', body, re.S)
+        if context:
+            assert body.index(context.group(0)) > body.index('</figure></div></div>'), name
+
+
+def test_public_agent_entry_points_share_site_publishing_rules():
+    target = 'skill/mesh-jig-publish-results/SKILL.md#reference-site-publishing'
+    for filename in ('AGENTS.md', 'CLAUDE.md'):
+        assert target in (ROOT / filename).read_text(encoding='utf-8')
+    assert '## Reference-site publishing' in (ROOT / 'skill/mesh-jig-publish-results/SKILL.md').read_text(encoding='utf-8')
+
+
 def test_gif_export_assets_are_bundled_and_each_viewer_has_its_own_controls():
     page = PAGE.read_text(encoding='utf-8')
     assert page.count('class="gif-export"') == page.count('<model-viewer')
