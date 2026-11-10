@@ -126,6 +126,13 @@ showcase/explore-horror-openai-20261110/model-07.glb
 showcase/explore-horror-openai-20261110/model-08.glb
 showcase/explore-horror-openai-20261110/release.json
 showcase/explore-horror-openai-20261110/summary.json
+showcase/explore-horror-qwen-local-20261110/README.md
+showcase/explore-horror-qwen-local-20261110/image-01.png
+showcase/explore-horror-qwen-local-20261110/image-02.png
+showcase/explore-horror-qwen-local-20261110/image-03.png
+showcase/explore-horror-qwen-local-20261110/model-01.glb
+showcase/explore-horror-qwen-local-20261110/release.json
+showcase/explore-horror-qwen-local-20261110/summary.json
 showcase/explore-horror-textured-astra-20261109/README.md
 showcase/explore-horror-textured-astra-20261109/image-01.png
 showcase/explore-horror-textured-astra-20261109/model-01.glb
