@@ -1,26 +1,23 @@
-# Frozen six-limbed horror motion brief
+# Six-limbed horror sprint and leap
 
-Rig only this builder's visually selected static GLB. Freeze source.glb and
-SHA256 before rigging. Preserve source geometry/colours. Use the same native
-model at high effort for generation and rigging. Three successful in-contract
-rig candidates; common cap twelve submitted builds including preserved failures.
-Reaching a cap means incomplete, never loosened gates.
+Rig this builder's frozen textured GLB. Preserve its mesh, rest pose, materials,
+and painted texture. Articulate the head, torso, and all six legs. Preserve
+attachment around the limb roots, knees, wrists or ankles, and toes. Use the
+contract's deformation gates on both clips and inspect the film strips for
+pinching, sliding, detached parts, and intersections.
 
-- idle: 3 s loop. Subtle torso breathing, restrained head/neck response and
-  small weight shifts over planted six limbs. Keep the gaunt profile readable.
-- crawl: 2 s loop, in place, zero net root displacement. Coordinated six-limb
-  lift/plant cycle with alternating support; readable fore/aft reach and a stable
-  low trunk. Choose a plausible smooth gait consistent with the six limbs in the
-  approved sheet. Whole-body bobbing alone does not count as locomotion.
-- gentle_turn: 3 s loop. Head leads a modest turn, neck and torso follow, feet
-  adjust subtly and return to the initial heading. No accumulated root spin.
+- `sprint` is a one-second in-place loop with zero net root travel. Make it a
+  fast six-legged gait, with opposed limb groups, low recovery, distinct stance
+  and swing, and readable reach and push-off. Keep the heavy torso low, with
+  restrained weight shifts and head stabilization. In-place travel may show
+  backward stance-foot motion; avoid a foot floating through its support phase.
+- `leap` is a 1.5-second one-shot forward along Blender +Y. Start supported,
+  crouch, drive off the legs, and show a clear airborne phase (aim for all
+  vertices at least 150 mm above rest ground at the apex). Reach forward into
+  landing, absorb the impact through the legs and torso, and settle supported
+  about 0.8–1.0 m forward of the start. Leave the travel in the root joint.
+  Avoid a rigid-body jump or a slide before takeoff and after landing.
 
-Use rig-info, rig-build --failed for every candidate, rig-check --readings and
-rig-preview in front, right, top and three-quarter views. Inspect every candidate's
-weights and each clip's strips. For the final selection inspect dense samples
-spanning a full cycle of each clip, including between coarse strip frames.
-Report sampled motion evidence honestly. Check exported joints, nonnegative
-normalized weights, required clips/durations, preserved source accessors, loop
-seams, ground drop, stretch, limb attachment and support timing. Explicitly
-describe foot sliding, interpenetration, joint collapse and volume loss that
-remain. Numeric gates do not certify anatomy or animation quality.
+Target three in-contract candidates. Use at most twelve build submissions,
+including failures. Pick the one with the clearest gait, airborne phase and
+landing while preserving the creature's anatomy. Explain visible tradeoffs.

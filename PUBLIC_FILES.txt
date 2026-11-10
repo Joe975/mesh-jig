@@ -93,6 +93,14 @@ showcase/explore-caterpillar/model-07.glb
 showcase/explore-caterpillar/model-08.glb
 showcase/explore-caterpillar/release.json
 showcase/explore-caterpillar/summary.json
+showcase/explore-horror-astra-max-motion-20261110/README.md
+showcase/explore-horror-astra-max-motion-20261110/image-01.png
+showcase/explore-horror-astra-max-motion-20261110/image-02.png
+showcase/explore-horror-astra-max-motion-20261110/image-03.png
+showcase/explore-horror-astra-max-motion-20261110/model-01.glb
+showcase/explore-horror-astra-max-motion-20261110/model-02.glb
+showcase/explore-horror-astra-max-motion-20261110/release.json
+showcase/explore-horror-astra-max-motion-20261110/summary.json
 showcase/explore-horror-fable-api-20261110/README.md
 showcase/explore-horror-fable-api-20261110/image-01.png
 showcase/explore-horror-fable-api-20261110/model-01.glb
@@ -426,6 +434,7 @@ tests/test_glb_world_positions.py
 tests/test_harness.py
 tests/test_harness_loop.py
 tests/test_home_paths.py
+tests/test_horror_motion_default.py
 tests/test_hull.py
 tests/test_judge.py
 tests/test_keep_going.py
