@@ -7,9 +7,12 @@ description: Keep mesh-jig runs private by default and prepare selected public s
 
 ## Reference-site publishing
 
-For any agent republishing the reference site, the explorer must be the sheet's **immediate next element**.
-Never put section prose, provenance, comparison caveats or other blocks between them. Preserve needed facts in
-existing model captions/public reports or collapsed context below the viewer; keep model-specific warnings visible.
+Keep the reference site visual-first and concise: each section heading leads **directly to its sheet**, and the
+explorer is the sheet's **immediate next element**. No introductory blurb, cohort report, score table, warning list
+or other block goes before the sheet or between sheet and viewer. Put aggregate metrics, cohort comparisons and
+section provenance in closed-by-default **Scores and build context** below the viewer. Keep selected-model metrics
+and model-specific warnings visible in the caption; preserve every example and its limitations. The page intro
+stays under 35 words. Adding results is not a reason to add another visible explanation.
 
 Start from the latest authoritative source and fetched public commit. Check leases and concurrent work; use isolated
 worktrees and preserve all current selections, GLBs, framing, clip labels, links, comparison and GIF controls.

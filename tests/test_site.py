@@ -11,11 +11,16 @@ def test_every_reference_sheet_leads_directly_to_its_explorer():
     sections = re.findall(r'<section id="([^"]+)">(.*?)</section>', PAGE.read_text(encoding='utf-8'), re.S)
     assert sections
     for name, body in sections:
+        assert re.match(r'\s*<h2>[^<]+</h2>\s*<img class="sheet"', body), f'{name}: content before the sheet'
         gap = re.search(r'<img class="sheet"[^>]*>(.*?)<div class="explore"', body, re.S)
         assert gap and not gap.group(1).strip(), f'{name}: a block was inserted between the sheet and viewer'
         context = re.search(r'<details class="section-context">.*?</details>', body, re.S)
         if context:
             assert body.index(context.group(0)) > body.index('</figure></div></div>'), name
+        outside_context = body.replace(context.group(0), '') if context else body
+        assert '<table' not in outside_context and 'class="cohort"' not in outside_context, name
+    intro = re.search(r'<p class="lede">(.*?)</p>', PAGE.read_text(encoding='utf-8'), re.S).group(1)
+    assert len(re.sub(r'<[^>]+>', '', intro).split()) <= 35
 
 
 def test_public_agent_entry_points_share_site_publishing_rules():
