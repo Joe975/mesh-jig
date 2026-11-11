@@ -531,3 +531,47 @@ def test_lock_cleanup_failure_does_not_mask_original_error(batch_checkout, monke
         curator.install_many([("first", package)], repo)
     assert any("lock cleanup" in note for note in error.value.__notes__)
     assert not (repo / "showcase").exists()
+
+
+@pytest.mark.parametrize("failure", ["post-commit", "busy", "lock-cleanup", "write", "partial"])
+def test_install_cli_reports_safe_failure_outcome(batch_checkout, monkeypatch, capsys, failure):
+    repo, package = batch_checkout
+    secret = "PRIVATE-EXCEPTION-TEXT"
+    lock = repo / ".git/curate-install.lock"
+    if failure == "post-commit":
+        original = curator.tempfile.TemporaryDirectory
+
+        class CleanupFailure(original):
+            def __exit__(self, *args):
+                super().__exit__(*args)
+                raise OSError(secret)
+        monkeypatch.setattr(curator.tempfile, "TemporaryDirectory", CleanupFailure)
+    elif failure == "busy":
+        lock.write_text(secret)
+    elif failure == "lock-cleanup":
+        (repo / "untracked").write_text("keep")
+        original = Path.unlink
+
+        def fail(path, *args, **kwargs):
+            if path == lock:
+                raise OSError(secret)
+            return original(path, *args, **kwargs)
+        monkeypatch.setattr(Path, "unlink", fail)
+    else:
+        def fail(*args):
+            if failure == "partial":
+                (repo / "showcase/first/foreign").write_text("keep")
+            raise OSError(secret)
+        monkeypatch.setattr(curator.os, "replace", fail)
+    assert curator.main(["install-many", "--repo", str(repo), "--package", "first", str(package)]) == 1
+    error = capsys.readouterr().err
+    assert secret not in error and str(repo) not in error
+    expected = {"post-commit": "Installation completed, but cleanup failed", "busy": "another install may be active or the lock may be stale", "lock-cleanup": "Installer lock cleanup also failed", "write": "were rolled back", "partial": "some new paths remain"}
+    assert expected[failure] in error
+    if failure == "post-commit":
+        assert (repo / "showcase/first/release.json").is_file()
+        assert "showcase/first/release.json" in (repo / "PUBLIC_FILES.txt").read_text()
+    elif failure == "lock-cleanup":
+        assert "must be clean" in error and "before package writes" in error
+    elif failure == "partial":
+        assert (repo / "showcase/first/foreign").read_text() == "keep"

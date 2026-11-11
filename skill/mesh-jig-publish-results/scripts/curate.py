@@ -461,7 +461,11 @@ def install_many(packages, repo):
     ordinary_path(lock)
     created, directories = [], []
     published = False
-    lock_file = lock.open("xb")
+    try:
+        lock_file = lock.open("xb")
+    except FileExistsError as exc:
+        exc._showcase_outcome = "busy"
+        raise
     try:
         try:
             check_targets()
@@ -506,8 +510,9 @@ def install_many(packages, repo):
                     raise ValueError("public checkout changed during installation")
                 os.replace(replacement, inventory)
                 published = True
-        except BaseException:
+        except BaseException as exc:
             if published:
+                exc._showcase_outcome = "completed"
                 # Cleanup failure after the commit point must not undo the installed files.
                 raise
             for path, identity, raw in reversed(created):
@@ -527,6 +532,18 @@ def install_many(packages, repo):
                         path.rmdir()
                 except (OSError, ValueError):
                     pass
+            exc._showcase_outcome = "preflight"
+            if directories or created:
+                exc._showcase_outcome = "rolled-back"
+                for path, _ in directories:
+                    try:
+                        path.lstat()
+                    except FileNotFoundError:
+                        continue
+                    except OSError:
+                        pass
+                    exc._showcase_outcome = "partial"
+                    break
             raise
         finally:
             lock_file.close()
@@ -536,7 +553,11 @@ def install_many(packages, repo):
             lock.unlink()
         except OSError as cleanup_error:
             if primary_error is None:
-                raise OSError("installation completed, but installer lock cleanup failed; inspect locally") from cleanup_error
+                outcome_error = OSError("installation completed, but installer lock cleanup failed; inspect locally")
+                outcome_error._showcase_outcome = "completed"
+                outcome_error._showcase_lock_cleanup_failed = True
+                raise outcome_error from cleanup_error
+            primary_error._showcase_lock_cleanup_failed = True
             primary_error.add_note("Installer lock cleanup also failed; inspect locally before retrying.")
     return [parent / slug for slug in selected]
 
@@ -611,7 +632,20 @@ def main(argv=None):
             protect(args.repo)
             print("Installed the local pre-push privacy guard using this virtual environment.")
     except (OSError, ValueError, TypeError, KeyError, struct.error, subprocess.SubprocessError) as exc:
-        print("Showcase operation failed: " + type(exc).__name__ + ": " + (str(exc) if isinstance(exc, ValueError) else "check the selected inputs locally"), file=sys.stderr)
+        outcomes = {
+            "busy": "Installer lock already exists: another install may be active or the lock may be stale. No packages installed. Inspect locally before retrying; do not remove an active lock.",
+            "completed": "Installation completed, but cleanup failed. Packages and inventory remain installed. Inspect locally; do not repeat the installation. Review and commit explicit paths, then run committed-tip and pre-push audits.",
+            "preflight": "Installation stopped before package writes; no packages installed.",
+            "rolled-back": "Installation failed; newly created package paths were rolled back and the inventory was not replaced.",
+            "partial": "Installation failed; some new paths remain and the inventory was not replaced. Inspect locally before retrying; concurrent changes were preserved.",
+        }
+        outcome = getattr(exc, "_showcase_outcome", None)
+        detail = str(exc) if isinstance(exc, ValueError) else "check the selected inputs locally"
+        print("Showcase operation failed: " + type(exc).__name__ + ": " + detail, file=sys.stderr)
+        if outcome in outcomes:
+            print(outcomes[outcome], file=sys.stderr)
+        if getattr(exc, "_showcase_lock_cleanup_failed", False):
+            print("Installer lock cleanup also failed. Inspect the lock locally before retrying.", file=sys.stderr)
         return 1
     return 0
 
