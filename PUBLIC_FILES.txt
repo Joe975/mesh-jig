@@ -193,6 +193,12 @@ showcase/explore-mech-astra-high-20261111/model-01.glb
 showcase/explore-mech-astra-high-20261111/model-02.glb
 showcase/explore-mech-astra-high-20261111/release.json
 showcase/explore-mech-astra-high-20261111/summary.json
+showcase/explore-mech-sol-high-20261111/README.md
+showcase/explore-mech-sol-high-20261111/image-01.png
+showcase/explore-mech-sol-high-20261111/model-01.glb
+showcase/explore-mech-sol-high-20261111/model-02.glb
+showcase/explore-mech-sol-high-20261111/release.json
+showcase/explore-mech-sol-high-20261111/summary.json
 showcase/explore-mech/README.md
 showcase/explore-mech/model-01.glb
 showcase/explore-mech/model-02.glb

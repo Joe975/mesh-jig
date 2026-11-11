@@ -1,0 +1,34 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex subscription agent",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "GPT-6.1 Sol",
+  "notes": [
+    "Five-evaluation study; simplified mechanical forms and a single painted base-color atlas. In-place walk and run; joint contact and collisions are not certified. No engine-specific playback test. Dense sampling and rigid-component checks pass, but small transient intersections or linkage gaps remain uncertified.",
+    "Idle, walk, run and jump. Fourteen rigid bones. Subscription cost, normalized tokens and total runtime were not reported.",
+    "33,608 triangles. Visual selection: a05, score 0.5974; numeric best: a04, score 0.6008. Walk speed 0.4583 m/s; run speed 1.9737 m/s."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 0,
+    "numeric_score": 0.5974
+  },
+  "schema_version": 1,
+  "scope": "Five successful static evaluations, selected textured mesh and four-clip rigid animation",
+  "title": "GPT-6.1 Sol high: painted steampunk mech"
+}
