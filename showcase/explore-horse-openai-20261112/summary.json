@@ -1,0 +1,35 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Independent Codex subscription agents",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 15,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "GPT-6 Astra, GPT-6.1 Sol and GPT-6 Luna",
+  "notes": [
+    "Model/image order is Astra, Sol, Luna. All use a 60,000-triangle cap, a script-painted 1024 px texture, and idle, walk, run, jump, rear_up. Costs and tokens not reported (subscription). These are studies with visible limitations, not production-ready assets.",
+    "Model 01 and image 01: GPT-6 Astra high. Selected static score 0.7979; numeric best of five 0.7979. Simplified hair and hooves; local joint compression and 25.34% buried triangles. Six rig builds, three repaired failures. About 33 minutes observed, excluding initial orientation.",
+    "Model 02 and image 02: GPT-6.1 Sol high. Selected static score 0.8015; numeric best of five 0.8015. Shoulder bulges and faceting, simplified mane, shuffling walk and rigid rear balance. Three rig builds. About 32.2 minutes from directory records, excluding initial setup.",
+    "Model 03 and image 03: GPT-6 Luna high. Selected static score 0.6954; numeric best of five 0.7016. Detached-looking leg shapes, rigid-piece seams and sliding hooves; rear-up lifts the hind hooves about 46 mm. Five rig builds, two repaired ground-limit failures. Runtime not recorded."
+  ],
+  "result": {
+    "gates_passed": null,
+    "gates_total": null,
+    "numeric_score": null
+  },
+  "schema_version": 1,
+  "scope": "Three runs, five static evaluations each, three selected five-clip animated horses",
+  "title": "Three high-effort painted horse studies"
+}
