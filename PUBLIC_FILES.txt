@@ -98,6 +98,11 @@ showcase/explore-horror-antigravity-opus-high-a01-20261111/image-01.png
 showcase/explore-horror-antigravity-opus-high-a01-20261111/model-01.glb
 showcase/explore-horror-antigravity-opus-high-a01-20261111/release.json
 showcase/explore-horror-antigravity-opus-high-a01-20261111/summary.json
+showcase/explore-horror-antigravity-opus-high-a02-20261111/README.md
+showcase/explore-horror-antigravity-opus-high-a02-20261111/image-01.png
+showcase/explore-horror-antigravity-opus-high-a02-20261111/model-01.glb
+showcase/explore-horror-antigravity-opus-high-a02-20261111/release.json
+showcase/explore-horror-antigravity-opus-high-a02-20261111/summary.json
 showcase/explore-horror-astra-max-motion-20261110/README.md
 showcase/explore-horror-astra-max-motion-20261110/image-01.png
 showcase/explore-horror-astra-max-motion-20261110/image-02.png
