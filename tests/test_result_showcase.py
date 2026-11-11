@@ -639,3 +639,16 @@ def test_partial_write_failure_preserves_ambiguous_bytes(batch_checkout, monkeyp
     assert target.read_bytes() == (package / "summary.json").read_bytes()[:12]
     assert error.value._showcase_outcome == "partial"
     assert (repo / "PUBLIC_FILES.txt").read_bytes() == before
+
+
+@pytest.mark.parametrize("location", ["package", "repo"])
+def test_parent_traversal_is_rejected_before_path_resolution(batch_checkout, monkeypatch, location):
+    repo, package = batch_checkout
+    # An uninspected link followed by '..' must not disappear through lexical abspath.
+    ambiguous = package / "uninspected-link" / ".."
+    if location == "repo":
+        ambiguous = repo / "uninspected-link" / ".."
+    with pytest.raises(ValueError, match="parent traversal"):
+        curator.install_many([("first", ambiguous if location == "package" else package)],
+                             ambiguous if location == "repo" else repo)
+    assert not (repo / "showcase").exists()

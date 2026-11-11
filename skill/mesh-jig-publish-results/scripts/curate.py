@@ -363,6 +363,8 @@ def validate_files(files, sealed=True):
 
 def ordinary_path(path):
     """Reject links/reparse points in every existing path component, including ancestors."""
+    if ".." in Path(path).parts:
+        raise ValueError("parent traversal is not allowed in package or checkout paths")
     path = Path(os.path.abspath(path))
     for part in (*reversed(path.parents), path):
         try:
@@ -375,7 +377,7 @@ def ordinary_path(path):
 
 
 def package_files(directory):
-    ordinary_path(directory)
+    directory = ordinary_path(directory)
     if not directory.is_dir() or directory.is_symlink():
         raise ValueError("package must be an ordinary directory")
     paths = list(directory.iterdir())
