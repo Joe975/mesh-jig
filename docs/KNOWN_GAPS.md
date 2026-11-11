@@ -6,7 +6,9 @@
   the lit renderer assigns the same named colour.
 - An unthresholded review region is an observation. Define quality limits before treating it as acceptance.
 - The script checker is a denylist, not a security sandbox. Aliases and indirect calls can evade static checks.
-- No general rigging, animation or deformation-quality acceptance workflow is supplied.
+- The initial [rigging stage](RIGGING.md) supports authored weights and clips on a frozen static GLB.
+  Its structural checks and sampled deformation gates do not certify visual animation quality,
+  planted feet, self-intersection or volume preservation. The modelling dashboard shows the rest pose.
 - Agent context compaction and recovery policies are configurable; provider reasoning and cost reporting vary.
 - Only the implemented renderer determines the numeric result; other engine renderers can look different.
 - A project needs suitable reference views. Inconsistent artwork cannot define one exact shared projection.
