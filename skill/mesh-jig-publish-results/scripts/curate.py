@@ -6,6 +6,9 @@ import hashlib
 import io
 import json
 import math
+import os
+import stat
+import tempfile
 from pathlib import Path
 import re
 import shlex
@@ -358,12 +361,28 @@ def validate_files(files, sealed=True):
     return doc
 
 
+def ordinary_path(path):
+    """Reject links/reparse points in every existing path component, including ancestors."""
+    path = Path(os.path.abspath(path))
+    for part in (*reversed(path.parents), path):
+        try:
+            info = part.lstat()
+        except FileNotFoundError:
+            continue
+        if stat.S_ISLNK(info.st_mode) or getattr(info, "st_file_attributes", 0) & 0x400:
+            raise ValueError("path contains a link or junction")
+    return path
+
+
 def package_files(directory):
+    ordinary_path(directory)
     if not directory.is_dir() or directory.is_symlink():
         raise ValueError("package must be an ordinary directory")
     paths = list(directory.iterdir())
     if any(not p.is_file() or p.is_symlink() for p in paths):
         raise ValueError("package contains directories or links")
+    for path in paths:
+        ordinary_path(path)
     return {p.name: p.read_bytes() for p in paths}
 
 
@@ -380,29 +399,146 @@ def git(root, *args):
     return subprocess.check_output(["git", "-c", "safe.directory=" + root.as_posix(), *args], cwd=root)
 
 
+def checkout_snapshot(repo):
+    """Include tracked bytes even when assume-unchanged hides a working-tree edit."""
+    status = git(repo, "status", "--porcelain=v1", "--untracked-files=all")
+    if status.strip():
+        raise ValueError("public checkout must be clean before installing a showcase")
+    return tracked_snapshot(repo)
+
+
+def tracked_snapshot(repo):
+    index = git(repo, "ls-files", "--stage", "-z")
+    files = []
+    for name in git(repo, "ls-files", "-z").split(b"\0"):
+        if name:
+            path = ordinary_path(repo / os.fsdecode(name))
+            files.append((name, digest(path.read_bytes())))
+    return git(repo, "rev-parse", "HEAD"), index, tuple(files)
+
+
 def install(directory, repo, slug):
-    if not SLUG.fullmatch(slug):
-        raise ValueError("use a lowercase showcase slug")
-    files = package_files(directory)
-    validate_files(files)
-    inventory = repo / "PUBLIC_FILES.txt"
-    guard = repo / "tools/check_publication.py"
+    return install_many([(slug, directory)], repo)[0]
+
+
+def install_many(packages, repo):
+    """Install an explicit batch; final committed-tip and pre-push audits remain required.
+
+    The exclusive lock serializes these installers, not arbitrary editors. Recovery removes
+    only unchanged files created by this invocation, never recursively deletes a directory.
+    A crash or concurrent external writer can require manual recovery; no guard is bypassed.
+    """
+    selected = {}
+    for slug, directory in packages:
+        if not SLUG.fullmatch(slug):
+            raise ValueError("use a lowercase showcase slug")
+        if slug in selected:
+            raise ValueError("duplicate showcase slug")
+        files = package_files(Path(directory))
+        validate_files(files)
+        selected[slug] = files
+    if not selected:
+        raise ValueError("select at least one package")
+    repo = ordinary_path(repo)
+    if Path(os.fsdecode(git(repo, "rev-parse", "--show-toplevel")).strip()).resolve() != repo.resolve():
+        raise ValueError("destination must be the checkout root")
+    inventory = ordinary_path(repo / "PUBLIC_FILES.txt")
+    guard = ordinary_path(repo / "tools/check_publication.py")
     if not inventory.is_file() or not guard.is_file():
         raise ValueError("destination must be a public checkout with a publication inventory and guard")
-    if git(repo, "status", "--porcelain").strip():
-        raise ValueError("public checkout must be clean before installing a showcase")
-    subprocess.run([sys.executable, str(guard), "HEAD"], cwd=repo, check=True)
     parent = repo / "showcase"
-    target = parent / slug
-    if parent.is_symlink() or target.exists():
-        raise ValueError("showcase already exists or destination is a link")
-    names = set(inventory.read_text(encoding="utf-8").splitlines())
-    names.update(f"showcase/{slug}/{name}" for name in files)
-    target.mkdir(parents=True)
-    for name, raw in files.items():
-        (target / name).write_bytes(raw)
-    inventory.write_text("\n".join(sorted(names)) + "\n", encoding="utf-8", newline="\n")
-    return target
+
+    def check_targets():
+        ordinary_path(parent)
+        for slug in selected:
+            target = ordinary_path(parent / slug)
+            if target.exists():
+                raise ValueError("showcase already exists")
+
+    lock = Path(os.fsdecode(git(repo, "rev-parse", "--git-path", "curate-install.lock")).strip())
+    if not lock.is_absolute():
+        lock = repo / lock
+    ordinary_path(lock)
+    created, directories = [], []
+    published = False
+    lock_file = lock.open("xb")
+    try:
+        try:
+            check_targets()
+            baseline = checkout_snapshot(repo)
+            original = inventory.read_bytes()
+            names = set(original.decode("utf-8").splitlines())
+            if any(name.startswith(f"showcase/{slug}/") for slug in selected for name in names):
+                raise ValueError("showcase slug already appears in inventory")
+            subprocess.run([sys.executable, str(guard), "HEAD"], cwd=repo, check=True)
+            names.update(f"showcase/{slug}/{name}" for slug, files in selected.items() for name in files)
+            updated = ("\n".join(sorted(names)) + "\n").encode("utf-8")
+            # Stage the inventory outside the worktree, on the same filesystem.
+            with tempfile.TemporaryDirectory(prefix="curate-", dir=lock.parent) as staging:
+                replacement = Path(staging) / "PUBLIC_FILES.txt"
+                replacement.write_bytes(updated)
+                check_targets()
+                ordinary_path(inventory)
+                if checkout_snapshot(repo) != baseline or inventory.read_bytes() != original:
+                    raise ValueError("public checkout changed during preflight")
+                if not parent.exists():
+                    parent.mkdir()
+                    directories.append((parent, parent.stat()))
+                for slug, files in selected.items():
+                    ordinary_path(parent)
+                    target = parent / slug
+                    target.mkdir()  # Exclusive: never merge into an existing directory.
+                    directories.append((target, target.stat()))
+                    for name, raw in files.items():
+                        path = ordinary_path(target / name)
+                        with path.open("xb") as output:
+                            created.append((path, os.fstat(output.fileno()), raw))
+                            output.write(raw)
+                ordinary_path(inventory)
+                expected_untracked = {f"showcase/{slug}/{name}" for slug, files in selected.items() for name in files}
+                actual_untracked = {os.fsdecode(name) for name in git(repo, "ls-files", "--others", "--exclude-standard", "-z").split(b"\0") if name}
+                if actual_untracked != expected_untracked:
+                    raise ValueError("public checkout changed during installation")
+                for slug, files in selected.items():
+                    if package_files(parent / slug) != files:
+                        raise ValueError("installed showcase changed during installation")
+                if inventory.read_bytes() != original or tracked_snapshot(repo) != baseline:
+                    raise ValueError("public checkout changed during installation")
+                os.replace(replacement, inventory)
+                published = True
+        except BaseException:
+            if published:
+                # Cleanup failure after the commit point must not undo the installed files.
+                raise
+            for path, identity, raw in reversed(created):
+                # Do not remove another writer's replacement or follow a swapped parent.
+                try:
+                    ordinary_path(path)
+                    current = path.stat()
+                    if (current.st_dev, current.st_ino) == (identity.st_dev, identity.st_ino) and raw.startswith(path.read_bytes()):
+                        path.unlink()
+                except (OSError, ValueError):
+                    pass
+            for path, identity in reversed(directories):
+                try:
+                    ordinary_path(path)
+                    current = path.stat()
+                    if (current.st_dev, current.st_ino) == (identity.st_dev, identity.st_ino):
+                        path.rmdir()
+                except (OSError, ValueError):
+                    pass
+            raise
+        finally:
+            lock_file.close()
+    finally:
+        primary_error = sys.exception()
+        try:
+            lock.unlink()
+        except OSError as cleanup_error:
+            if primary_error is None:
+                raise OSError("installation completed, but installer lock cleanup failed; inspect locally") from cleanup_error
+            primary_error.add_note("Installer lock cleanup also failed; inspect locally before retrying.")
+    return [parent / slug for slug in selected]
 
 
 def protect(repo):
@@ -446,10 +582,15 @@ def main(argv=None):
     copy.add_argument("--package", type=Path, required=True)
     copy.add_argument("--repo", type=Path, required=True)
     copy.add_argument("--slug", required=True)
+    batch = sub.add_parser("install-many")
+    batch.add_argument("--repo", type=Path, required=True)
+    batch.add_argument("--package", nargs=2, action="append", required=True, metavar=("SLUG", "ABSOLUTE_PATH"))
     hook = sub.add_parser("protect")
     hook.add_argument("--repo", type=Path, required=True)
     args = parser.parse_args(argv)
     paths = [v for v in vars(args).values() if isinstance(v, Path)] + getattr(args, "image", []) + getattr(args, "glb", [])
+    if args.command == "install-many":
+        paths += [Path(path) for _, path in args.package]
     if any(not path.is_absolute() for path in paths):
         parser.error("use absolute paths")
     try:
@@ -460,6 +601,9 @@ def main(argv=None):
         elif args.command == "seal":
             seal(args.package)
             print("Sealed the exact selected bytes. No files committed or pushed.")
+        elif args.command == "install-many":
+            install_many([(slug, Path(path)) for slug, path in args.package], args.repo)
+            print("Installed selected showcases and updated the inventory once. Review, commit explicit paths, then run committed-tip and pre-push audits.")
         elif args.command == "install":
             install(args.package, args.repo, args.slug)
             print("Installed the selected showcase and updated the public inventory. Review and commit explicit paths.")

@@ -290,3 +290,244 @@ def test_protect_preserves_a_custom_hook_and_quotes_paths_with_spaces(tmp_path):
     with pytest.raises(ValueError, match="existing pre-push hook"):
         curator.protect(repo)
     assert "echo existing" in hook.read_text()
+
+
+@pytest.fixture
+def batch_checkout(tmp_path):
+    package = draft(tmp_path, assets=False)
+    curator.seal(package)
+    repo = tmp_path / "public"
+    repo.mkdir()
+    git(repo, "init", "-q")
+    (repo / "tools").mkdir()
+    (repo / "tools/check_publication.py").write_text("pass\n")
+    (repo / "PUBLIC_FILES.txt").write_text("PUBLIC_FILES.txt\ntools/check_publication.py\n")
+    commit(repo)
+    return repo, package
+
+
+def test_install_many_validates_batch_and_runs_one_guard(batch_checkout, monkeypatch):
+    repo, package = batch_checkout
+    calls = []
+    run = curator.subprocess.run
+
+    def count(*args, **kwargs):
+        if str(repo / "tools/check_publication.py") in args[0]:
+            calls.append(args[0])
+        return run(*args, **kwargs)
+
+    monkeypatch.setattr(curator.subprocess, "run", count)
+    targets = curator.install_many([("first", package), ("second", package)], repo)
+    assert len(calls) == 1
+    assert targets == [repo / "showcase/first", repo / "showcase/second"]
+    names = (repo / "PUBLIC_FILES.txt").read_text().splitlines()
+    assert names == sorted({"PUBLIC_FILES.txt", "tools/check_publication.py"} |
+                           {f"showcase/{slug}/{name}" for slug in ("first", "second")
+                            for name in curator.package_files(package)})
+    for target in targets:
+        assert curator.package_files(target) == curator.package_files(package)
+
+
+@pytest.mark.parametrize("failure", ["invalid", "duplicate", "empty", "dirty", "existing", "guard"])
+def test_batch_preflight_failures_leave_existing_data(batch_checkout, monkeypatch, failure):
+    repo, package = batch_checkout
+    packages = [("first", package), ("second", package)]
+    if failure == "invalid":
+        other = package.parent / "invalid"
+        shutil.copytree(package, other)
+        (other / "summary.json").write_bytes(b"{}")
+        packages[1] = ("second", other)
+    elif failure == "duplicate":
+        packages[1] = ("first", package)
+    elif failure == "empty":
+        packages = []
+    elif failure == "dirty":
+        (repo / "untracked").write_text("keep")
+    elif failure == "existing":
+        (repo / "showcase/second").mkdir(parents=True)
+        (repo / "showcase/second/keep").write_text("keep")
+        commit(repo)
+    elif failure == "guard":
+        (repo / "tools/check_publication.py").write_text("raise SystemExit(1)\n")
+        commit(repo)
+    before = {p.relative_to(repo): p.read_bytes() for p in repo.rglob("*") if p.is_file() and ".git" not in p.parts}
+    with pytest.raises((ValueError, subprocess.CalledProcessError)):
+        curator.install_many(packages, repo)
+    assert before == {p.relative_to(repo): p.read_bytes() for p in repo.rglob("*") if p.is_file() and ".git" not in p.parts}
+
+
+@pytest.mark.parametrize("change", ["head", "index", "worktree", "inventory", "target"])
+def test_batch_rechecks_checkout_after_guard(batch_checkout, monkeypatch, change):
+    repo, package = batch_checkout
+    run = curator.subprocess.run
+    inventory = (repo / "PUBLIC_FILES.txt").read_bytes()
+
+    def race(*args, **kwargs):
+        result = run(*args, **kwargs)
+        if str(repo / "tools/check_publication.py") in args[0]:
+            if change == "head":
+                git(repo, "-c", "user.name=Test", "-c", "user.email=test@users.noreply.github.com", "commit", "--allow-empty", "-qm", "race")
+            elif change == "index":
+                git(repo, "update-index", "--assume-unchanged", "tools/check_publication.py")
+                # Stage a different blob while leaving the file alone.
+                oid = git(repo, "hash-object", "-w", "PUBLIC_FILES.txt").decode().strip()
+                git(repo, "update-index", "--cacheinfo", "100644", oid, "tools/check_publication.py")
+            elif change == "worktree":
+                git(repo, "update-index", "--assume-unchanged", "tools/check_publication.py")
+                (repo / "tools/check_publication.py").write_text("# changed\n")
+            elif change == "inventory":
+                (repo / "PUBLIC_FILES.txt").write_bytes(inventory + b"changed\n")
+            else:
+                (repo / "showcase/second").mkdir(parents=True)
+                (repo / "showcase/second/keep").write_text("keep")
+        return result
+
+    monkeypatch.setattr(curator.subprocess, "run", race)
+    with pytest.raises(ValueError):
+        curator.install_many([("first", package), ("second", package)], repo)
+    assert not (repo / "showcase/first").exists()
+    if change != "inventory":
+        assert (repo / "PUBLIC_FILES.txt").read_bytes() == inventory
+    if change == "target":
+        assert (repo / "showcase/second/keep").read_text() == "keep"
+
+
+@pytest.mark.parametrize("failure", ["file", "inventory"])
+def test_batch_write_failures_roll_back_only_new_files(batch_checkout, monkeypatch, failure):
+    repo, package = batch_checkout
+    before = (repo / "PUBLIC_FILES.txt").read_bytes()
+    if failure == "file":
+        original = Path.open
+
+        def fail(path, *args, **kwargs):
+            if path == repo / "showcase/second/summary.json" and args == ("xb",):
+                raise OSError("injected write failure")
+            return original(path, *args, **kwargs)
+        monkeypatch.setattr(Path, "open", fail)
+    else:
+        def fail(*args):
+            raise OSError("injected inventory failure")
+        monkeypatch.setattr(curator.os, "replace", fail)
+    with pytest.raises(OSError):
+        curator.install_many([("first", package), ("second", package)], repo)
+    assert not (repo / "showcase").exists()
+    assert (repo / "PUBLIC_FILES.txt").read_bytes() == before
+    assert not git(repo, "status", "--porcelain").strip()
+    assert not (repo / ".git/curate-install.lock").exists()
+
+
+def test_install_many_cli_requires_absolute_package_paths(batch_checkout):
+    repo, package = batch_checkout
+    with pytest.raises(SystemExit):
+        curator.main(["install-many", "--repo", str(repo), "--package", "first", "relative"])
+    assert curator.main(["install-many", "--repo", str(repo), "--package", "first", str(package),
+                         "--package", "second", str(package)]) == 0
+
+
+@pytest.mark.parametrize("linked", ["package", "parent", "inventory", "guard"])
+def test_package_and_target_reparse_points_are_refused(batch_checkout, monkeypatch, linked):
+    repo, package = batch_checkout
+    linked_path = {"package": package, "parent": repo / "showcase", "inventory": repo / "PUBLIC_FILES.txt", "guard": repo / "tools/check_publication.py"}[linked]
+    if linked == "parent":
+        linked_path.mkdir()
+    original = Path.lstat
+
+    def reparse(path, *args, **kwargs):
+        result = original(path, *args, **kwargs)
+        if path == linked_path:
+            from types import SimpleNamespace
+            return SimpleNamespace(st_mode=result.st_mode, st_file_attributes=0x400)
+        return result
+
+    monkeypatch.setattr(Path, "lstat", reparse)
+    with pytest.raises(ValueError, match="junction"):
+        curator.install_many([("first", package)], repo)
+    assert not (repo / "showcase/first").exists()
+
+
+@pytest.mark.parametrize("change", ["foreign-file", "changed-file", "untracked"])
+def test_batch_recovery_preserves_concurrent_writers(batch_checkout, monkeypatch, change):
+    repo, package = batch_checkout
+    before = (repo / "PUBLIC_FILES.txt").read_bytes()
+    original = curator.tracked_snapshot
+    calls = []
+
+    def race(root):
+        calls.append(root)
+        if len(calls) == 3:
+            if change == "foreign-file":
+                (repo / "showcase/first/foreign").write_text("keep")
+            elif change == "changed-file":
+                (repo / "showcase/first/summary.json").write_text("other writer")
+            else:
+                (repo / "untracked").write_text("keep")
+            raise ValueError("injected concurrent writer")
+        return original(root)
+
+    monkeypatch.setattr(curator, "tracked_snapshot", race)
+    with pytest.raises(ValueError, match="concurrent writer"):
+        curator.install_many([("first", package), ("second", package)], repo)
+    assert (repo / "PUBLIC_FILES.txt").read_bytes() == before
+    assert not (repo / "showcase/second").exists()
+    path = {"foreign-file": "showcase/first/foreign", "changed-file": "showcase/first/summary.json", "untracked": "untracked"}[change]
+    assert (repo / path).read_text() == ("other writer" if change == "changed-file" else "keep")
+
+
+def test_concurrent_installer_lock_is_not_removed(batch_checkout):
+    repo, package = batch_checkout
+    lock = repo / ".git/curate-install.lock"
+    lock.write_text("other installer")
+    with pytest.raises(FileExistsError):
+        curator.install_many([("first", package)], repo)
+    assert lock.read_text() == "other installer"
+    assert not (repo / "showcase").exists()
+
+
+def test_batch_replaces_inventory_once(batch_checkout, monkeypatch):
+    repo, package = batch_checkout
+    original = curator.os.replace
+    calls = []
+
+    def replace(source, destination):
+        calls.append(destination)
+        return original(source, destination)
+
+    monkeypatch.setattr(curator.os, "replace", replace)
+    curator.install_many([("first", package), ("second", package)], repo)
+    assert calls == [repo / "PUBLIC_FILES.txt"]
+
+
+
+def test_post_replace_cleanup_failure_keeps_complete_install(batch_checkout, monkeypatch):
+    repo, package = batch_checkout
+    original = curator.tempfile.TemporaryDirectory
+
+    class CleanupFailure(original):
+        def __exit__(self, *args):
+            super().__exit__(*args)
+            raise OSError("injected post-replace cleanup failure")
+
+    monkeypatch.setattr(curator.tempfile, "TemporaryDirectory", CleanupFailure)
+    with pytest.raises(OSError, match="post-replace"):
+        curator.install_many([("first", package), ("second", package)], repo)
+    for slug in ("first", "second"):
+        assert curator.package_files(repo / "showcase" / slug) == curator.package_files(package)
+        assert f"showcase/{slug}/release.json" in (repo / "PUBLIC_FILES.txt").read_text()
+    assert not (repo / ".git/curate-install.lock").exists()
+
+
+def test_lock_cleanup_failure_does_not_mask_original_error(batch_checkout, monkeypatch):
+    repo, package = batch_checkout
+    (repo / "untracked").write_text("keep")
+    original = Path.unlink
+
+    def fail(path, *args, **kwargs):
+        if path == repo / ".git/curate-install.lock":
+            raise OSError("injected lock cleanup failure")
+        return original(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", fail)
+    with pytest.raises(ValueError, match="must be clean") as error:
+        curator.install_many([("first", package)], repo)
+    assert any("lock cleanup" in note for note in error.value.__notes__)
+    assert not (repo / "showcase").exists()
