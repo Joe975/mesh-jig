@@ -496,8 +496,10 @@ def install_many(packages, repo):
                     for name, raw in files.items():
                         path = ordinary_path(target / name)
                         with path.open("xb") as output:
-                            created.append((path, os.fstat(output.fileno()), raw))
+                            record = [path, os.fstat(output.fileno()), raw, False]
+                            created.append(record)
                             output.write(raw)
+                        record[3] = True
                 ordinary_path(inventory)
                 expected_untracked = {f"showcase/{slug}/{name}" for slug, files in selected.items() for name in files}
                 actual_untracked = {os.fsdecode(name) for name in git(repo, "ls-files", "--others", "--exclude-standard", "-z").split(b"\0") if name}
@@ -515,12 +517,12 @@ def install_many(packages, repo):
                 exc._showcase_outcome = "completed"
                 # Cleanup failure after the commit point must not undo the installed files.
                 raise
-            for path, identity, raw in reversed(created):
+            for path, identity, raw, completed in reversed(created):
                 # Do not remove another writer's replacement or follow a swapped parent.
                 try:
                     ordinary_path(path)
                     current = path.stat()
-                    if (current.st_dev, current.st_ino) == (identity.st_dev, identity.st_ino) and raw.startswith(path.read_bytes()):
+                    if completed and (current.st_dev, current.st_ino) == (identity.st_dev, identity.st_ino) and path.read_bytes() == raw:
                         path.unlink()
                 except (OSError, ValueError):
                     pass

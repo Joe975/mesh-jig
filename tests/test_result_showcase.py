@@ -575,3 +575,67 @@ def test_install_cli_reports_safe_failure_outcome(batch_checkout, monkeypatch, c
         assert "must be clean" in error and "before package writes" in error
     elif failure == "partial":
         assert (repo / "showcase/first/foreign").read_text() == "keep"
+
+
+@pytest.mark.parametrize("truncate", ["empty", "prefix"])
+def test_rollback_preserves_same_inode_truncations(batch_checkout, monkeypatch, truncate):
+    repo, package = batch_checkout
+    before = (repo / "PUBLIC_FILES.txt").read_bytes()
+    original = curator.tracked_snapshot
+    calls = []
+    target = repo / "showcase/first/summary.json"
+    changed = b"" if truncate == "empty" else (package / "summary.json").read_bytes()[:12]
+
+    def race(root):
+        calls.append(root)
+        if len(calls) == 3:
+            inode = target.stat().st_ino
+            target.write_bytes(changed)
+            assert target.stat().st_ino == inode
+            raise ValueError("injected concurrent truncation")
+        return original(root)
+
+    monkeypatch.setattr(curator, "tracked_snapshot", race)
+    with pytest.raises(ValueError, match="concurrent truncation") as error:
+        curator.install_many([("first", package)], repo)
+    assert target.read_bytes() == changed
+    assert error.value._showcase_outcome == "partial"
+    assert (repo / "PUBLIC_FILES.txt").read_bytes() == before
+
+
+def test_partial_write_failure_preserves_ambiguous_bytes(batch_checkout, monkeypatch):
+    repo, package = batch_checkout
+    before = (repo / "PUBLIC_FILES.txt").read_bytes()
+    target = repo / "showcase/first/summary.json"
+    original = Path.open
+
+    class PartialWrite:
+        def __init__(self, output):
+            self.output = output
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            self.output.close()
+
+        def fileno(self):
+            return self.output.fileno()
+
+        def write(self, raw):
+            self.output.write(raw[:12])
+            self.output.flush()
+            raise OSError("injected partial write")
+
+    def fail(path, *args, **kwargs):
+        output = original(path, *args, **kwargs)
+        if path == target and args == ("xb",):
+            return PartialWrite(output)
+        return output
+
+    monkeypatch.setattr(Path, "open", fail)
+    with pytest.raises(OSError, match="partial write") as error:
+        curator.install_many([("first", package)], repo)
+    assert target.read_bytes() == (package / "summary.json").read_bytes()[:12]
+    assert error.value._showcase_outcome == "partial"
+    assert (repo / "PUBLIC_FILES.txt").read_bytes() == before
