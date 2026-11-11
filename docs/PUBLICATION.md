@@ -81,3 +81,32 @@ This is not a multi-path filesystem transaction or a lock on unrelated editors. 
 checkout concurrently. A process crash or external writer can leave a partial installation or stale lock.
 Inspect the reported state before retrying; never remove a lock belonging to a running installer or bypass
 the guard. Raw source runs are never changed, copied wholesale, committed or published by installation.
+
+
+## Fixed-history performance check
+
+Measured on Windows x64 with Python 3.13.3 and Pillow 12.2.0, using public commit
+`3497c4dc2f67ab2e02f2f0397534d8de0fe7245f`: 123 reachable commits and 38 packages in
+the checked-out tip (332 showcase files, 184,736,123 bytes).
+
+- Original guard: 649.24 seconds, 20,303 Git processes (20,055 object-reader processes),
+  2,150 package validations.
+- Optimized guard: 17.57 and 16.13 seconds, 249 Git processes (one object-reader process),
+  99 package validations on each run.
+- All three full-history audits returned the same empty failure set, including fresh working files.
+  The observed improvement was approximately 37–40 times for this snapshot.
+
+Each measurement used a fresh Python process and the same clean fixed-commit worktree, inventory,
+validator bytes and installed dependencies. The two optimized runs bracketed the original run.
+The original validator was used for both implementations so installer changes could not affect the
+comparison. Counts include every Git child and every call to package validation within the audit;
+setup/status probes are outside the timer. No publisher guard ran concurrently. Operating-system
+caches were not flushed and unrelated desktop activity was not controlled, so these are local
+measurements, not a cross-machine performance guarantee.
+
+Regression tests compare exact failure sets against the original traversal with cache and batch modes
+independently enabled/disabled. Cases include unsafe deleted ancestry, later sealing, changed or extra
+package files, private metadata, divergent refs, forbidden names/modes, current inventory and working-file
+changes, malformed or missing objects and reader cleanup failures. Installer tests cover all-input
+preflight, duplicate/existing slugs, links and parent traversal, concurrent edits, partial writes, rollback
+ownership, the inventory commit point, locks and clear recovery outcomes.
