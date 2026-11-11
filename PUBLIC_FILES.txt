@@ -93,6 +93,11 @@ showcase/explore-caterpillar/model-07.glb
 showcase/explore-caterpillar/model-08.glb
 showcase/explore-caterpillar/release.json
 showcase/explore-caterpillar/summary.json
+showcase/explore-horror-antigravity-opus-high-a01-20261111/README.md
+showcase/explore-horror-antigravity-opus-high-a01-20261111/image-01.png
+showcase/explore-horror-antigravity-opus-high-a01-20261111/model-01.glb
+showcase/explore-horror-antigravity-opus-high-a01-20261111/release.json
+showcase/explore-horror-antigravity-opus-high-a01-20261111/summary.json
 showcase/explore-horror-astra-max-motion-20261110/README.md
 showcase/explore-horror-astra-max-motion-20261110/image-01.png
 showcase/explore-horror-astra-max-motion-20261110/image-02.png

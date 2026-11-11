@@ -1,0 +1,33 @@
+{
+  "completed": false,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Antigravity subscription CLI",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 2,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "Claude Opus 5.5",
+  "notes": [
+    "Partial run stopped after 2 of 5 successful evaluations. Attempt 1 of 2 completed; static only. No rig or animations. Resemblance 0.324 fails 0.40. Subscription quota interrupted the run; generation is paused at the user's request. Simplified face, tubular limbs and flat skin colour remain.",
+    "No rigging was started. Numeric agreement is not finished visual quality."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 1,
+    "numeric_score": 0.4399
+  },
+  "schema_version": 1,
+  "scope": "Attempt 1 of two completed evaluations in a stopped five-evaluation run; static mesh only",
+  "title": "Opus 5.5 High Antigravity horror: a01 static"
+}
