@@ -111,6 +111,14 @@ showcase/explore-horror-fable-claude-code-20261110/image-01.png
 showcase/explore-horror-fable-claude-code-20261110/model-01.glb
 showcase/explore-horror-fable-claude-code-20261110/release.json
 showcase/explore-horror-fable-claude-code-20261110/summary.json
+showcase/explore-horror-gemini-flash-high-20261111/README.md
+showcase/explore-horror-gemini-flash-high-20261111/image-01.png
+showcase/explore-horror-gemini-flash-high-20261111/image-02.png
+showcase/explore-horror-gemini-flash-high-20261111/image-03.png
+showcase/explore-horror-gemini-flash-high-20261111/model-01.glb
+showcase/explore-horror-gemini-flash-high-20261111/model-02.glb
+showcase/explore-horror-gemini-flash-high-20261111/release.json
+showcase/explore-horror-gemini-flash-high-20261111/summary.json
 showcase/explore-horror-openai-20261110/README.md
 showcase/explore-horror-openai-20261110/image-01.png
 showcase/explore-horror-openai-20261110/image-02.png
