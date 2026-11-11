@@ -1,0 +1,37 @@
+{
+  "completed": false,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "mesh-jig via Anthropic API",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": 382643,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": 842419,
+    "reasoning_tokens": null,
+    "runtime_seconds": 4215.2
+  },
+  "model": "claude-fable-5-2",
+  "notes": [
+    "Partial budget-stopped study: 5 static evaluations, 4 of 5 model/review iterations completed, and 1 of 3 rig builds. Selected a04, not the unreviewed fifth mesh. Idle, walk, run and jump are present; further rig refinement, joint contact and collisions are not certified.",
+    "The selected static score is 0.6275; resemblance is 0.4293. The rig has 31,480 triangles and 18 joints. The recorded rig checks report no issues; that is not production or engine-specific certification.",
+    "Runtime and token counters sum the two partial reports: modeling 3,290.3 seconds, rigging 924.9 seconds. Prompt and completion counters are provider-defined; completion includes reasoning.",
+    "Total API cost is unavailable. Known priced usage is estimated at US$16.637448 for modeling and US$5.407624 for rigging; three calls remain unpriced. These partial estimates are not settled charges.",
+    "The run stopped at its existing spending limits; publication did not resume generation or rigging.",
+    "Download order: model-01.glb is the four-clip animated rig; model-02.glb is the selected static mesh."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 0,
+    "numeric_score": 0.6275
+  },
+  "schema_version": 1,
+  "scope": "Partial model and rig run: five static evaluations, four completed review iterations, one rig build",
+  "title": "Fable 5.2 high API: partial painted steampunk mech"
+}

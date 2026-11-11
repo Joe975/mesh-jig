@@ -202,6 +202,12 @@ showcase/explore-mech-astra-high-20261111/model-01.glb
 showcase/explore-mech-astra-high-20261111/model-02.glb
 showcase/explore-mech-astra-high-20261111/release.json
 showcase/explore-mech-astra-high-20261111/summary.json
+showcase/explore-mech-fable-api-high-20261112/README.md
+showcase/explore-mech-fable-api-high-20261112/image-01.png
+showcase/explore-mech-fable-api-high-20261112/model-01.glb
+showcase/explore-mech-fable-api-high-20261112/model-02.glb
+showcase/explore-mech-fable-api-high-20261112/release.json
+showcase/explore-mech-fable-api-high-20261112/summary.json
 showcase/explore-mech-sol-high-20261111/README.md
 showcase/explore-mech-sol-high-20261111/image-01.png
 showcase/explore-mech-sol-high-20261111/model-01.glb
