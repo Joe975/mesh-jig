@@ -41,3 +41,43 @@ establish that text visible in a picture or model is appropriate to share.
 Adding .gitignore rules or deleting a file does not remove earlier commits. A clean publication root avoids
 bringing private ancestors along. Replacing an existing remote history requires a deliberate remote update.
 Previously public commits may remain in clones, forks, caches or hosting-provider retention after replacement.
+
+
+## Repeated history checks
+
+Every audit still visits all commits reachable from every requested ref, checks each commit's metadata
+and each path against the current inventory, and reads working files afresh. Within one invocation,
+identical historical showcase snapshots are validated once. A snapshot key includes its full package
+path and every filename, mode and Git blob ID, so an added file, changed byte or mode cannot hide behind
+an unchanged release manifest. Invalid snapshots keep a failure for every affected commit.
+
+A single binary `git cat-file --batch` reader serves object requests. Its invocation-local blob cache
+is limited to 32 MiB; larger objects are read without being retained. Missing objects, malformed responses
+and reader failures block publication. There is no disk cache and no trust in a previous successful audit.
+`--no-cache` and `--no-batch` disable these performance features for comparison, without disabling checks.
+
+## Install several selected packages
+
+Prepare, visually review and seal each package separately. Then, from the virtual environment, use one
+explicit batch instead of repeating single-package installation:
+
+```text
+python skill/mesh-jig-publish-results/scripts/curate.py install-many --repo <absolute-public-checkout> --package first-result <absolute-sealed-package-one> --package second-result <absolute-sealed-package-two>
+```
+
+Every `--package` takes a slug followed by an absolute package directory. The existing `install` command
+remains supported. The batch validates all inputs before writing, audits the clean public baseline once,
+rechecks the checkout, installs only the selected paths and replaces the inventory once. It never commits
+or pushes. Review and stage the explicit package paths and inventory, commit them, then run the complete
+committed-tip guard and the normal pre-push hook. Batching does not authorize publishing additional data.
+
+The installer rejects existing/duplicate slugs and links or reparse points. A checkout-local exclusive
+lock coordinates these installers. HEAD, index, tracked file bytes, inventory and destinations are checked
+again around the writes. On an ordinary pre-commit failure, cleanup removes only unchanged files this
+invocation created. Once inventory replacement succeeds, the installation is committed to the filesystem;
+a later cleanup error leaves the complete packages and inventory intact and reports an error.
+
+This is not a multi-path filesystem transaction or a lock on unrelated editors. Do not edit the publication
+checkout concurrently. A process crash or external writer can leave a partial installation or stale lock.
+Inspect the reported state before retrying; never remove a lock belonging to a running installer or bypass
+the guard. Raw source runs are never changed, copied wholesale, committed or published by installation.

@@ -107,6 +107,18 @@ Install only that sealed package into a clean public checkout:
 <venv-python> <public-checkout>/tools/check_publication.py HEAD
 ```
 
+For several already reviewed and sealed packages, run a single explicit batch:
+
+```text
+<venv-python> <checkout>/skill/mesh-jig-publish-results/scripts/curate.py install-many --repo <public-checkout> --package first-result <first-private-package> --package second-result <second-private-package>
+```
+
+Each `--package` takes a slug and absolute package path. All inputs are validated before writes; one full
+baseline audit covers the batch. The inventory is updated once. Do not edit that checkout concurrently.
+The command does not commit or push, and it does not replace the post-commit or pre-push audits below.
+On failure, inspect the reported state before retrying. The [publication policy](../../docs/PUBLICATION.md)
+explains locking and recovery limits.
+
 `install` refuses a dirty public checkout or an existing showcase name, validates all files, copies the
 package and adds only its exact paths to `PUBLIC_FILES.txt`. Review the diff, then stage the explicit
 `showcase/<slug>/` path and inventory file. Commit with the public checkout's normal attribution settings,
