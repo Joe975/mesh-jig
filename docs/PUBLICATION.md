@@ -94,7 +94,7 @@ the checked-out tip (332 showcase files, 184,736,123 bytes).
 - Optimized guard: 17.57 and 16.13 seconds, 249 Git processes (one object-reader process),
   99 package validations on each run.
 - All three full-history audits returned the same empty failure set, including fresh working files.
-  The observed improvement was approximately 37–40 times for this snapshot.
+  The observed improvement was approximately 37-40 times for this snapshot.
 
 Each measurement used a fresh Python process and the same clean fixed-commit worktree, inventory,
 validator bytes and installed dependencies. The two optimized runs bracketed the original run.
@@ -110,3 +110,10 @@ package files, private metadata, divergent refs, forbidden names/modes, current 
 changes, malformed or missing objects and reader cleanup failures. Installer tests cover all-input
 preflight, duplicate/existing slugs, links and parent traversal, concurrent edits, partial writes, rollback
 ownership, the inventory commit point, locks and clear recovery outcomes.
+
+
+The completed implementation passed all 1,283 offline tests, including 96 publication/curation tests,
+and the complete committed-tip privacy audit. The full run used the isolated checkout for both parent
+and subprocess imports; a shared virtual environment must not silently select a different source tree.
+Independent review findings on reader cleanup and conservative installer recovery were fixed and covered
+by regression tests before this validation.
