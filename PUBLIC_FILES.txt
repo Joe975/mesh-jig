@@ -305,6 +305,11 @@ showcase/reference-horror/model-03.glb
 showcase/reference-horror/model-04.glb
 showcase/reference-horror/release.json
 showcase/reference-horror/summary.json
+showcase/reference-horse/README.md
+showcase/reference-horse/image-01.png
+showcase/reference-horse/image-02.png
+showcase/reference-horse/release.json
+showcase/reference-horse/summary.json
 showcase/reference-mech/README.md
 showcase/reference-mech/image-01.png
 showcase/reference-mech/image-02.png

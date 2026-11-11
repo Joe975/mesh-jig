@@ -1,0 +1,32 @@
+{
+  "completed": null,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Generated reference sheet",
+  "effort": null,
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": null,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "Generated chunky cartoon horse reference",
+  "notes": [
+    "Generated illustrative reference; front and left views are proportion masters, but width and depth disagree across views. Hero is visual guidance, not a calibrated geometry target."
+  ],
+  "result": {
+    "gates_passed": null,
+    "gates_total": null,
+    "numeric_score": null
+  },
+  "schema_version": 1,
+  "scope": "Selected reference sheet and navigation thumbnail",
+  "title": "Chunky cartoon horse reference"
+}
