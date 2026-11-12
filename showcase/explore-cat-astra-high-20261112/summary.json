@@ -1,0 +1,32 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex native subscription agent",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "GPT-6 Astra",
+  "notes": [
+    "Face, patch and eye colour gates miss target. Toy-like jog and basic hop; stiff torso, armhole sliding and small instep weight defects remain."
+  ],
+  "result": {
+    "gates_passed": 16,
+    "gates_total": 19,
+    "numeric_score": 0.6328
+  },
+  "schema_version": 1,
+  "scope": "Five static evaluations; selected model rigged with idle, walk, run and jump.",
+  "title": "GPT-6 Astra: pirate cat"
+}

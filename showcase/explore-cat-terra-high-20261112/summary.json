@@ -1,0 +1,32 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex native subscription agent",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "GPT-6.1 Terra",
+  "notes": [
+    "Face, patch, eye and tail gates miss target. Stiff in-place shuffles and a vertical hop; clothing intersects and separates in motion."
+  ],
+  "result": {
+    "gates_passed": 15,
+    "gates_total": 19,
+    "numeric_score": 0.623
+  },
+  "schema_version": 1,
+  "scope": "Five static evaluations; selected model rigged with idle, walk, run and jump.",
+  "title": "GPT-6.1 Terra: pirate cat"
+}

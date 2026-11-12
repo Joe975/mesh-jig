@@ -1,0 +1,32 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex native subscription agent",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "GPT-6 Luna",
+  "notes": [
+    "Toy-like shape and rigid vest/back. Restrained gaits and a whole-character hop with little tuck; selected visually rather than by highest score."
+  ],
+  "result": {
+    "gates_passed": 13,
+    "gates_total": 19,
+    "numeric_score": 0.5417
+  },
+  "schema_version": 1,
+  "scope": "Five static evaluations; selected model rigged with idle, walk, run and jump.",
+  "title": "GPT-6 Luna: pirate cat"
+}
