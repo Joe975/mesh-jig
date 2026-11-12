@@ -1,0 +1,10 @@
+{
+  "files": {
+    "README.md": "f15df012609cb2b24b0034c47284cd130bf290076d90b64969bf85e6d5d48cf2",
+    "image-01.png": "0b6002ed8507e03e98fa69700b88d26caaf499f0d46d0856e0973f4ed79dfe1f",
+    "model-01.glb": "173c7d2d8441bfed2c37c054d5281836dfd053435a26e412a482b1963df1a525",
+    "model-02.glb": "c386e4b4d0a35282f2a5f419643fa95089306ee4f8800dde41ee3f7eb8f88bab",
+    "summary.json": "8443620d993ede96cf1f0b2508a8e54fdfcb80e71ff4435d4068ac62675bb835"
+  },
+  "schema_version": 1
+}

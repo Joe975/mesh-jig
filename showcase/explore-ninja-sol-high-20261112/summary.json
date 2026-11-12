@@ -1,0 +1,32 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex native subscription agent",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "GPT-6.1 Sol",
+  "notes": [
+    "Simple low-poly form, blocky face and hands, heavy cuffs and inner-trouser contact beneath the skirt. Numeric motion checks do not certify collision-free animation."
+  ],
+  "result": {
+    "gates_passed": 3,
+    "gates_total": 3,
+    "numeric_score": 0.6443
+  },
+  "schema_version": 1,
+  "scope": "Five static evaluations; selected model rigged with idle, walk, run, jump and attack.",
+  "title": "GPT-6.1 Sol: ninja"
+}
