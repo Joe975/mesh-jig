@@ -1,0 +1,36 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Native Codex delegated worker",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "gpt-6-astra",
+  "notes": [
+    "60,000-triangle ceiling; both selected GLBs contain 57,112 triangles. Model 1 is animated; model 2 is static.",
+    "Simplified sculpt; wrinkles, eyelid/chin integration and hands fall short of the reference. The grin is subtle.",
+    "Static rest has minor tongue/tooth overlap. Animated neutral recesses the tongue by 30 mm.",
+    "One unified 24-bone body/face hierarchy. Idle, walk and run loop. Walk/run are in place; matching forward speeds are 0.166667 and 0.810185 m/s.",
+    "Runtime, token usage and cost are unavailable. Numeric gates and sampled contact checks are not a visual-quality or engine certification."
+  ],
+  "result": {
+    "gates_passed": 3,
+    "gates_total": 3,
+    "numeric_score": 0.6943
+  },
+  "schema_version": 1,
+  "scope": "Five evaluated modeling attempts, selected a05; three rig iterations, selected r03; idle, walk, run, jump, bite, grin, yell, look.",
+  "title": "Huge ugly head: Astra high"
+}
