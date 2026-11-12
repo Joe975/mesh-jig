@@ -1,0 +1,33 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Claude Code subscription agent",
+  "effort": "low",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "Claude Fable 5.2 low",
+  "notes": [
+    "All use a 60,000-triangle cap, a script-painted 1024 px texture, and idle, walk, run, jump, rear_up. Costs and tokens not reported (subscription). This is a study with visible limitations, not a production-ready asset.",
+    "Selected static a05 scores 0.8240; numeric best of five is a04 at 0.8278. Motion judged by the builder from strips only; head smaller than the sheet."
+  ],
+  "result": {
+    "gates_passed": null,
+    "gates_total": null,
+    "numeric_score": null
+  },
+  "schema_version": 1,
+  "scope": "One run, five static evaluations, one selected five-clip animated horse",
+  "title": "Fable 5.2 low painted horse study"
+}

@@ -211,6 +211,11 @@ showcase/explore-horror/model-09.glb
 showcase/explore-horror/model-10.glb
 showcase/explore-horror/release.json
 showcase/explore-horror/summary.json
+showcase/explore-horse-fable-low-20261112/README.md
+showcase/explore-horse-fable-low-20261112/image-01.png
+showcase/explore-horse-fable-low-20261112/model-01.glb
+showcase/explore-horse-fable-low-20261112/release.json
+showcase/explore-horse-fable-low-20261112/summary.json
 showcase/explore-horse-openai-20261112/README.md
 showcase/explore-horse-openai-20261112/image-01.png
 showcase/explore-horse-openai-20261112/image-02.png
