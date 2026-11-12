@@ -1,0 +1,32 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex native subscription agent",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "GPT-6.1 Terra",
+  "notes": [
+    "In-place march with simplified armor and mechanical detail. Linkage contact, stance slip, collisions and engine integration are not certified; detailed diagnostic readings were not completed."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 0,
+    "numeric_score": 0.5956
+  },
+  "schema_version": 1,
+  "scope": "Five static evaluations; selected model rigged with idle, walk, run and jump.",
+  "title": "GPT-6.1 Terra: mech"
+}
