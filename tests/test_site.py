@@ -63,10 +63,27 @@ def test_every_viewer_starts_on_the_front_loads_lazily_and_takes_touch_drags():
     assert all('camera-orbit="180deg' in v and 'loading="lazy"' in v and 'touch-action="none"' in v for v in viewers)
 
 
+def _shown_bytes(page, root):
+    shown = re.findall(r'src="(showcase/[^"]+)"', page)
+    return sum((root / s).stat().st_size for s in shown)
+
+
 def test_the_page_stays_light():
-    """Every viewer and picture loads lazily, as it scrolls into view; the cap bounds a reader who sees it all."""
-    shown = re.findall(r'src="(showcase/[^"]+)"', PAGE.read_text(encoding="utf-8"))
-    assert sum((ROOT / s).stat().st_size for s in shown) < 50_000_000
+    """Lazy gallery growth is bounded without giving older sections extra room."""
+    page = PAGE.read_text(encoding="utf-8")
+    octopus = re.search(r'<section id="octopus">.*?</section>', page, re.S)
+    added = octopus.group(0) if octopus else ''
+    assert _shown_bytes(page.replace(added, ''), ROOT) < 50_000_000
+    assert _shown_bytes(added, ROOT) < 10_000_000
+    assert _shown_bytes(page, ROOT) < 60_000_000
+
+
+def test_gallery_byte_accounting_counts_only_shown_assets(tmp_path):
+    (tmp_path / 'showcase').mkdir()
+    (tmp_path / 'showcase' / 'shown.png').write_bytes(b'12345')
+    (tmp_path / 'showcase' / 'download.glb').write_bytes(b'123456789')
+    page = '<img src="showcase/shown.png"><a href="showcase/download.glb">Download</a>'
+    assert _shown_bytes(page, tmp_path) == 5
 
 
 def test_every_example_sheet_is_published():

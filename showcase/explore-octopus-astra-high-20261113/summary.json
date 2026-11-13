@@ -1,0 +1,35 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex delegated worker",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "GPT-6 Astra",
+  "notes": [
+    "Selected by eye: fourth model, 44,644 active triangles, 82 joints. Latest fifth model is numeric best at 0.7008; it clips inner cup rims and was not selected.",
+    "Eight clips: idle, crawl, swim, curl, reach, grasp, release and turn. Crawl stays in place; swim uses traveling bend and axial twist. Grasp and release are paired actions, not seamless loops.",
+    "Reach target in model metres: (0.396, 1.025, 0.251). Empty grasp sphere: center (0, 1.044, 0.366), radius 0.20. No prop or physical contact claim.",
+    "Simplified arm volume, eyes and mantle. Frozen geometry and sampled motion checks pass; finite clearance proxies do not certify all mesh collisions. Runtime, token usage and cost unavailable."
+  ],
+  "result": {
+    "gates_passed": 1,
+    "gates_total": 1,
+    "numeric_score": 0.6965
+  },
+  "schema_version": 1,
+  "scope": "Five evaluated models; visual selection fourth; five rig refinements; eight clips",
+  "title": "Octopus: Astra high animated result"
+}

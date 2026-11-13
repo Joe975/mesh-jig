@@ -1,0 +1,32 @@
+{
+  "completed": null,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Built-in image generation",
+  "effort": null,
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": null,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "Built-in image generation",
+  "notes": [
+    "Top and underside are arm-count and attachment masters; front is height master. Hero is illustrative."
+  ],
+  "result": {
+    "gates_passed": null,
+    "gates_total": null,
+    "numeric_score": null
+  },
+  "schema_version": 1,
+  "scope": "Accepted six-view eight-arm creature sheet",
+  "title": "Eight-arm octopus reference"
+}
