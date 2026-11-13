@@ -1,0 +1,30 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Antigravity subscription CLI",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "gemini-4-hydrogen-high",
+  "notes": [],
+  "result": {
+    "gates_passed": 16,
+    "gates_total": 19,
+    "numeric_score": 0.6533
+  },
+  "schema_version": 1,
+  "scope": "Five evaluated models; three passing rigs from eight submissions; selected a05 and r08",
+  "title": "Gemini 4 Hydrogen High: pirate cat"
+}

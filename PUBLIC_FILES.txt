@@ -78,6 +78,10 @@ showcase/explore-cat-fable-claude-code-20261110/image-01.png
 showcase/explore-cat-fable-claude-code-20261110/model-01.glb
 showcase/explore-cat-fable-claude-code-20261110/release.json
 showcase/explore-cat-fable-claude-code-20261110/summary.json
+showcase/explore-cat-hydrogen-high-20261114/README.md
+showcase/explore-cat-hydrogen-high-20261114/model-01.glb
+showcase/explore-cat-hydrogen-high-20261114/release.json
+showcase/explore-cat-hydrogen-high-20261114/summary.json
 showcase/explore-cat-luna-high-20261112/README.md
 showcase/explore-cat-luna-high-20261112/image-01.png
 showcase/explore-cat-luna-high-20261112/model-01.glb
