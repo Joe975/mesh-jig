@@ -1,0 +1,33 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": 0.469932,
+    "kind": "reported"
+  },
+  "driver": "Mesh Jig API via OpenRouter",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": 840203,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": 3695289,
+    "reasoning_tokens": null,
+    "runtime_seconds": 8638.0
+  },
+  "model": "nex-agi/nex-n2.6",
+  "notes": [
+    "US$0.469932 covers completed model and rig calls; interrupted startup calls have unknown additional cost.",
+    "Primitive mannequin-like anatomy and flat paint. Sprint head bob, shallow crouch and late forward leap; sampled gates pass but joint seams move. Not game-engine certified."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 1,
+    "numeric_score": 0.3258
+  },
+  "schema_version": 1,
+  "scope": "Five visual model iterations followed by rigging and sprint/leap animation; selected a05/a10",
+  "title": "Nex-N2.6 High horror"
+}
