@@ -278,6 +278,10 @@ showcase/explore-huge-head-astra-high-20261113/model-01.glb
 showcase/explore-huge-head-astra-high-20261113/model-02.glb
 showcase/explore-huge-head-astra-high-20261113/release.json
 showcase/explore-huge-head-astra-high-20261113/summary.json
+showcase/explore-huge-head-hydrogen-high-20261114/README.md
+showcase/explore-huge-head-hydrogen-high-20261114/model-01.glb
+showcase/explore-huge-head-hydrogen-high-20261114/release.json
+showcase/explore-huge-head-hydrogen-high-20261114/summary.json
 showcase/explore-mech-astra-high-20261111/README.md
 showcase/explore-mech-astra-high-20261111/image-01.png
 showcase/explore-mech-astra-high-20261111/model-01.glb
