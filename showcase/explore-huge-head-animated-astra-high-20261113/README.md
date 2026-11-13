@@ -1,4 +1,4 @@
-# Huge ugly head: Astra high
+# Huge ugly head: Astra high animated
 
 | Measure | Value |
 |---|---|
@@ -23,11 +23,9 @@
 
 Token counts use the report's provider conventions. Reasoning is included in completion tokens; cache counters are not extra prompt tokens. Estimated cost is not an invoiced charge.
 
-60,000-triangle ceiling; both selected GLBs contain 57,112 triangles. Model 1 is animated; model 2 is static.
+60,000-triangle ceiling; selected animated GLB contains 57,112 triangles.
 
 Simplified sculpt; wrinkles, eyelid/chin integration and hands fall short of the reference. The grin is subtle.
-
-Static rest has minor tongue/tooth overlap. Animated neutral recesses the tongue by 30 mm.
 
 One unified 24-bone body/face hierarchy. Idle, walk and run loop. Walk/run are in place; matching forward speeds are 0.166667 and 0.810185 m/s.
 
@@ -52,5 +50,3 @@ Runtime, token usage and cost are unavailable. Numeric gates and sampled contact
 ![Selected output](image-09.png)
 
 [Download selected model](model-01.glb)
-
-[Download selected model](model-02.glb)
