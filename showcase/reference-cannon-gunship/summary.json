@@ -1,0 +1,32 @@
+{
+  "completed": null,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Built-in image generation and edits",
+  "effort": null,
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": null,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "Built-in image generation",
+  "notes": [
+    "Top and underside define planform; front and rear define height. The side is 11.63% shallow and is a descriptive attachment guide, excluded from numeric silhouette scoring. Hero and effects panels are illustrative. The animated model uses authored timing and simplified faceted surfaces."
+  ],
+  "result": {
+    "gates_passed": null,
+    "gates_total": null,
+    "numeric_score": null
+  },
+  "schema_version": 1,
+  "scope": "Selected concept turnaround and effects appearance study.",
+  "title": "Cannon gunship reference sheets"
+}

@@ -51,6 +51,14 @@ showcase/bruce-owl-comparison/model-06.glb
 showcase/bruce-owl-comparison/model-07.glb
 showcase/bruce-owl-comparison/release.json
 showcase/bruce-owl-comparison/summary.json
+showcase/explore-cannon-gunship-astra-high-20261113/README.md
+showcase/explore-cannon-gunship-astra-high-20261113/image-01.png
+showcase/explore-cannon-gunship-astra-high-20261113/image-02.png
+showcase/explore-cannon-gunship-astra-high-20261113/image-03.png
+showcase/explore-cannon-gunship-astra-high-20261113/image-04.png
+showcase/explore-cannon-gunship-astra-high-20261113/model-01.glb
+showcase/explore-cannon-gunship-astra-high-20261113/release.json
+showcase/explore-cannon-gunship-astra-high-20261113/summary.json
 showcase/explore-cat-astra-high-20261112/README.md
 showcase/explore-cat-astra-high-20261112/image-01.png
 showcase/explore-cat-astra-high-20261112/model-01.glb
@@ -373,6 +381,12 @@ showcase/reference-argon-sky-whale/image-01.png
 showcase/reference-argon-sky-whale/model-01.glb
 showcase/reference-argon-sky-whale/release.json
 showcase/reference-argon-sky-whale/summary.json
+showcase/reference-cannon-gunship/README.md
+showcase/reference-cannon-gunship/image-01.png
+showcase/reference-cannon-gunship/image-02.png
+showcase/reference-cannon-gunship/image-03.png
+showcase/reference-cannon-gunship/release.json
+showcase/reference-cannon-gunship/summary.json
 showcase/reference-cat/README.md
 showcase/reference-cat/image-01.png
 showcase/reference-cat/image-02.png

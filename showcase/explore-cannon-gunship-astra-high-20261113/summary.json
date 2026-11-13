@@ -1,0 +1,35 @@
+{
+  "completed": null,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex subscription worker",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 6,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "GPT-6 Astra high",
+  "notes": [
+    "One animated deliverable: idle, bank_turn, aim, fire, burst, thrust and shutdown. All mesh instances total 9,136 triangles including 1,304 baked effect triangles. Scale: about 8 m long.",
+    "Barrel recoil is 0.36 m. Muzzle flash follows the moving barrel; sparks travel and shrink away. Two rear plumes and streaks ramp with authored thrust and fully extinguish during shutdown. These are core glTF mesh/TRS animations, not runtime particle simulation. Opacity is fixed; visibility fades by shrinking.",
+    "Mechanical geometry, textures and rigid weights retained. Sanitized materials and animation data matched the source. Attachment and lifecycle checks sampled at 120 Hz. Clearance checks use a barrel/canopy height envelope, not complete collision certification.",
+    "Simplified faceted craft with painted details. Selected numeric score 0.7215; highest numeric score 0.7221. Source-authored top/underside planform and front/rear height are authoritative. The side reference is 11.63% shallow and excluded from numeric silhouette scoring; hero is illustrative. Subscription token usage, elapsed runtime and cost are not reported."
+  ],
+  "result": {
+    "gates_passed": 1,
+    "gates_total": 1,
+    "numeric_score": 0.7215
+  },
+  "schema_version": 1,
+  "scope": "Six successful modeling evaluations: five candidates plus a panel-contact repair; selected visual-best source, rigid rig and two effect refinements.",
+  "title": "Cannon gunship: seven clips and baked effects"
+}
