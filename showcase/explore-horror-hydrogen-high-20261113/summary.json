@@ -1,0 +1,37 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Antigravity native subscription CLI",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "gemini-4-hydrogen-high",
+  "notes": [
+    "32,000-triangle ceiling and script-painted 1024 px atlas; selected model has 26,568 triangles.",
+    "Selected visual pick score 0.4797; numeric leader a03 scored 0.4996. All five models missed the 0.4 resemblance diagnostic; selected model measured 0.332.",
+    "Simplified tubular/faceted limbs, blocky joins and coarse paint remain. Passing sampled motion gates is not production-quality or engine certification.",
+    "Thirty-bone rig, maximum three influences. Sprint is a one-second in-place loop; leap is 1.5 seconds and travels 0.86 m forward. Independent 60 Hz checks found 240.8 mm leap clearance and at most 2.16 mm ground penetration, within the 8 mm limit.",
+    "Original geometry, accessors and texture pixels are preserved through rigging. The native CLI completed the files but reported a malformed final-call error; independent artifact validation succeeded without another model run.",
+    "Runtime, token usage and subscription cost are unavailable. No paid API fallback was used."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 1,
+    "numeric_score": 0.4797
+  },
+  "schema_version": 1,
+  "scope": "Five successful model evaluations; selected a05. Five rig submissions, three passing candidates; selected r05 with sprint and leap.",
+  "title": "Six-limbed horror: Gemini 4 Hydrogen High"
+}

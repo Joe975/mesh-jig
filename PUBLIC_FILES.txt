@@ -153,6 +153,11 @@ showcase/explore-horror-gemini-flash-high-20261111/model-01.glb
 showcase/explore-horror-gemini-flash-high-20261111/model-02.glb
 showcase/explore-horror-gemini-flash-high-20261111/release.json
 showcase/explore-horror-gemini-flash-high-20261111/summary.json
+showcase/explore-horror-hydrogen-high-20261113/README.md
+showcase/explore-horror-hydrogen-high-20261113/image-01.png
+showcase/explore-horror-hydrogen-high-20261113/model-01.glb
+showcase/explore-horror-hydrogen-high-20261113/release.json
+showcase/explore-horror-hydrogen-high-20261113/summary.json
 showcase/explore-horror-openai-20261110/README.md
 showcase/explore-horror-openai-20261110/image-01.png
 showcase/explore-horror-openai-20261110/image-02.png
