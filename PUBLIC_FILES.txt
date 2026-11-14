@@ -23,6 +23,8 @@ docs/RIGGING.md
 docs/SELECTIONS.md
 docs/SOUND.md
 examples/character-contract/jig.example.json
+examples/eight-tentacle-creature/rig-brief.md
+examples/eight-tentacle-creature/rig.json
 examples/organic/recipe.py
 examples/six-limbed-horror/brief.md
 examples/six-limbed-horror/jig.json

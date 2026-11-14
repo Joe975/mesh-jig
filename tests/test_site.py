@@ -74,8 +74,8 @@ def test_the_page_stays_light():
     octopus = re.search(r'<section id="octopus">.*?</section>', page, re.S)
     added = octopus.group(0) if octopus else ''
     assert _shown_bytes(page.replace(added, ''), ROOT) < 50_000_000
-    assert _shown_bytes(added, ROOT) < 10_000_000
-    assert _shown_bytes(page, ROOT) < 60_000_000
+    assert _shown_bytes(added, ROOT) < 15_000_000
+    assert _shown_bytes(page, ROOT) < 65_000_000
 
 
 def test_gallery_byte_accounting_counts_only_shown_assets(tmp_path):

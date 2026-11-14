@@ -1,0 +1,12 @@
+{
+  "fps": 24,
+  "max_influences": 4,
+  "bones": {"required": ["root", "mantle", "arm00.00", "arm01.00", "arm02.00", "arm03.00", "arm04.00", "arm05.00", "arm06.00", "arm07.00"], "max": 90},
+  "loop_mm_max": 1,
+  "clips": {
+    "crawl": {"seconds": 3, "loop": true, "min_displacement_mm": 80, "ground_drop_mm_max": 12, "max_edge_ratio": 2.5, "stretch_area_max": 0.02},
+    "walk": {"seconds": 3, "loop": true, "min_displacement_mm": 80, "ground_drop_mm_max": 12, "max_edge_ratio": 2.5, "stretch_area_max": 0.02},
+    "leap": {"seconds": 1.25, "loop": false, "min_displacement_mm": 200, "ground_drop_mm_max": 12, "max_edge_ratio": 2.5, "stretch_area_max": 0.02},
+    "turn": {"seconds": 4, "loop": true, "min_displacement_mm": 150, "max_edge_ratio": 2.5, "stretch_area_max": 0.02}
+  }
+}
