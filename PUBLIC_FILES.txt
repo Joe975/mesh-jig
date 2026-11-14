@@ -246,6 +246,11 @@ showcase/explore-horse-fable-low-20261112/image-01.png
 showcase/explore-horse-fable-low-20261112/model-01.glb
 showcase/explore-horse-fable-low-20261112/release.json
 showcase/explore-horse-fable-low-20261112/summary.json
+showcase/explore-horse-fable-medium-gallop-20261115/README.md
+showcase/explore-horse-fable-medium-gallop-20261115/image-01.png
+showcase/explore-horse-fable-medium-gallop-20261115/model-01.glb
+showcase/explore-horse-fable-medium-gallop-20261115/release.json
+showcase/explore-horse-fable-medium-gallop-20261115/summary.json
 showcase/explore-horse-hydrogen-high-20261114/README.md
 showcase/explore-horse-hydrogen-high-20261114/model-01.glb
 showcase/explore-horse-hydrogen-high-20261114/release.json
