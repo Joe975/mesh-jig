@@ -7,7 +7,9 @@ description: Generate and iteratively review multi-view image reference sheets f
 
 Produce a usable modeling reference, not several attractive variations. This skill covers image generation,
 review and refinement; the [mesh-jig skill](../mesh-jig/SKILL.md) covers building the eventual mesh.
-Do not launch builders or alter an existing modeling contract unless requested.
+Do not launch builders or alter an existing modeling contract unless requested. When the subject is a real
+object and there is a video or photos of it, start from a photo sheet made with the
+[mesh-jig-video-reference skill](../mesh-jig-video-reference/SKILL.md) and use it as the edit target and design master.
 
 ## Establish the projection contract
 

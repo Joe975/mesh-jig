@@ -12,6 +12,8 @@
 - Agent context compaction and recovery policies are configurable; provider reasoning and cost reporting vary.
 - Only the implemented renderer determines the numeric result; other engine renderers can look different.
 - A project needs suitable reference views. Inconsistent artwork cannot define one exact shared projection.
+- The video/photo workflow preserves photographed perspective and pixel scale. Image-generator repairs can
+  change pose or design; inspect every view against its source before accepting a modelling reference.
 - A coding agent using the skill and the API visual workflow are not given the same things: the first reads
   its scores, the reference's outline table and as many previews as it likes, the second only pictures and a
   reviewer's notes, one build a round. A difference between their results is not a difference between models.

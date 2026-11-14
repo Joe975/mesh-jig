@@ -4,6 +4,8 @@ Republishing the reference site: follow the shared [reference-site publishing ru
 
 Generating or repairing a multi-view reference sheet: read `skill/mesh-jig-reference-sheet/SKILL.md`.
 
+Making a reference sheet from a video or photos of a real object: read `skill/mesh-jig-video-reference/SKILL.md`.
+
 Using mesh-jig to build a model: read `skill/mesh-jig/SKILL.md`. It is the whole loop.
 
 Building with no fixed number of attempts (a task like "keep going until three attempts in a row show no

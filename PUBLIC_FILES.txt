@@ -577,6 +577,8 @@ skill/mesh-jig-publish-results/SKILL.md
 skill/mesh-jig-publish-results/scripts/curate.py
 skill/mesh-jig-reference-sheet/SKILL.md
 skill/mesh-jig-reference-sheet/scripts/audit_sheet.py
+skill/mesh-jig-video-reference/SKILL.md
+skill/mesh-jig-video-reference/scripts/video_sheet.py
 skill/mesh-jig/SKILL.md
 src/mesh_jig/__init__.py
 src/mesh_jig/__main__.py
@@ -713,6 +715,7 @@ tests/test_surface_symmetry.py
 tests/test_texel_bake.py
 tests/test_texel_gutter.py
 tests/test_tool_protocol_transfer.py
+tests/test_video_reference.py
 tests/test_viewer.py
 tests/test_visual_agent.py
 tests/test_workflow_checkpoints.py

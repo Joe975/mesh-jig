@@ -5,6 +5,10 @@ use the README's shell conventions. Choose [Codex/Claude Code](CLIENTS.md) or th
 
 ## Configure your own reference
 
+For video or photos of a physical object, use the
+[video/photo reference workflow](../skill/mesh-jig-video-reference/SKILL.md) to make a six-view photo sheet
+before configuring the project. Its command examples use generic filenames; no source media is bundled.
+
 Supply `concept.png`:
 
 ```

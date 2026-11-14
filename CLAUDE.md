@@ -7,6 +7,9 @@ skills hold the model-building and harness workflows. Tests use synthetic inputs
 For modeling rather than development, use the included `.claude/skills/mesh-jig` entry or read
 `skill/mesh-jig/SKILL.md`. See `docs/CLIENTS.md` for local client/MCP setup.
 
+For a reference sheet from real-object video or photos, use `skill/mesh-jig-video-reference/SKILL.md`.
+Its helper and synthetic tests cover mask cleanup and six-view sheet assembly; source media stays private.
+
 Use the repository virtual environment. Run `python -m pytest -q` after logic changes. Keep measures
 deterministic. The Blender runner uses only Blender-shipped modules and the standard library. Preserve
 the script denylist, model write confinement and legacy scoring behavior unless deliberately changing them

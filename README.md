@@ -102,6 +102,9 @@ These examples supply briefs and contracts, not finished modelling or rig script
 
 ## Build your own model
 
+For a physical object, the [video/photo workflow](skill/mesh-jig-video-reference/SKILL.md) turns your
+turntable footage or photos into a six-view reference sheet for review.
+
 Follow [the guide](docs/GUIDE.md) to set crops, cameras, dimensions, scored views and brief **before**
 cutting references. Freeze them before comparing attempts. Initialization defaults suit a craft;
 characters need their own contract. The [reference-sheet skill](skill/mesh-jig-reference-sheet/SKILL.md)
