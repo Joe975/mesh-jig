@@ -374,6 +374,11 @@ showcase/explore-octopus-astra-high-20261113/image-09.png
 showcase/explore-octopus-astra-high-20261113/model-01.glb
 showcase/explore-octopus-astra-high-20261113/release.json
 showcase/explore-octopus-astra-high-20261113/summary.json
+showcase/explore-octopus-sol-high-20261114/README.md
+showcase/explore-octopus-sol-high-20261114/image-01.png
+showcase/explore-octopus-sol-high-20261114/model-01.glb
+showcase/explore-octopus-sol-high-20261114/release.json
+showcase/explore-octopus-sol-high-20261114/summary.json
 showcase/explore-sky-whale/README.md
 showcase/explore-sky-whale/model-01.glb
 showcase/explore-sky-whale/model-02.glb

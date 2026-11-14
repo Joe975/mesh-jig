@@ -1,0 +1,32 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Native Codex Sol high modeling and rigging",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "GPT-6 Sol",
+  "notes": [
+    "The short leap moves 0.28 m forward and rises 0.24 m; sampled deformation checks do not certify all mesh collisions."
+  ],
+  "result": {
+    "gates_passed": 1,
+    "gates_total": 1,
+    "numeric_score": 0.7015
+  },
+  "schema_version": 1,
+  "scope": "Five static evaluations seeded from the prior accepted octopus geometry; selected a05; two rig builds with crawl, walk, leap and turn",
+  "title": "GPT-6 Sol high octopus walk and leap"
+}
