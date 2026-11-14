@@ -5,7 +5,7 @@ self.onmessage = ({data}) => {
   try {
     if (data.type === 'init') {
       ({width, height} = data);
-      if (width * height > 640 * 640 || width < 1 || height < 1) throw new Error('Invalid GIF size.');
+      if (width * height > 2 * 640 * 640 || width < 1 || height < 1) throw new Error('Invalid GIF size.');
       gif = GIFEncoder();
     } else if (data.type === 'frame') {
       const rgba = new Uint8Array(data.buffer);

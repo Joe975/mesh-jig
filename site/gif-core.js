@@ -44,3 +44,49 @@ export function restoreViewer(viewer, state) {
   if (state.paused) viewer.pause(); else viewer.play();
   return true;
 }
+
+// Compare at real playback speeds. Only claim a loop when every moving panel closes.
+export function comparisonPlan(clips) {
+  const moving = clips.filter(c => c.animated);
+  if (!moving.length) throw new Error('Choose at least one animated model first.');
+  const plans = moving.map(c => capturePlan(c.duration, c.time, c.rate));
+  const cycle = plans[0].duration / plans[0].rate;
+  let seconds = 0;
+  const maxCycles = Math.floor((3 + 1e-7) / cycle);
+  for (let step = 0; step < 600 && maxCycles - step > 0; step++) {
+    const t = (maxCycles - step) * cycle;
+    if (plans.every(p => Math.abs(t / (p.duration / p.rate) - Math.round(t / (p.duration / p.rate))) < 1e-5)) {
+      seconds = Math.min(3, t); break;
+    }
+  }
+  const loops = seconds > 0;
+  seconds ||= 3;
+  const count = Math.max(1, Math.round(seconds * 20));
+  return {seconds, count, cycles: loops ? 1 : 0, centiseconds: Math.max(count * 2, Math.round(seconds * 100))};
+}
+
+export function comparisonTime(clip, seconds) {
+  if (!clip.animated) return clip.time;
+  return ((clip.time + seconds * clip.rate) % clip.duration + clip.duration) % clip.duration;
+}
+
+export function exportLabel(pick = {}, position = '', clip = '') {
+  const facts = pick.facts || {};
+  // Existing labels record effort; never infer it from provider or model capability.
+  const effort = pick.effort || facts.effort || pick.model?.match(/\b(ultra|xhigh|max|high|medium|low|minimal)\b/i)?.[1]?.toLowerCase() || 'not reported';
+  const triangles = Number.isFinite(facts.triangles) ? facts.triangles.toLocaleString('en') : 'not reported';
+  return [position && `${position} · ${clip || 'static'}`, pick.model || 'Unknown model',
+    `Effort: ${effort}`, `Cost: ${facts.cost || 'not reported'}`, `Triangles: ${triangles}`].filter(Boolean);
+}
+
+export function exportLayout(boxes) {
+  if (!boxes.length || boxes.length > 2 || boxes.some(b => !(b.width > 0 && b.height > 0)))
+    throw new Error('Open both viewers before exporting.');
+  const width = Math.max(1, Math.floor(Math.min(...boxes.map(b => Math.min(b.width, 640 * b.width / Math.max(b.width, b.height))))));
+  let y = 0;
+  const panels = boxes.map(b => {
+    const height = Math.max(1, Math.round(width * b.height / b.width));
+    const panel = {x: 0, y, width, height}; y += height; return panel;
+  });
+  return {width, height: y, panels};
+}
