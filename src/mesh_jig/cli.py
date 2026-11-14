@@ -229,8 +229,12 @@ def cmd_init(a) -> int:
         print("give --length (a craft) or --height (a standing subject), not both", file=sys.stderr)
         return 2
     try:
+        facial = None
+        if any(getattr(a, k, None) for k in ("face_required", "face_optional", "face_eyes")):
+            facial = {"version": 1, "required": a.face_required or [], "optional": a.face_optional or [],
+                      "eyes": a.face_eyes or []}
         written = sheet.init(a.dir, name=a.name, length_m=1.0 if a.length is None else a.length, sheet=a.sheet,
-                             height_m=a.height)
+                             height_m=a.height, **({"face_capabilities": facial} if facial else {}))
     except ValueError as error:
         print(str(error), file=sys.stderr)
         return 2
@@ -503,7 +507,8 @@ def cmd_new(a) -> int:
             return 2
     dest.mkdir(parents=True)
     copied = []
-    for filename in (script, *COPIED) if src else ():
+    facial_files = ("face_bindings.json",) if proj.data.get("face_capabilities") is not None else ()
+    for filename in (script, *COPIED, *facial_files) if src else ():
         if (src / filename).is_file():
             shutil.copy2(src / filename, dest / filename)
             copied.append(filename)
@@ -959,6 +964,15 @@ def parser() -> argparse.ArgumentParser:
     ap.add_argument('--metrics-stage', help='stage identifier; defaults to workflow or command family')
     ap.add_argument('--metrics-run', default='run', help='stable run identifier across stages')
     subs = ap.add_subparsers(dest="cmd", required=True)
+    from . import face
+    face.add_commands(subs)
+    from . import character
+    character.add_commands(subs)
+    from . import face_capability
+    s = subs.add_parser("face-bind", help="seal attempt facial bindings to its script and project requirements")
+    s.add_argument("project", type=Path)
+    s.add_argument("attempt", type=Path)
+    s.set_defaults(fn=face_capability.cli_bind)
     for command in ('rig-build', 'rig-check', 'rig-preview'):
         s = subs.add_parser(command, help='frozen GLB rigging, contract checks and animated CPU poses')
         s.add_argument('--contract', type=Path, required=True)
@@ -1024,6 +1038,9 @@ def parser() -> argparse.ArgumentParser:
                    help="a standing subject's height in metres: writes its contract (six views, the front among "
                         "them, held to that height) in place of a craft's")
     s.add_argument("--sheet", type=Path, help="a design sheet image to copy in and cut views from")
+    s.add_argument("--face-required", nargs="+", choices=face.STATES)
+    s.add_argument("--face-optional", nargs="+", choices=face.STATES)
+    s.add_argument("--face-eyes", nargs="+", choices=("left", "right"), help="visible eyes when gaze is requested")
     s.set_defaults(fn=cmd_init)
 
     s = subs.add_parser("sheet", help="cut refs/ from the design sheet named in jig.json")

@@ -156,6 +156,12 @@ class Project:
     def problems(self) -> list[str]:
         """What is wrong with the project as written; [] when every tool can run on it."""
         out = []
+        if "face_capabilities" in self.data:
+            from . import face_capability
+            try:
+                face_capability.contract(self.data["face_capabilities"])
+            except ValueError as error:
+                out.append(str(error))
         model = self.data.get("model")
         if not isinstance(model, dict):
             return [f"{JIG_FILE} needs a `model` block (see mesh_jig.glb for its fields)"]

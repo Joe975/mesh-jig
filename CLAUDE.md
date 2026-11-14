@@ -10,6 +10,10 @@ For modeling rather than development, use the included `.claude/skills/mesh-jig`
 For a reference sheet from real-object video or photos, use `skill/mesh-jig-video-reference/SKILL.md`.
 Its helper and synthetic tests cover mask cleanup and six-view sheet assembly; source media stays private.
 
+Facial requirements, binding and body/face composition are documented in `docs/FACE_CAPABILITIES.md`,
+`docs/FACE.md` and `docs/CHARACTER.md`. Their examples generate all geometry; scores and visual approval
+remain separate from functional checks.
+
 Use the repository virtual environment. Run `python -m pytest -q` after logic changes. Keep measures
 deterministic. The Blender runner uses only Blender-shipped modules and the standard library. Preserve
 the script denylist, model write confinement and legacy scoring behavior unless deliberately changing them

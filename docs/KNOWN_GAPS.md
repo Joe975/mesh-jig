@@ -9,6 +9,10 @@
 - The initial [rigging stage](RIGGING.md) supports authored weights and clips on a frozen static GLB.
   Its structural checks and sampled deformation gates do not certify visual animation quality,
   planted feet, self-intersection or volume preservation. The modelling dashboard shows the rest pose.
+- Optional [facial checks](FACE_CAPABILITIES.md) use authored regions and sampled motion/opening evidence.
+  They do not establish convincing anatomy, complete cavity topology or expression quality.
+  [Body/face composition](CHARACTER.md) supports compatible mesh-jig rigs; arbitrary skeleton retargeting,
+  morph targets, audio lip sync and engine adapters remain unsupported.
 - Agent context compaction and recovery policies are configurable; provider reasoning and cost reporting vary.
 - Only the implemented renderer determines the numeric result; other engine renderers can look different.
 - A project needs suitable reference views. Inconsistent artwork cannot define one exact shared projection.

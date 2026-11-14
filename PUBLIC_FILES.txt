@@ -10,7 +10,10 @@ LICENSE
 PUBLIC_FILES.txt
 README.md
 docs/API.md
+docs/CHARACTER.md
 docs/CLIENTS.md
+docs/FACE.md
+docs/FACE_CAPABILITIES.md
 docs/GAUNTLET.md
 docs/GUIDE.md
 docs/JIG.md
@@ -26,6 +29,8 @@ docs/SOUND.md
 examples/character-contract/jig.example.json
 examples/eight-tentacle-creature/rig-brief.md
 examples/eight-tentacle-creature/rig.json
+examples/face-capability/compose_example.py
+examples/face-capability/make_example.py
 examples/organic/recipe.py
 examples/six-limbed-horror/brief.md
 examples/six-limbed-horror/jig.json
@@ -589,12 +594,16 @@ src/mesh_jig/articulation.py
 src/mesh_jig/blender_runner.py
 src/mesh_jig/brief.py
 src/mesh_jig/build.py
+src/mesh_jig/character.py
 src/mesh_jig/checkpoint.py
 src/mesh_jig/cli.py
 src/mesh_jig/comparison_context.py
 src/mesh_jig/cpu.py
 src/mesh_jig/criteria.py
 src/mesh_jig/evaluate.py
+src/mesh_jig/face.py
+src/mesh_jig/face_capability.py
+src/mesh_jig/face_motion.py
 src/mesh_jig/gauntlet.py
 src/mesh_jig/gauntlet_sweep.py
 src/mesh_jig/glb.py
@@ -639,6 +648,7 @@ src/mesh_jig/target.py
 src/mesh_jig/texel_bake.py
 src/mesh_jig/viewer.py
 src/mesh_jig/visual_agent.py
+tests/character_blender_probe.py
 tests/conftest.py
 tests/dilate_oracle.py
 tests/glbkit.py
@@ -654,6 +664,7 @@ tests/test_brief.py
 tests/test_brief_placement.py
 tests/test_build.py
 tests/test_character.py
+tests/test_character_composition.py
 tests/test_checkpoint_writes.py
 tests/test_comparison_context.py
 tests/test_completion_evidence_transfer.py
@@ -661,6 +672,8 @@ tests/test_cpu.py
 tests/test_criteria.py
 tests/test_evaluate.py
 tests/test_evaluation_ownership.py
+tests/test_face.py
+tests/test_face_capability.py
 tests/test_floating_feedback.py
 tests/test_framing_feedback.py
 tests/test_gauntlet.py

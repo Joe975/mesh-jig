@@ -395,6 +395,9 @@ def text(project: Project) -> str:
     if project.brief.strip():
         parts.append("WHAT THE MODEL MUST SHOW (brief):\n" + project.brief.strip())
     parts.append(model_facts(spec))
+    if project.data.get("face_capabilities") is not None:
+        from . import face_capability
+        parts.append(face_capability.brief(project.data["face_capabilities"]))
     if project.scoring_weights is not None:
         parts.append(f"AGGREGATE SCORING VIEW WEIGHTS: {weights_text(project.scoring_weights)}. Hero only contributes if "
                      "explicitly selected.")

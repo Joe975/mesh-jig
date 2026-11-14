@@ -155,9 +155,10 @@ CPU pose film strips. Inspect every clip, then play it in an animation-capable v
 natural motion, foot planting or freedom from intersections. There is no animation-quality score.
 
 An [API rig builder](docs/RIGGING.md#an-api-model-writes-the-rig) is also available with
-`--workflow rig`. [Procedural sounds](docs/SOUND.md) can follow rigging. Facial animation and
-terrain/scene/runtime-IK stages are experimental work outside public `main`; this workflow does not
-combine facial expressions with body locomotion.
+`--workflow rig`. [Procedural sounds](docs/SOUND.md) can follow rigging.
+[Facial controls](docs/FACE.md) and [body/face composition](docs/CHARACTER.md) are optional stages;
+declare [facial geometry requirements](docs/FACE_CAPABILITIES.md) before modelling when needed.
+The examples generate their own puppet geometry. Terrain/scene/runtime-IK stages remain outside public `main`.
 
 ## See the models
 

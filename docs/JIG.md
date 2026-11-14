@@ -18,6 +18,7 @@
 | `refs` | Reference view directory. Default `refs`. |
 | `palette` | `{"name": "#rrggbb"}`: the colours the reference is painted in. Turns on the zone measure and the zone maps in `mesh-jig brief`, and names colours for atlas plans. |
 | `model` | The build contract ([model](#model)). Required. |
+| `face_capabilities` | Optional facial construction requirements declared before modelling: required/optional states, visible eyes and mouth-opening thresholds. Separate from resemblance scores; [schema and attempt bindings](FACE_CAPABILITIES.md). |
 | `sheet` | Optional: cut `refs/` from one design sheet with `mesh-jig sheet` ([sheet](#sheet)). |
 | `criteria` | What this reference is judged on: the scored views, a calibrated outline table, gates and review ([Criteria](#criteria)). |
 | `target` | What a build is for: `quest`, `pcvr` or a name from `targets` ([Targets](#targets)). A command's `--target` says it for one run. Absent: no target, and everything is built and read as before. |

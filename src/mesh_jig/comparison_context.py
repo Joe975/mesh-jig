@@ -51,6 +51,9 @@ def signature(project, *, package_root: str | Path | None = None) -> dict:
         "references": _reference_hashes(project),
         "implementation": source_fingerprint(package_root),
     }
+    if project.data.get("face_capabilities") is not None:
+        from . import face_capability
+        payload["face_capabilities"] = face_capability.contract(project.data["face_capabilities"])
     digest = hashlib.sha256(_canonical(payload)).hexdigest()
     target = project.target
     result = {"schema": SCHEMA, "digest": digest}

@@ -132,9 +132,12 @@ def template(name: str, length_m: float, sheet_file: str = "", sheet_size: tuple
 
 
 def init(root: str | Path, *, name: str = "", length_m: float = 1.0, sheet: str | Path | None = None,
-         height_m: float | None = None) -> list[Path]:
+         height_m: float | None = None, face_capabilities: dict | None = None) -> list[Path]:
     """Write jig.json, brief.md and refs/ into `root` (created). Refuses to overwrite a jig.json. With `sheet`, the
     image is copied in and a `sheet` block with one full-frame box per view is written for you to tighten."""
+    if face_capabilities is not None:
+        from . import face_capability
+        face_capabilities = face_capability.contract(face_capabilities)
     root = Path(root)
     jig = root / JIG_FILE
     if jig.exists():
@@ -151,7 +154,10 @@ def init(root: str | Path, *, name: str = "", length_m: float = 1.0, sheet: str 
         shutil.copyfile(src, root / sheet_file)
         size = Image.open(root / sheet_file).size
         written.append(root / sheet_file)
-    jig.write_text(json.dumps(template(name, length_m, sheet_file, size, height_m), indent=2) + "\n", encoding="utf-8")
+    data = template(name, length_m, sheet_file, size, height_m)
+    if face_capabilities is not None:
+        data["face_capabilities"] = face_capabilities
+    jig.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     written.append(jig)
     brief = root / "brief.md"
     if not brief.exists():

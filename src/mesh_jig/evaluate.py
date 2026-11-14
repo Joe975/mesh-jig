@@ -43,7 +43,7 @@ EVAL_FILE = "eval.json"
 NUMERIC_FILE = "numeric.json"
 ORTHO_VIEWS = silhouette.ORTHO_VIEWS
 PATH_FIELDS = ("script", "against")                     # a path each
-PATH_MAPS = ("renders", "compare", "ruled", "overlays", "closeups", "zone_maps")    # view -> path; a close-up is region -> path
+PATH_MAPS = ("renders", "compare", "ruled", "overlays", "closeups", "zone_maps", "face_pictures")
 TEXT_FIELDS = ("error", "pairwise_error")               # what a build or a judge said, which can name a path
 LEDGER_HEAD = ("| attempt | build | outline mm | overlap | resemblance | zones | numeric | gates | triangles | judge "
                "| note |\n|---|---|---|---|---|---|---|---|---|---|---|\n")
@@ -655,6 +655,7 @@ def _evaluate_locked(project: Project, script: str | Path, out_dir: str | Path, 
     # Existing direct callers can build/render without references. Validate the new
     # opt-in contracts here while retaining that legacy behavior (CLI validates all).
     if (any(k in spec for k in ("height_m", "height_tolerance", "axis_extents_m", "axis_tolerances", "profile"))
+            or "face_capabilities" in project.data
             or any(project.data.get(k) is not None for k in ("scoring", "review", "criteria"))):
         problems = project.problems()
         if problems:
@@ -731,6 +732,13 @@ def _evaluate_locked(project: Project, script: str | Path, out_dir: str | Path, 
         rec["hidden"] = review.hidden(judged, spec, [v for v in (weights or ORTHO_VIEWS) if v in views])
         rec["floating"] = review.floating(judged, spec)      # and nodes that touch no other: a tail off its body
         rec["flipped"] = review.flipped(judged, spec, [v for v in (weights or ORTHO_VIEWS) if v in views])  # holes
+    if project.data.get("face_capabilities") is not None:
+        from . import face_capability
+        rec["face_capabilities"], rec["face_pictures"] = face_capability.evaluate(project, script, judged, out_dir)
+        if rec["face_capabilities"]["requirements"]["required"]:
+            rec["gates"].append({"name": "face_capabilities_sampled",
+                                 "passed": rec["face_capabilities"]["required_checks_passed"],
+                                 "message": "Required facial smoke checks; visual review remains pending. See FACIAL FUNCTION feedback."})
     log(f"[{rec['name']}] measured: {numbers_text(numeric)}")
 
     if against is not None and backend is not None:
@@ -797,6 +805,11 @@ def preview(project: Project, attempt: str | Path, views: list[str] | None = Non
                           "weak_resemblance_views": res["weak_views"]}
     if project.review is not None:
         rec["closeups"] = review.closeups(paired, refs, project.review.get("regions") or [], out)
+    if project.data.get("face_capabilities") is not None:
+        from . import face_capability
+        rec["face_capabilities"], rec["face_pictures"] = face_capability.evaluate(
+            project, attempt / glb.script_name(project.spec), attempt / "out" / glb.judged_glb(project.spec),
+            attempt, output=out / "face-test")
     return rec
 
 
@@ -808,6 +821,10 @@ def preview_text(project: Project, attempt: str | Path, rec: dict) -> str:
         return "PREVIEW FAILED: " + str(rec.get("error", ""))
     measured = rec["silhouette"]
     if not measured:
+        if rec.get("face_capabilities"):
+            from . import face_capability
+            return "\n".join(["rendered (no reference view of the same name to compare)",
+                              face_capability.feedback(rec["face_capabilities"]), *picture_lines(rec, [])])
         return "rendered (no reference view of the same name to compare)"
     scored = ([v for v in rec["scoring"]["weights"] if v in measured] if rec.get("scoring")
               else [v for v in ORTHO_VIEWS if v in measured])
@@ -824,6 +841,9 @@ def preview_text(project: Project, attempt: str | Path, rec: dict) -> str:
     else:
         lines += [f"[{rec['name']}] a free look, not an attempt: not every scored view was drawn, so there is no "
                   "score. Leave `views` out to have one."]
+    if rec.get("face_capabilities"):
+        from . import face_capability
+        lines.append(face_capability.feedback(rec["face_capabilities"]))
     lines += region_lines(rec)
     lines += view_lines(rec, scored)
     lines += zone_reading_lines(rec.get("zone_reading") or {}, scored)
@@ -1186,6 +1206,9 @@ def picture_lines(rec: dict, scored: list[str]) -> list[str]:
         names = ", ".join((Path(close[n]).name if where else close[n]) + (" (its gate FAILED)" if n in failed else "")
                           for n in order)
         lines.append(f"close-ups of the marked regions (reference left, your build right, enlarged){where}: {names}")
+    at, poses = listed(rec.get("face_pictures") or {})
+    if poses:
+        lines.append(f"Facial functional close-ups (candidate only; visual review pending) in {at}: {poses}")
     return lines
 
 
@@ -1224,6 +1247,9 @@ def feedback(rec: dict, stands: dict | None = None) -> str:
     if any(v in scored for v in cropped):               # a view the score is taken over: the number above is off
         lines.append(cut)
     lines += gate_lines(rec)
+    if rec.get("face_capabilities"):
+        from . import face_capability
+        lines.append(face_capability.feedback(rec["face_capabilities"]))
     lines += standing_lines(rec, stands, scored)
     if surface:
         lines.append(surface)

@@ -40,7 +40,10 @@ def worlds(doc, local=None):
     return result
 
 
-def sample(doc, blob, clip, t):
+def channels(doc, blob, clip, t):
+    """Sample local TRS values from a clip; each call starts without previous state."""
+    if not np.isfinite(t):
+        raise ValueError('animation time must be finite')
     anim = next((a for a in doc.get('animations', []) if a.get('name') == clip), None)
     if anim is None:
         raise ValueError(f"no clip {clip!r}")
@@ -60,9 +63,35 @@ def sample(doc, blob, clip, t):
             u = float(np.clip((t-times[k])/(times[k+1]-times[k]), 0, 1))
             v = (slerp(values[k], values[k+1], u) if channel['target']['path'] == 'rotation'
                  else values[k]*(1-u) + values[k+1]*u)
-        parts.setdefault(channel['target']['node'], {})[channel['target']['path']] = v.tolist()
+        node, path = channel['target']['node'], channel['target']['path']
+        if path in parts.get(node, {}):
+            raise ValueError('duplicate animation channel ownership')
+        parts.setdefault(node, {})[path] = v.tolist()
+    return parts
+
+
+def with_channels(doc, parts):
     return worlds(doc, {i: glb.node_matrix({**{k: v for k, v in doc['nodes'][i].items() if k != 'matrix'}, **p})
                         for i, p in parts.items()})
+
+
+def sample(doc, blob, clip, t):
+    return with_channels(doc, channels(doc, blob, clip, t))
+
+
+def sample_layers(doc, blob, layers):
+    """Layer disjoint (clip, seconds) pairs. Refuse overlaps; reset unused channels to rest.
+
+    There is no accumulation, implicit averaging, crossfade or last-writer wins.
+    A baked combined clip is played alone, not layered over its body/face inputs.
+    """
+    parts = {}
+    for clip, t in layers:
+        for node, values in channels(doc, blob, clip, t).items():
+            if set(parts.get(node, {})) & set(values):
+                raise ValueError('overlapping animation layers: choose one owner per node/property')
+            parts.setdefault(node, {}).update(values)
+    return with_channels(doc, parts)
 
 
 def primitive_positions(doc, blob, ni, prim, world):
@@ -81,9 +110,10 @@ def primitive_positions(doc, blob, ni, prim, world):
     return np.einsum('nij,nj->ni', blend, np.c_[pos, np.ones(len(pos))])[:, :3], blend
 
 
-def posed(path: str | Path, clip=None, t=0):
+def posed(path: str | Path, clip=None, t=0, *, world=None):
     doc, blob = glb.read_glb(path)
-    world = worlds(doc) if clip is None else sample(doc, blob, clip, t)
+    if world is None:
+        world = worlds(doc) if clip is None else sample(doc, blob, clip, t)
     # Reuse colour/texture decoding in the static loader. Traversal/primitive order is identical.
     base = render.load(path, textured=bool(doc.get('images')), multiply=True)
     triangles, normals, offset = [], [], 0

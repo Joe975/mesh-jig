@@ -8,6 +8,9 @@ Making a reference sheet from a video or photos of a real object: read `skill/me
 
 Using mesh-jig to build a model: read `skill/mesh-jig/SKILL.md`. It is the whole loop.
 
+For facial geometry requirements and controls, read `docs/FACE_CAPABILITIES.md` and `docs/FACE.md`.
+For adding those controls to an animated body, read `docs/CHARACTER.md`.
+
 Building with no fixed number of attempts (a task like "keep going until three attempts in a row show no
 improvement"): read `skill/mesh-jig-keep-going/SKILL.md` as well. `mesh-jig streak <project>` says when to stop.
 

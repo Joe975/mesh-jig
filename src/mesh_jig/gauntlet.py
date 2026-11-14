@@ -12,7 +12,7 @@ import shutil
 import sys
 import time
 
-from . import agent, articulation, brief, cpu, evaluate, glb, llm, project, readiness, references
+from . import agent, articulation, brief, cpu, evaluate, face_capability, glb, llm, project, readiness, references
 from . import review as review_mod
 
 MODEL = "claude-haiku-5-5"
@@ -133,7 +133,25 @@ def visual_brief(proj: project.Project) -> str:
             + ("\nFIXED REGIONS / PARTS / VISIBILITY / CLEARANCE CONTRACT (Blender metres; "
                "preserve exact declared node names):\n" + json.dumps(proj.review)
                if proj.review else "")
-            + ("\n" + articulation.brief_text(proj.review) if articulation.brief_text(proj.review) else ""))
+            + ("\n" + articulation.brief_text(proj.review) if articulation.brief_text(proj.review) else "")
+            + ("\n" + face_capability.brief(proj.data["face_capabilities"])
+               if proj.data.get("face_capabilities") is not None else ""))
+
+
+def attempt_files(proj):
+    files = (glb.script_name(proj.spec), "atlas_plan.json")
+    return files + ((face_capability.FILE,) if proj.data.get("face_capabilities") is not None else ())
+
+
+def face_review(proj, rec):
+    if proj.data.get("face_capabilities") is None:
+        return ""
+    return (face_capability.brief(proj.data["face_capabilities"], include_binding=False) + "\n"
+            + face_capability.feedback(rec.get("face_capabilities")) + "\n"
+            "Report neutral fidelity and functional facial quality separately. Inspect each functional pose; "
+            "test results are sampled evidence, not a visual verdict. Describe unreadable expressions, false "
+            "openings, detached lips/eyes or intersections as specific geometric fixes. If pictures are missing, "
+            "state that visual function could not be assessed.")
 
 
 # What a reviewer is shown of a build, after the plain references: the key of the evaluation's record and the caption.
@@ -149,7 +167,10 @@ REVIEW_PICTURES = (
 def review_pictures(proj: project.Project, rec: dict) -> list[tuple[str, dict]]:
     """Every picture a reviewer of this build is shown, in order, as (caption, name -> path). One list for the loop's
     own reviewer and for `review_brief`, so a reviewer started any other way is shown what the loop's is."""
-    return [("Reference", dict(proj.references))] + [(caption, rec.get(key) or {}) for key, caption in REVIEW_PICTURES]
+    result = [("Reference", dict(proj.references))] + [(caption, rec.get(key) or {}) for key, caption in REVIEW_PICTURES]
+    if rec.get("face_pictures"):
+        result.append(("Facial functional pose (candidate only; assess separately from neutral fidelity)", rec["face_pictures"]))
+    return result
 
 
 def review_brief(proj: project.Project, rec: dict, attempt: Path) -> str:
@@ -170,7 +191,7 @@ def review_brief(proj: project.Project, rec: dict, attempt: Path) -> str:
         REVIEWER,
         "",
         "DESIGN BRIEF:",
-        proj.brief.strip(),
+        proj.brief.strip() + ("\n\n" + face_review(proj, rec) if proj.data.get("face_capabilities") is not None else ""),
         "",
         "PICTURES (open every one, in this order):",
         *shown])
@@ -185,13 +206,20 @@ class Files:
         self.names = {glb.script_name(proj.spec), "atlas_plan.json"}
         self.schemas = [t for t in agent.FILE_TOOLS
                         if t["function"]["name"] in {"read_file", "write_file", "edit_file"}] + [SUBMIT]
+        if proj.data.get("face_capabilities") is not None:
+            self.names.add(face_capability.FILE)
+            self.schemas.append(face_capability.BIND_TOOL)
 
     def call(self, name, args):
+        if name == "bind_face" and self.proj.data.get("face_capabilities") is not None:
+            if args:
+                raise agent.Rejected("bind_face takes no arguments; it seals only this attempt")
+            return face_capability.seal(self.proj, self.current)
         if name not in {"read_file", "write_file", "edit_file"}:
             raise agent.Rejected(f"unknown file tool {name}")
         path = agent.in_attempt(self.proj.root, args.get("path", ""), file=True)
         if path.name not in self.names or path.parent.parent != self.proj.attempts_dir:
-            raise agent.Rejected("only attempt model scripts and atlas_plan.json are readable")
+            raise agent.Rejected("only allowed attempt files are readable: " + ", ".join(sorted(self.names)))
         if name != "read_file" and path.parent != self.current:
             raise agent.Rejected("only the current attempt may be changed")
         return getattr(self.tools, "t_" + name)(args)[0]
@@ -273,16 +301,19 @@ def run(proj: project.Project, chat_fn, *, iterations=10, max_turns=24, model=MO
                                  **kwargs, _postprocess=append_successful_ledger)
 
     def on_disk(attempt):
-        """What a submission would build: the script's and the plan's bytes."""
+        """What a submission would build: script, plan and any facial binding bytes."""
         digest = hashlib.sha256()
-        for filename in (script_file, "atlas_plan.json"):
+        for filename in attempt_files(proj):
             path = attempt / filename
             digest.update(path.read_bytes() if path.is_file() else b"\0")
         return digest.hexdigest()
 
     def conversation(index, attempt, files, parts):
         """One conversation of a round: the build that passed (or None) and the last build error."""
-        messages = [{"role": "system", "content": IMPLEMENTOR}, {"role": "user", "content": parts}]
+        implementor = IMPLEMENTOR
+        if proj.data.get("face_capabilities") is not None:
+            implementor += "\nFor this facial contract, face_bindings.json is also an allowed attempt file. Seal final edits with bind_face before submit."
+        messages = [{"role": "system", "content": implementor}, {"role": "user", "content": parts}]
         rec, error, built = None, "", None
         given = on_disk(attempt)
         for turn in range(max_turns):
@@ -417,7 +448,7 @@ def run(proj: project.Project, chat_fn, *, iterations=10, max_turns=24, model=MO
             attempt = proj.attempts_dir / name
             attempt.mkdir(parents=True, exist_ok=False)
             if previous:
-                for filename in (glb.script_name(proj.spec), "atlas_plan.json"):
+                for filename in attempt_files(proj):
                     source = proj.attempts_dir / previous["name"] / filename
                     if source.is_file():
                         shutil.copy2(source, attempt / filename)
@@ -427,7 +458,7 @@ def run(proj: project.Project, chat_fn, *, iterations=10, max_turns=24, model=MO
                 """The files copied in from the previous round, in full. Left to read_file, which gives 200 lines a
                 call, a 693-line script took three turns to read before a line of it was changed."""
                 said = []
-                for filename in (script_file, "atlas_plan.json"):
+                for filename in attempt_files(proj):
                     path = attempt / filename
                     if not path.is_file():
                         continue
@@ -454,6 +485,9 @@ def run(proj: project.Project, chat_fn, *, iterations=10, max_turns=24, model=MO
                     # pixels of a whole view
                     parts += pictures(previous.get("closeups") or {},
                                       "Previous build, a marked region enlarged: reference left, yours right")
+                    if previous.get("face_capabilities"):
+                        parts += [{"type": "text", "text": face_capability.feedback(previous["face_capabilities"])}]
+                        parts += pictures(previous.get("face_pictures") or {}, "Previous facial functional pose")
                     if checks != "none":
                         parts += [{"type": "text", "text": "JIG CHECKS FOR PREVIOUS BUILD:\n"
                                    + evaluate.feedback(evaluate.portable(previous, proj.attempts_dir / previous["name"], proj.root))}]
@@ -528,6 +562,8 @@ def run(proj: project.Project, chat_fn, *, iterations=10, max_turns=24, model=MO
                 continue
             log(f"gauntlet round {index}/{iterations}: adversarial reviewer")
             review_parts = [{"type": "text", "text": proj.brief}]
+            if proj.data.get("face_capabilities") is not None:
+                review_parts += [{"type": "text", "text": face_review(proj, rec)}]
             for caption, paths in review_pictures(proj, rec):
                 review_parts += pictures(paths, caption)
             reviewer_prompt = REVIEWER

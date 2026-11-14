@@ -26,6 +26,9 @@ Before cutting references, edit `jig.json` and `brief.md`:
    and replace template calibration values with measured reference values.
 3. Set scored views, weights and gates. Describe the parts and colours in `brief.md`.
 
+For gaze, talking or expressions, declare the optional [facial requirements](FACE_CAPABILITIES.md)
+before modelling. Usable eyes, lips and mouth interiors must be built into the source geometry.
+
 Cut and inspect the configured views:
 
 ```
@@ -93,6 +96,10 @@ mesh-jig ready local-work/my-model a00 --target quest
 [Rigging](RIGGING.md) adds a skeleton and clips to a frozen GLB without re-exporting its geometry, by
 hand or with `mesh-jig agent <rig dir> --workflow rig`. [Sounds](SOUND.md) are synthesised by a script and
 timed to a rigged clip's footfalls, takeoff and landing, with `--workflow sound` for an API author.
+
+[Facial controls](FACE.md) bind authored regions on a static source. To attach them to a compatible
+animated body, use [character composition](CHARACTER.md), which preserves the body clips and exports
+independent facial clips or combined demonstrations. Its procedural examples need no existing character assets.
 
 ## Versions and troubleshooting
 
