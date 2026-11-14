@@ -259,6 +259,11 @@ showcase/explore-horse-openai-20261112/model-02.glb
 showcase/explore-horse-openai-20261112/model-03.glb
 showcase/explore-horse-openai-20261112/release.json
 showcase/explore-horse-openai-20261112/summary.json
+showcase/explore-horse-opus-high-gallop-20261115/README.md
+showcase/explore-horse-opus-high-gallop-20261115/image-01.png
+showcase/explore-horse-opus-high-gallop-20261115/model-01.glb
+showcase/explore-horse-opus-high-gallop-20261115/release.json
+showcase/explore-horse-opus-high-gallop-20261115/summary.json
 showcase/explore-huge-head-animated-astra-high-20261113/README.md
 showcase/explore-huge-head-animated-astra-high-20261113/image-01.png
 showcase/explore-huge-head-animated-astra-high-20261113/image-02.png
