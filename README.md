@@ -70,6 +70,9 @@ Coding clients use their own login and plan. Local build/render/evaluation needs
 The hosted API runner and optional vision judge use separate credentials and billing; a localhost
 runner can be key-free. Client subscriptions don't supply API credit.
 
+Optional [per-stage metrics](docs/METRICS.md) record timing, token usage and reported API costs for
+new runs. They include JSON and Markdown reports and explicit native CLI receipt imports.
+
 ## Choose a reference
 
 These sheets and selected outputs are included in a clone:

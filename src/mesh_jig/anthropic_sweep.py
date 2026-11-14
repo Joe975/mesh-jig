@@ -14,7 +14,7 @@ import threading
 import time
 import urllib.request
 
-from . import gauntlet, llm
+from . import gauntlet, llm, metrics
 
 RATES = {"claude-fable-5-2": (8., 40.), "claude-opus-5-5": (4., 20.), "claude-sonnet-5-5": (2., 10.),
          "claude-haiku-5-5": (.5, 2.5)}  # Haiku's maximum (long-context) rates for reservations
@@ -238,12 +238,17 @@ def chat_for(api, budget, label, *, max_tokens=65536, opener=urllib.request.urlo
         # One request only. Any transport failure leaves its reservation intact.
         try:
             timeout = api.timeout_s if left_s is None else max(1.0, min(api.timeout_s or left_s, left_s))
-            with opener(request, timeout=timeout) as response:
-                blocks, raw_usage, served, stop_reason = read_stream(response)
-            if served != api.model:
-                raise llm.LLMError(f"unexpected serving model {served}")
-            if budget is not None:
-                budget.settle(ticket, raw_usage)
+            # Reserve first: a budget refusal is not a dispatched request. Preserve measured
+            # usage even if serving-model validation or budget settlement subsequently fails.
+            with metrics.request(model=api.model, provider="anthropic",
+                                 role="implementor" if schemas else "reviewer", retry_index=0) as measured:
+                with opener(request, timeout=timeout) as response:
+                    blocks, raw_usage, served, stop_reason = read_stream(response)
+                measured.usage(raw_usage, dialect="anthropic")
+                if served != api.model:
+                    raise llm.LLMError(f"unexpected serving model {served}")
+                if budget is not None:
+                    budget.settle(ticket, raw_usage)
         except Exception:
             if budget is not None:
                 budget.failed(ticket)

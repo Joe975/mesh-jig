@@ -36,6 +36,7 @@ from pathlib import Path
 
 import numpy as np
 
+from . import metrics
 from . import script_check, sound_cues, sound_measure
 
 RATE = 44100
@@ -402,6 +403,7 @@ def run(script: str | Path, cues: dict, out: str | Path, python: str = sys.execu
     return record
 
 
+@metrics.measured('sound-build')
 def check(root: str | Path, script: str | Path, keep: str | Path | None = None, python: str = sys.executable) -> Result:
     """Refuse, run twice, compare, check. `keep` receives the first run's WAVs."""
     root = Path(root)

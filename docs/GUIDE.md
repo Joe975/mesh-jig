@@ -75,6 +75,10 @@ options need it.
 
 ## After modelling
 
+For new runs, enable [per-stage metrics](METRICS.md) before starting to record observed time,
+token coverage and reported API costs. Keep the same run ID across stages and give modelling,
+rigging/animation and sound their own stage IDs. Existing results are not rewritten.
+
 Read what a built model costs an engine, and what a rig or texture would find in it. `--target quest` or
 `pcvr` (or a project's own `targets` in [jig.json](JIG.md)) sets the triangle ceiling and the limits:
 

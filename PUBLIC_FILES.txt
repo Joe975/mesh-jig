@@ -16,6 +16,7 @@ docs/GUIDE.md
 docs/JIG.md
 docs/KNOWN_GAPS.md
 docs/LESSONS.md
+docs/METRICS.md
 docs/ORGANIC.md
 docs/PUBLICATION.md
 docs/QUICKSTART.md
@@ -600,6 +601,8 @@ src/mesh_jig/hull.py
 src/mesh_jig/judge.py
 src/mesh_jig/llm.py
 src/mesh_jig/mcp_server.py
+src/mesh_jig/metrics.py
+src/mesh_jig/metrics_native.py
 src/mesh_jig/outline.py
 src/mesh_jig/paint.py
 src/mesh_jig/palette.py
@@ -675,6 +678,9 @@ tests/test_keep_going.py
 tests/test_llm_completion.py
 tests/test_llm_stream.py
 tests/test_mcp_server.py
+tests/test_metrics.py
+tests/test_metrics_native.py
+tests/test_metrics_transport.py
 tests/test_new_attempt.py
 tests/test_organic_recipe.py
 tests/test_outline.py

@@ -13,6 +13,13 @@ For a new run, choose an ignored project directory such as `local-work/<run>/` a
 tracked. Keep the complete run private. Use [mesh-jig-publish-results](../mesh-jig-publish-results/SKILL.md)
 to share selected metrics, images or GLBs later; do not commit the raw project to a public repository.
 
+## Recording new-run statistics
+
+For new benchmark runs, follow [per-stage metrics](../../docs/METRICS.md) before starting.
+Keep one private metrics directory and stable run ID; explicitly change the stage at handoff.
+Capture native runner usage as well as jig tool timings. Missing counters stay unknown, not zero.
+Do not rewrite past results or split a combined rig/animation session by guesswork.
+
 ## The loop
 
 Make and change files with your file tools (write, edit), not shell heredocs, `sed -i` or `python -c`, and run

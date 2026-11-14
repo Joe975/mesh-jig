@@ -20,6 +20,7 @@ the attempt directory (`portable`), so a record names no machine and survives a 
 """
 
 from __future__ import annotations
+from . import metrics
 
 import errno
 import hashlib
@@ -592,6 +593,7 @@ def _owned_evaluation(project: Project, script: str | Path, out_dir: str | Path,
         yield rec
 
 
+@metrics.measured('evaluation')
 def evaluate(project: Project, script: str | Path, out_dir: str | Path, *, atlas: str | Path | None = None,
              paint_plan: str | Path | None = None, name: str = "", note: str = "", against: str | Path | None = None,
              against_name: str = "", backend=None, samples: int = 16, build_fn: Callable = build.build_variants,

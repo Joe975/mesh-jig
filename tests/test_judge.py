@@ -242,9 +242,9 @@ def test_the_default_env_file_is_dot_env_where_it_is_run_and_never_one_in_the_ho
         monkeypatch.setenv(var, str(home))
     monkeypatch.chdir(work)
     # conftest points llm's default at nothing; this is the module as it loads, with that home in place
-    spec = importlib.util.spec_from_file_location("llm_as_loaded", llm.__file__)
+    spec = importlib.util.spec_from_file_location("mesh_jig._llm_as_loaded", llm.__file__)
     fresh = importlib.util.module_from_spec(spec)
-    monkeypatch.setitem(sys.modules, "llm_as_loaded", fresh)
+    monkeypatch.setitem(sys.modules, "mesh_jig._llm_as_loaded", fresh)
     spec.loader.exec_module(fresh)
     assert fresh.DEFAULT_ENV_FILE == ".env"
     assert fresh.load_env_file(env={}) == [], "a key file in the home directory is not looked for"

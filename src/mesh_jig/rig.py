@@ -13,6 +13,7 @@ from pathlib import Path
 
 import numpy as np
 
+from . import metrics
 from . import glb, render, script_check, skin
 
 class ContractError(ValueError):
@@ -222,6 +223,7 @@ def write_glb(path, doc, blob):
     Path(path).write_bytes(data)
 
 
+@metrics.measured('rig-build')
 def build(source, script, spec, out, failed=None):
     """Build, check, and deliver to `out` only what holds its contract. A candidate that fails it is deleted, or
     with `failed` (a path) left there beside its report, for whoever has to see what it did."""

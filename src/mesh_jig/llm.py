@@ -30,6 +30,8 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Callable, Iterable, Iterator
 
+from . import metrics
+
 DEFAULT_URL = "https://openrouter.ai/api/v1"
 DEFAULT_MODEL = "deepseek/deepseek-v4.1-flash"
 JUDGE_PREFIX = "MESH_JIG_JUDGE"
@@ -233,8 +235,12 @@ def _post(url: str, payload: dict, key: str | None, timeout_s: float, attempts: 
         if key:
             req.add_header("Authorization", f"Bearer {key}")
         try:
-            with opener(req, timeout=timeout_s) as resp:
-                return json.loads(resp.read().decode("utf-8"))
+            with metrics.request(model=payload.get("model"), provider="openai-compatible",
+                                 role="implementor" if payload.get("tools") else "reviewer", retry_index=i) as measured:
+                with opener(req, timeout=timeout_s) as resp:
+                    raw = json.loads(resp.read().decode("utf-8"))
+                measured.usage(raw.get("usage") or {}, dialect="openai")
+                return raw
         except urllib.error.HTTPError as e:
             body = e.read().decode("utf-8", "replace")[:800]
             last = LLMError(f"HTTP {e.code} from {url}: {body}")
@@ -540,13 +546,22 @@ def chat_stream(backend: Backend, messages: list[dict], max_tokens: int | None =
         return OutOfTime(f"the {budget_s:.0f} s left for the model call ran out" + (f": {last}" if last else ""))
 
     i, waited = 0, 0.0
+    dispatched = 0
     while i <= retries:
         if left() <= 0:
             raise out_of_time()
         delay, down = 2.0 ** (i + 1) + random.uniform(0, 1), False
         try:
-            msg, usage = consume_with_watchdog(open_stream, idle_s=idle_s, max_s=min(backend.timeout_s, left()),
-                                               poll_s=poll_s, beat_s=beat_s, log=log)
+            # The request belongs to the caller thread's stage context, not the watchdog worker.
+            # Each retry (including an unavailable-server probe) is a separate dispatch.
+            attempt_index = dispatched
+            dispatched += 1
+            with metrics.request(model=backend.model, provider=backend.name,
+                                 role="implementor" if tools else "reviewer",
+                                 retry_index=attempt_index) as measured:
+                msg, usage = consume_with_watchdog(open_stream, idle_s=idle_s, max_s=min(backend.timeout_s, left()),
+                                                   poll_s=poll_s, beat_s=beat_s, log=log)
+                measured.usage(usage, dialect="openai")
             return {"text": msg.get("content") or "", "message": msg, "usage": usage}
         except ChatStalled as e:
             last, delay = e, 0.0

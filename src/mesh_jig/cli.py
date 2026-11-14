@@ -955,6 +955,9 @@ def parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="mesh-jig", description=__doc__.split("\n\n")[0],
                                  epilog=__doc__.split("\n\n", 1)[1], formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--version", action="version", version=f"mesh-jig {__version__}")
+    ap.add_argument('--metrics-dir', type=Path, help='opt-in private per-stage metrics directory')
+    ap.add_argument('--metrics-stage', help='stage identifier; defaults to workflow or command family')
+    ap.add_argument('--metrics-run', default='run', help='stable run identifier across stages')
     subs = ap.add_subparsers(dest="cmd", required=True)
     for command in ('rig-build', 'rig-check', 'rig-preview'):
         s = subs.add_parser(command, help='frozen GLB rigging, contract checks and animated CPU poses')
@@ -1266,7 +1269,18 @@ def main(argv: list[str] | None = None) -> int:
     a = parser().parse_args(argv)
     cpu.govern()                                # before any work: everything started later inherits it
     try:
-        return a.fn(a)
+        from . import metrics
+        if a.metrics_dir:
+            stage = a.metrics_stage or (('rig-animation' if a.workflow == 'rig' else a.workflow) if a.cmd == 'agent' else a.cmd.split('-')[0])
+            with metrics.stage(a.metrics_dir, stage, a.metrics_run):
+                with metrics.span('command', command=a.cmd) as record:
+                    result = a.fn(a)
+                    record.result(result in (None, 0))
+                    return result
+        with metrics.span('command', command=a.cmd) as record:
+            result = a.fn(a)
+            record.result(result in (None, 0))
+            return result
     except (project.ProjectError, ValueError) as e:
         print(f"mesh-jig: {e}", file=sys.stderr)
         return 2
