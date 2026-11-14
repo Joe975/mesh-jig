@@ -172,6 +172,12 @@ showcase/explore-horror-hydrogen-high-20261113/image-01.png
 showcase/explore-horror-hydrogen-high-20261113/model-01.glb
 showcase/explore-horror-hydrogen-high-20261113/release.json
 showcase/explore-horror-hydrogen-high-20261113/summary.json
+showcase/explore-horror-kimi-k31-pro-high-20261114/README.md
+showcase/explore-horror-kimi-k31-pro-high-20261114/image-01.png
+showcase/explore-horror-kimi-k31-pro-high-20261114/image-02.png
+showcase/explore-horror-kimi-k31-pro-high-20261114/model-01.glb
+showcase/explore-horror-kimi-k31-pro-high-20261114/release.json
+showcase/explore-horror-kimi-k31-pro-high-20261114/summary.json
 showcase/explore-horror-nex-high-20261113/README.md
 showcase/explore-horror-nex-high-20261113/image-01.png
 showcase/explore-horror-nex-high-20261113/model-01.glb
