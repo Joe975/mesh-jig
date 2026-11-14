@@ -1,0 +1,30 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Claude Code subscription CLI",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "claude-fable-5-2",
+  "notes": [],
+  "result": {
+    "gates_passed": 3,
+    "gates_total": 3,
+    "numeric_score": 0.7021
+  },
+  "schema_version": 1,
+  "scope": "Five evaluated models; four rig iterations; selected a05 and r04",
+  "title": "Claude Fable 5.2 high: huge head"
+}
