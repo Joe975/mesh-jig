@@ -7,6 +7,26 @@ PAGE = ROOT / "site" / "index.html"
 PUBLIC = set((ROOT / "PUBLIC_FILES.txt").read_text(encoding="utf-8").split())
 
 
+def test_stage_scorecards_and_unranked_overall_coverage_preserve_missing_data():
+    import html
+    import json
+    page = PAGE.read_text(encoding='utf-8')
+    assert page.index('</nav>') < page.index('class="coverage-board"') < page.index('<main')
+    assert 'Coverage only' in page and 'unranked' in page
+    assert 'missing stages are not zero' in page
+    assert page.count('class="stage-scorecard"') == page.count('<model-viewer')
+    picks = [p for data in re.findall(r'data-explore="([^"]+)"',page) for p in json.loads(html.unescape(data))]
+    kimi = next(p for p in picks if p['model']=='Kimi K3.1 Pro High, OpenRouter')
+    stages = kimi['facts']['stages']
+    assert stages['model']['metrics']['numeric_score'] == .4568
+    assert stages['model']['triangle_limit'] == 32000
+    assert stages['rig']['passed'] is False and stages['rig']['passing_candidates'] == 0
+    assert stages['clips']['sprint']['passed'] is True and stages['clips']['leap']['passed'] is False
+    assert stages['efficiency']['total_usd'] == 3.5591478
+    assert 'incomplete list-price estimate' in page and 'interrupted startup calls unpriced' in page
+    assert 'Not measured' in page and 'Unavailable' in page
+
+
 def test_every_reference_sheet_leads_directly_to_its_explorer():
     sections = re.findall(r'<section id="([^"]+)">(.*?)</section>', PAGE.read_text(encoding='utf-8'), re.S)
     assert sections
