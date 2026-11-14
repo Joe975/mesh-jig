@@ -106,14 +106,16 @@ assert.throws(()=>comparisonPlan([{...a,rate:0}]));
 """)
 
 
-def test_labels_keep_cost_provenance_and_missing_fields_honest():
+def test_labels_are_compact_and_keep_known_cost_qualifications():
     run_js("""
-const l=exportLabel({model:'GPT Sol HIGH, Codex',facts:{cost:'not reported (subscription)',triangles:43220}},'Top','run');
-assert.deepEqual(l,['Top · run','GPT Sol HIGH, Codex','Effort: high','Cost: not reported (subscription)','Triangles: 43,220']);
-assert.ok(exportLabel({model:'Mystery'}).includes('Effort: not reported'));
-assert.ok(exportLabel({model:'Mystery'}).includes('Cost: not reported'));
-assert.ok(exportLabel({effort:'low',model:'Test high',facts:{cost:'$4 estimated'}}).includes('Effort: low'));
-assert.ok(exportLabel({facts:{cost:'none (local model)',triangles:0}}).includes('Triangles: 0'));
+const l=exportLabel({model:'GPT Sol HIGH, Codex, 14 Nov',facts:{cost:'not reported (subscription)',triangles:43220}},'Top','run');
+assert.deepEqual(l,['GPT Sol HIGH, Codex','Triangles: 43,220']);
+assert.deepEqual(exportLabel({model:'Mystery'}),['Mystery','Triangles: not reported']);
+assert.ok(exportLabel({effort:'low',model:'Test high',facts:{cost:'$4 estimated'}}).includes('Test low'));
+assert.ok(exportLabel({model:'Test, 2026-11-14',effort:'high'}).includes('Effort: high'));
+assert.ok(exportLabel({facts:{cost:'none (local model)',triangles:0}}).includes('Cost: none (local model)'));
+assert.ok(exportLabel({facts:{cost:'US$0.46 reported; interrupted startup calls unpriced'}}).includes('Cost: US$0.46 reported; interrupted startup calls unpriced'));
+for(const cost of ['unknown','unavailable','not reported (subscription)','N/A','']) assert.ok(!exportLabel({facts:{cost}}).some(x=>x.startsWith('Cost:')));
 """)
 
 

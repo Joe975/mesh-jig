@@ -70,13 +70,24 @@ export function comparisonTime(clip, seconds) {
   return ((clip.time + seconds * clip.rate) % clip.duration + clip.duration) % clip.duration;
 }
 
-export function exportLabel(pick = {}, position = '', clip = '') {
+export function exportLabel(pick = {}) {
   const facts = pick.facts || {};
-  // Existing labels record effort; never infer it from provider or model capability.
-  const effort = pick.effort || facts.effort || pick.model?.match(/\b(ultra|xhigh|max|high|medium|low|minimal)\b/i)?.[1]?.toLowerCase() || 'not reported';
+  const effortWord = /\b(ultra|xhigh|max|high|medium|low|minimal)\b/i;
+  let model = (pick.model || 'Unknown model')
+    .replace(/\b\d{4}-\d{2}-\d{2}\b/g, '')
+    .replace(/\b\d{1,2}\s+(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)(?:\s+\d{4})?\b/gi, '')
+    .replace(/\s*,\s*(?=,|$)/g, '').replace(/,\s*$/, '').trim();
+  const recorded = pick.effort || facts.effort;
+  const inModel = model.match(effortWord)?.[1]?.toLowerCase();
+  // Keep effort once. Explicit metadata wins over an older model label.
+  if (recorded && inModel && recorded.toLowerCase() !== inModel)
+    model = model.replace(effortWord, recorded);
+  const effort = recorded || inModel;
+  const cost = String(facts.cost || '').trim();
+  const knownCost = cost && !/^(?:not reported|unknown|unavailable|n\/?a)\b/i.test(cost);
   const triangles = Number.isFinite(facts.triangles) ? facts.triangles.toLocaleString('en') : 'not reported';
-  return [position && `${position} · ${clip || 'static'}`, pick.model || 'Unknown model',
-    `Effort: ${effort}`, `Cost: ${facts.cost || 'not reported'}`, `Triangles: ${triangles}`].filter(Boolean);
+  return [model, effort && !inModel && `Effort: ${effort}`,
+    knownCost && `Cost: ${cost}`, `Triangles: ${triangles}`].filter(Boolean);
 }
 
 export function exportLayout(boxes) {
