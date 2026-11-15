@@ -1,0 +1,34 @@
+{
+  "completed": null,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "GPT-6 Astra high, Codex subscription",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": null,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "GPT-6 Astra",
+  "notes": [
+    "Three sword clips plus two facial-composition demonstrations. Full character download retains seven facial clips.",
+    "Approximate video fit: compact reach and torso motion. Angular elbows and fingers remain. Sampled checks do not certify continuous collision clearance or game-engine readiness.",
+    "Source has 23592 triangles. Static score and native token usage are unavailable."
+  ],
+  "result": {
+    "gates_passed": null,
+    "gates_total": null,
+    "numeric_score": null
+  },
+  "schema_version": 1,
+  "scope": "Selected sword repair after twelve independently reviewed fitting rounds and three final no-improvement rounds.",
+  "title": "Anime swordsman: heavy two-handed sword"
+}

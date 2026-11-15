@@ -85,6 +85,13 @@ showcase/bruce-owl-comparison/model-06.glb
 showcase/bruce-owl-comparison/model-07.glb
 showcase/bruce-owl-comparison/release.json
 showcase/bruce-owl-comparison/summary.json
+showcase/explore-anime-swordsman-astra-high-20261116/README.md
+showcase/explore-anime-swordsman-astra-high-20261116/image-01.png
+showcase/explore-anime-swordsman-astra-high-20261116/model-01.glb
+showcase/explore-anime-swordsman-astra-high-20261116/model-02.glb
+showcase/explore-anime-swordsman-astra-high-20261116/model-03.glb
+showcase/explore-anime-swordsman-astra-high-20261116/release.json
+showcase/explore-anime-swordsman-astra-high-20261116/summary.json
 showcase/explore-cannon-gunship-astra-high-20261113/README.md
 showcase/explore-cannon-gunship-astra-high-20261113/image-01.png
 showcase/explore-cannon-gunship-astra-high-20261113/image-02.png
@@ -494,6 +501,11 @@ showcase/pirate-cat-qwen-local/image-01.png
 showcase/pirate-cat-qwen-local/model-01.glb
 showcase/pirate-cat-qwen-local/release.json
 showcase/pirate-cat-qwen-local/summary.json
+showcase/reference-anime-swordsman/README.md
+showcase/reference-anime-swordsman/image-01.png
+showcase/reference-anime-swordsman/image-02.png
+showcase/reference-anime-swordsman/release.json
+showcase/reference-anime-swordsman/summary.json
 showcase/reference-argon-caterpillar/README.md
 showcase/reference-argon-caterpillar/image-01.png
 showcase/reference-argon-caterpillar/model-01.glb

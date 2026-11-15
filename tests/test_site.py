@@ -7,6 +7,27 @@ PAGE = ROOT / "site" / "index.html"
 PUBLIC = set((ROOT / "PUBLIC_FILES.txt").read_text(encoding="utf-8").split())
 
 
+def test_swordsman_preserves_selected_clips_and_unknown_static_score():
+    import html
+    import json
+    import struct
+    page = PAGE.read_text(encoding='utf-8')
+    section = page.split('<section id="anime-swordsman">', 1)[1].split('</section>', 1)[0]
+    picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section).group(1)))
+    assert len(picks) == 2
+    assert picks[0]['score'] is None and picks[0]['best'] is None
+    assert picks[0]['facts']['triangles'] == 23592
+    assert picks[0]['facts']['stages']['rig']['passed'] is True
+    assert picks[0]['clipLabels'] == ['guard', 'overhead_chop', 'horizontal_slash']
+    assert picks[1]['clipLabels'] == ['guard_talk', 'slash_yell_gaze']
+    for pick, count in zip(picks, [3, 2]):
+        raw = (ROOT / pick['src']).read_bytes()
+        size = struct.unpack_from('<I', raw, 12)[0]
+        assert len(json.loads(raw[20:20+size])['animations']) == count
+    assert 'Full character and facial clips' in section
+    assert 'compact reach' in section and 'subscription' in section
+
+
 def test_terrain_characters_are_lazy_anonymous_and_bound_to_their_public_models():
     import hashlib
     import json
