@@ -1,0 +1,34 @@
+{
+  "completed": null,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex subscription worker",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 7,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "GPT-6 Astra",
+  "notes": [
+    "55,136 triangles, 31 shared bones, six clips: idle, walk, run, jump, punch and angry_face. All declared rig checks and independent 60 Hz export sampling pass. Simplified muscle sculpt, extremities and carbon weave; no game-runtime or full collision validation.",
+    "Walk and run loop in place and require caller forward speeds 0.510753 and 3.009259 m/s. Jump, punch and angry_face are one-shot actions. Sampled interpolation ground penetration reaches 2.06 mm.",
+    "The website export uses core glTF unit-strength red emission instead of the native optional 3x emissive-strength extension. Geometry, textures, skinning and all animation channels are unchanged. Runtime, token usage and subscription cost were not reported."
+  ],
+  "result": {
+    "gates_passed": 2,
+    "gates_total": 2,
+    "numeric_score": 0.5618
+  },
+  "schema_version": 1,
+  "scope": "Seven evaluated models; visually selected a07 and final rig r06 of six iterations",
+  "title": "Hulking cyborg: Astra high"
+}

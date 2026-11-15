@@ -1,0 +1,33 @@
+{
+  "completed": null,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "OpenAI image generation",
+  "effort": null,
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": null,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "OpenAI image generation",
+  "notes": [
+    "Anatomical right arm and left leg are artificial; left arm and right leg are organic. Slim carbon-fibre and ivory ceramic limbs contrast with exaggerated human muscles. White faceplate with luminous eyes and mouth; no chrome.",
+    "Raster concept reference, not calibrated views from shared 3D geometry. The reusable modeling contract uses a 60,000-triangle ceiling."
+  ],
+  "result": {
+    "gates_passed": null,
+    "gates_total": null,
+    "numeric_score": null
+  },
+  "schema_version": 1,
+  "scope": "Owner-selected six-view cyborg reference",
+  "title": "Official reference: Hulking cyborg"
+}

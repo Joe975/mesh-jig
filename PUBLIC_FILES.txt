@@ -137,6 +137,12 @@ showcase/explore-caterpillar/model-07.glb
 showcase/explore-caterpillar/model-08.glb
 showcase/explore-caterpillar/release.json
 showcase/explore-caterpillar/summary.json
+showcase/explore-cyborg-astra-high-20261115/README.md
+showcase/explore-cyborg-astra-high-20261115/image-01.png
+showcase/explore-cyborg-astra-high-20261115/image-02.png
+showcase/explore-cyborg-astra-high-20261115/model-01.glb
+showcase/explore-cyborg-astra-high-20261115/release.json
+showcase/explore-cyborg-astra-high-20261115/summary.json
 showcase/explore-horror-antigravity-opus-high-a01-20261111/README.md
 showcase/explore-horror-antigravity-opus-high-a01-20261111/image-01.png
 showcase/explore-horror-antigravity-opus-high-a01-20261111/model-01.glb
@@ -480,6 +486,11 @@ showcase/reference-caterpillar/model-03.glb
 showcase/reference-caterpillar/model-04.glb
 showcase/reference-caterpillar/release.json
 showcase/reference-caterpillar/summary.json
+showcase/reference-cyborg/README.md
+showcase/reference-cyborg/image-01.png
+showcase/reference-cyborg/image-02.png
+showcase/reference-cyborg/release.json
+showcase/reference-cyborg/summary.json
 showcase/reference-horror/README.md
 showcase/reference-horror/image-01.png
 showcase/reference-horror/image-02.png
