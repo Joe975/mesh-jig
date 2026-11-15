@@ -676,6 +676,8 @@ site/index.html
 site/terrain/characters.json
 site/terrain/ground.js
 site/terrain/hash.js
+site/terrain/horror-deepseek.json
+site/terrain/horror-deepseek.release.json
 site/terrain/horror.json
 site/terrain/horror.release.json
 site/terrain/horse-fable.json

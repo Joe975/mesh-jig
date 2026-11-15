@@ -1,0 +1,8 @@
+{
+  "format": "mesh-jig terrain release",
+  "version": 1,
+  "files": {
+    "horror-deepseek.json": "b22f005358477d0ebda21c612b8750a1855bdbd7714110672f688219eab112c7"
+  },
+  "glb_sha256": "87be6606e5eabe719f83b4bb954cf46404c1e727b04087026cdc4bffcd9260ce"
+}

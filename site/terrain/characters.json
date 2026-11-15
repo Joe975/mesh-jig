@@ -18,6 +18,12 @@
       "model": "showcase/explore-horse-fable-medium-gallop-20261115/model-01.glb",
       "sha256": "afbf4eb7d6158d35d8834ba7393b3b188a32e131a16b45f017170a7af75168cb",
       "glb_sha256": "77aef2d34e17e0fbc52916136dd695690ebdb46f7a0c61582b02211520e3dbed"
+    },
+    "horror-deepseek-v1": {
+      "data": "horror-deepseek.json",
+      "model": "showcase/explore-horror-deepseek-1017-20261116/model-01.glb",
+      "sha256": "b22f005358477d0ebda21c612b8750a1855bdbd7714110672f688219eab112c7",
+      "glb_sha256": "87be6606e5eabe719f83b4bb954cf46404c1e727b04087026cdc4bffcd9260ce"
     }
   }
 }
