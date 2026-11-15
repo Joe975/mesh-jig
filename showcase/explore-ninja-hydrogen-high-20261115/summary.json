@@ -1,0 +1,34 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Antigravity subscription CLI",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "gemini-4-hydrogen-high",
+  "notes": [
+    "Five successful model evaluations and three passing rig candidates under the unchanged contracts. The selected model still fails the colour-placement gate.",
+    "Simplified clothing folds, wraps and facial shaping. Walk and run are basic in-place gaits; the jump has a modest tuck. Attack reads as an unarmed punch or sweep; the sword remains sheathed.",
+    "Sampled motion checks do not certify all clothing intersections, planted-foot behavior or physical quality. Subscription cost is not reported."
+  ],
+  "result": {
+    "gates_passed": 2,
+    "gates_total": 3,
+    "numeric_score": 0.6491
+  },
+  "schema_version": 1,
+  "scope": "One independent run: five successful model evaluations and three passing rig candidates under the frozen reference contract.",
+  "title": "Ninja: Gemini 4 Hydrogen High"
+}

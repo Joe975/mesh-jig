@@ -369,6 +369,11 @@ showcase/explore-ninja-astra-high-20261112/model-01.glb
 showcase/explore-ninja-astra-high-20261112/model-02.glb
 showcase/explore-ninja-astra-high-20261112/release.json
 showcase/explore-ninja-astra-high-20261112/summary.json
+showcase/explore-ninja-hydrogen-high-20261115/README.md
+showcase/explore-ninja-hydrogen-high-20261115/image-01.png
+showcase/explore-ninja-hydrogen-high-20261115/model-01.glb
+showcase/explore-ninja-hydrogen-high-20261115/release.json
+showcase/explore-ninja-hydrogen-high-20261115/summary.json
 showcase/explore-ninja-luna-high-20261112/README.md
 showcase/explore-ninja-luna-high-20261112/image-01.png
 showcase/explore-ninja-luna-high-20261112/model-01.glb
