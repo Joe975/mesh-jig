@@ -1,0 +1,34 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Antigravity subscription CLI",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "gemini-4-hydrogen-high",
+  "notes": [
+    "Five successful model evaluations, with the earlier visual selection retained over the latest candidate. Three rig candidates pass the unchanged contract. The selected model fails the resemblance gate.",
+    "Simplified sculpted face, layered scales and frond silhouette. Head-led turn and frond sway remain clear, while the crawl reads as a restrained shuffle with a weak contraction wave and subtle foot planting.",
+    "Sampled poses show no gross detachment or collapse, but do not certify foot sliding, minor intersections or all frond clearances. Subscription cost is not reported."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 1,
+    "numeric_score": 0.4932
+  },
+  "schema_version": 1,
+  "scope": "One independent run: five successful model evaluations and three passing rig candidates under the frozen reference contract.",
+  "title": "Three-eyed caterpillar: Gemini 4 Hydrogen High"
+}

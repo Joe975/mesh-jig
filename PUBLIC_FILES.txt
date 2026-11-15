@@ -130,6 +130,11 @@ showcase/explore-cat/model-14.glb
 showcase/explore-cat/model-15.glb
 showcase/explore-cat/release.json
 showcase/explore-cat/summary.json
+showcase/explore-caterpillar-hydrogen-high-20261115/README.md
+showcase/explore-caterpillar-hydrogen-high-20261115/image-01.png
+showcase/explore-caterpillar-hydrogen-high-20261115/model-01.glb
+showcase/explore-caterpillar-hydrogen-high-20261115/release.json
+showcase/explore-caterpillar-hydrogen-high-20261115/summary.json
 showcase/explore-caterpillar/README.md
 showcase/explore-caterpillar/model-01.glb
 showcase/explore-caterpillar/model-02.glb
