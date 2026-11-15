@@ -19,6 +19,7 @@ def test_swordsman_preserves_selected_clips_and_unknown_static_score():
     assert picks[0]['facts']['triangles'] == 23592
     assert picks[0]['facts']['stages']['rig']['passed'] is True
     assert picks[0]['clipLabels'] == ['guard', 'overhead_chop', 'horizontal_slash']
+    assert all(picks[0]['facts']['stages']['clips'][name]['passed'] for name in picks[0]['clipLabels'])
     assert picks[1]['clipLabels'] == ['guard_talk', 'slash_yell_gaze']
     for pick, count in zip(picks, [3, 2]):
         raw = (ROOT / pick['src']).read_bytes()
