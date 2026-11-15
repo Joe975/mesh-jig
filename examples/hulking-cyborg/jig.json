@@ -1,0 +1,292 @@
+{
+  "name": "hulking-cyborg",
+  "brief": "brief.md",
+  "refs": "refs",
+  "palette": {
+    "skin": "#c98262",
+    "carbon": "#202426",
+    "ceramic": "#eee9dc",
+    "red": "#ff171c",
+    "nails": "#c79d85"
+  },
+  "model": {
+    "glb": "model.glb",
+    "join": false,
+    "height_m": 2.6,
+    "height_tolerance": 0.02,
+    "stage_scale": 0.3846153846153846,
+    "max_triangles": 60000,
+    "min_triangles": 100,
+    "vertex_colors": true,
+    "min_colors": 4,
+    "blend": true,
+    "shots": [
+      {
+        "name": "front",
+        "cam_pos": [
+          0,
+          0.5,
+          -3
+        ],
+        "cam_target": [
+          0,
+          0.5,
+          0
+        ],
+        "ortho": 1.16
+      },
+      {
+        "name": "side",
+        "cam_pos": [
+          -3,
+          0.5,
+          0
+        ],
+        "cam_target": [
+          0,
+          0.5,
+          0
+        ],
+        "ortho": 1.16
+      },
+      {
+        "name": "rear",
+        "cam_pos": [
+          0,
+          0.5,
+          3
+        ],
+        "cam_target": [
+          0,
+          0.5,
+          0
+        ],
+        "ortho": 1.16
+      },
+      {
+        "name": "right",
+        "cam_pos": [
+          3,
+          0.5,
+          0
+        ],
+        "cam_target": [
+          0,
+          0.5,
+          0
+        ],
+        "ortho": 1.16
+      },
+      {
+        "name": "top",
+        "cam_pos": [
+          0,
+          3,
+          0
+        ],
+        "cam_target": [
+          0,
+          0.5,
+          0
+        ],
+        "ortho": 1.16,
+        "cam_up": [
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "name": "hero",
+        "cam_pos": [
+          -2.4,
+          1.5,
+          -3.7
+        ],
+        "cam_target": [
+          0,
+          0.5,
+          0
+        ],
+        "ortho": 1.16
+      }
+    ]
+  },
+  "sheet": {
+    "crops": {
+      "front": {
+        "box": [
+          60,
+          32,
+          490,
+          490
+        ]
+      },
+      "side": {
+        "box": [
+          650,
+          32,
+          900,
+          490
+        ]
+      },
+      "rear": {
+        "box": [
+          1040,
+          32,
+          1480,
+          490
+        ]
+      },
+      "right": {
+        "box": [
+          160,
+          530,
+          400,
+          1010
+        ]
+      },
+      "top": {
+        "box": [
+          525,
+          550,
+          1010,
+          1000
+        ]
+      },
+      "hero": {
+        "box": [
+          1050,
+          530,
+          1500,
+          1010
+        ]
+      }
+    },
+    "source": "../../showcase/reference-cyborg/image-01.png"
+  },
+  "criteria": {
+    "views": {
+      "front": 1,
+      "side": 1,
+      "rear": 1,
+      "right": 1,
+      "top": 1
+    },
+    "light": "camera",
+    "score": {
+      "overlap": 1,
+      "colour": 1,
+      "edges": 1,
+      "regions": 1
+    },
+    "gates": {
+      "resemblance_min": 0.38
+    },
+    "review": {
+      "regions": [
+        {
+          "name": "faceplate",
+          "view": "front",
+          "box": [
+            0.37,
+            0,
+            0.59,
+            0.15
+          ]
+        },
+        {
+          "name": "torso",
+          "view": "front",
+          "box": [
+            0.21,
+            0.13,
+            0.74,
+            0.43
+          ]
+        },
+        {
+          "name": "limb-materials",
+          "view": "front",
+          "box": [
+            0.14,
+            0.45,
+            0.72,
+            1
+          ]
+        }
+      ]
+    },
+    "outline": {
+      "mode": "standing",
+      "calibration": {
+        "view": "front",
+        "height_px": 449,
+        "origins_px": {
+          "front": [
+            218,
+            450
+          ],
+          "rear": [
+            214,
+            450
+          ],
+          "side": [
+            115,
+            446
+          ],
+          "right": [
+            111,
+            465
+          ]
+        }
+      },
+      "stations": [
+        {
+          "name": "foot",
+          "z_m": 0.06
+        },
+        {
+          "name": "ankle",
+          "z_m": 0.22
+        },
+        {
+          "name": "calf",
+          "z_m": 0.48
+        },
+        {
+          "name": "knee",
+          "z_m": 0.83
+        },
+        {
+          "name": "thigh",
+          "z_m": 1.14
+        },
+        {
+          "name": "pelvis",
+          "z_m": 1.4
+        },
+        {
+          "name": "waist",
+          "z_m": 1.63
+        },
+        {
+          "name": "chest",
+          "z_m": 1.98
+        },
+        {
+          "name": "shoulder",
+          "z_m": 2.16
+        },
+        {
+          "name": "neck",
+          "z_m": 2.3
+        },
+        {
+          "name": "head",
+          "z_m": 2.47
+        }
+      ]
+    }
+  }
+}

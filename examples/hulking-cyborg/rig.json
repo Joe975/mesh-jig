@@ -1,0 +1,14 @@
+{
+  "fps": 30,
+  "max_influences": 4,
+  "bones": {"required": ["root", "hips", "chest", "head", "upper_arm.R", "hand.R", "thigh.L", "eye.L", "mouth.R"], "max": 48},
+  "loop_mm_max": 1,
+  "clips": {
+    "idle": {"seconds": 3, "loop": true, "min_displacement_mm": 3, "ground_drop_mm_max": 8, "max_edge_ratio": 2.5, "stretch_area_max": 0.015},
+    "walk": {"seconds": 1.2, "loop": true, "min_displacement_mm": 100, "ground_drop_mm_max": 8, "max_edge_ratio": 2.5, "stretch_area_max": 0.015},
+    "run": {"seconds": 0.6, "loop": true, "min_displacement_mm": 200, "ground_drop_mm_max": 8, "max_edge_ratio": 2.5, "stretch_area_max": 0.015},
+    "jump": {"seconds": 1.8, "loop": false, "min_displacement_mm": 350, "ground_drop_mm_max": 8, "max_edge_ratio": 2.5, "stretch_area_max": 0.015},
+    "punch": {"seconds": 2, "loop": false, "min_displacement_mm": 350, "ground_drop_mm_max": 8, "max_edge_ratio": 2.5, "stretch_area_max": 0.015},
+    "angry_face": {"seconds": 2.4, "loop": false, "min_displacement_mm": 8, "ground_drop_mm_max": 8, "max_edge_ratio": 2.5, "stretch_area_max": 0.015}
+  }
+}

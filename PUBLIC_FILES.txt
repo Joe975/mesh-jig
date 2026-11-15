@@ -31,6 +31,10 @@ examples/eight-tentacle-creature/rig-brief.md
 examples/eight-tentacle-creature/rig.json
 examples/face-capability/compose_example.py
 examples/face-capability/make_example.py
+examples/hulking-cyborg/README.md
+examples/hulking-cyborg/brief.md
+examples/hulking-cyborg/jig.json
+examples/hulking-cyborg/rig.json
 examples/organic/recipe.py
 examples/six-limbed-horror/brief.md
 examples/six-limbed-horror/jig.json

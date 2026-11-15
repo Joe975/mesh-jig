@@ -93,9 +93,12 @@ def test_the_page_stays_light():
     page = PAGE.read_text(encoding="utf-8")
     octopus = re.search(r'<section id="octopus">.*?</section>', page, re.S)
     added = octopus.group(0) if octopus else ''
-    assert _shown_bytes(page.replace(added, ''), ROOT) < 50_000_000
+    cyborg = re.search(r'<section id="cyborg">.*?</section>', page, re.S)
+    cyborg_section = cyborg.group(0) if cyborg else ''
+    assert _shown_bytes(page.replace(added, '').replace(cyborg_section, ''), ROOT) < 50_000_000
     assert _shown_bytes(added, ROOT) < 15_000_000
-    assert _shown_bytes(page, ROOT) < 65_000_000
+    assert _shown_bytes(cyborg_section, ROOT) < 6_000_000
+    assert _shown_bytes(page, ROOT) < 71_000_000
 
 
 def test_gallery_byte_accounting_counts_only_shown_assets(tmp_path):
