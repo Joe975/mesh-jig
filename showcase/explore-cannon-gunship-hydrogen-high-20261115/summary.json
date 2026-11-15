@@ -1,0 +1,34 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Antigravity subscription CLI",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "gemini-4-hydrogen-high",
+  "notes": [
+    "Five successful model evaluations and three passing mechanical rig candidates under the unchanged contract. Seven animation clips; 3,336 active triangles including 1,244 triangles of appended baked mesh effects.",
+    "The original static source has 2,092 triangles. Original geometry, atlas, materials, skins and mechanical animation data are preserved. Muzzle flashes and forward sparks fire at 0.35 s, with burst shots at 0.35, 1.05 and 1.75 s; two cyan aft plumes strengthen in thrust and extinguish in shutdown.",
+    "Simplified cockpit, vents and cannon details. The forward sparks are faint at thumbnail scale and thrust intensity reads mainly as plume size. Independent sampled visual review and offline preservation, attachment, timing and loop checks do not certify continuous interpolation, physical behavior or every collision. Subscription cost is not reported."
+  ],
+  "result": {
+    "gates_passed": 1,
+    "gates_total": 1,
+    "numeric_score": 0.7451
+  },
+  "schema_version": 1,
+  "scope": "One independent run: five successful model evaluations and three passing rig candidates under the frozen reference contract.",
+  "title": "Cannon gunship: Gemini 4 Hydrogen High"
+}

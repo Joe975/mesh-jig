@@ -71,6 +71,11 @@ showcase/explore-cannon-gunship-astra-high-20261113/image-04.png
 showcase/explore-cannon-gunship-astra-high-20261113/model-01.glb
 showcase/explore-cannon-gunship-astra-high-20261113/release.json
 showcase/explore-cannon-gunship-astra-high-20261113/summary.json
+showcase/explore-cannon-gunship-hydrogen-high-20261115/README.md
+showcase/explore-cannon-gunship-hydrogen-high-20261115/image-01.png
+showcase/explore-cannon-gunship-hydrogen-high-20261115/model-01.glb
+showcase/explore-cannon-gunship-hydrogen-high-20261115/release.json
+showcase/explore-cannon-gunship-hydrogen-high-20261115/summary.json
 showcase/explore-cat-astra-high-20261112/README.md
 showcase/explore-cat-astra-high-20261112/image-01.png
 showcase/explore-cat-astra-high-20261112/model-01.glb
