@@ -8,8 +8,8 @@ For modeling rather than development, use the included `.claude/skills/mesh-jig`
 `skill/mesh-jig/SKILL.md`. See `docs/CLIENTS.md` for local client/MCP setup.
 
 For post-rig animation blends and ground IK, read `docs/GAME_AGENT.md` (`game-init`, then `agent --workflow game`).
-This agent receives numeric rig measurements and check results. It has no rendered-footage review tool;
-inspect the resulting motion separately before treating it as visually approved.
+Each build supplies numeric results and temporal scene renders. The agent records its self-review before revision
+or delivery. These are CPU reference scenes; inspect the resulting motion in the final browser/game too.
 
 For a reference sheet from real-object video or photos, use `skill/mesh-jig-video-reference/SKILL.md`.
 Its helper and synthetic tests cover mask cleanup and six-view sheet assembly; source media stays private.

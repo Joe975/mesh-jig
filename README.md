@@ -157,8 +157,8 @@ natural motion, foot planting or freedom from intersections. There is no animati
 An [API rig builder](docs/RIGGING.md#an-api-model-writes-the-rig) is also available with
 `--workflow rig`. The [post-rig game agent](docs/GAME_AGENT.md) prepares measured animation blends and ground IK
 from a frozen animated GLB, with independent checks before delivery. The reference site's terrain playback is
-experimental; see each model's limitations. The game agent currently sees numerical results, not rendered footage;
-visual inspection remains separate. [Procedural sounds](docs/SOUND.md) can follow rigging.
+experimental; see each model's limitations. The game agent reviews temporal renders of the solved skin on terrain;
+inspect the final browser/game scene too. [Procedural sounds](docs/SOUND.md) can follow rigging.
 [Facial controls](docs/FACE.md) and [body/face composition](docs/CHARACTER.md) are optional stages;
 declare [facial geometry requirements](docs/FACE_CAPABILITIES.md) before modelling when needed.
 The examples generate their own puppet geometry.

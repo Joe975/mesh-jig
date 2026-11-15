@@ -398,7 +398,7 @@ def dump(data):
     return (json.dumps(data, indent=2, sort_keys=True, allow_nan=False)+'\n').encode('utf-8')
 
 
-def build(rig, spec, out):
+def build(rig, spec, out, *, diagnostic=False):
     """Measure, gate and write the package. Invalid input raises ValueError and writes nothing."""
     rig, out = Path(rig), Path(out)
     game.contract(spec)
@@ -428,5 +428,12 @@ def build(rig, spec, out):
         game_godot.write(out)                     # godot/: the scene and a copy of the addon (slice 3)
         report['hashes'].update(package_glb_sha256=terrain.digest(out/'character.glb'),
                                 runtime_sha256=hashlib.sha256(data).hexdigest())
+    elif diagnostic:
+        # A failed candidate can be inspected, but never occupies the delivery paths.
+        preview = out/'diagnostic'
+        preview.mkdir()
+        shutil.copyfile(rig, preview/'character.glb')
+        (preview/'character.runtime.json').write_bytes(dump(runtime(spec, body, res, measured, layers, hashes)))
+        (preview/'diagnostic.json').write_bytes(dump({'accepted': False, 'issues': issues}))
     (out/'character.report.json').write_bytes(dump(report))
     return report

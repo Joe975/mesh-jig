@@ -715,6 +715,7 @@ src/mesh_jig/game_measure.py
 src/mesh_jig/game_package.py
 src/mesh_jig/game_runtime.py
 src/mesh_jig/game_scenario.py
+src/mesh_jig/game_scene_review.py
 src/mesh_jig/gauntlet.py
 src/mesh_jig/gauntlet_sweep.py
 src/mesh_jig/glb.py
@@ -794,6 +795,7 @@ tests/test_framing_feedback.py
 tests/test_game.py
 tests/test_game_agent.py
 tests/test_game_check.py
+tests/test_game_look.py
 tests/test_game_runtime.py
 tests/test_gauntlet.py
 tests/test_gauntlet_sweep.py

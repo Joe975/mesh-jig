@@ -34,14 +34,40 @@ Each run is under `agent/<run>/`, with a private transcript, usage accounting an
 build has a proposal, playback policy, package report and independent scenario checks. The scenario checker skins
 the actual mesh from runtime joint traces; a valid contract alone is insufficient.
 
-The API agent receives `game-info` measurements and structured build/check results. Its tools are `build`, `done`
-and `report_failure`; there is no render/look tool or automated visual reviewer. Screenshots, GIFs and video are
-not fed back to it. Inspect rendered motion separately. In the Fable horse trial, package gates failed before
-runtime scenarios ran; browser footage was inspected afterward outside the API loop.
+The API agent receives `game-info` measurements, structured build/check results and temporal scene renders.
+Its tools are `build`, `review`, `done` and `report_failure`. After a build, pictures enter the next model turn.
+The agent must call `review` with concrete clip/time/limb observations and a `needs_revision` decision before
+another build or delivery. A build and its review cannot happen in the same turn. The configured backend must
+accept images. Existing call, turn, token and cost caps still apply, including image input accounting.
 
-Exit 0 means `report.json.final` names a passing attempt and its package. Exit 1 means there is no accepted
+Exit 0 means `report.json.final` names a numerically passing, reviewed attempt and its package. Exit 1 means there is no accepted
 delivery. Exit 2 means invalid setup/configuration. A candidate package may exist when the package measurements
 pass but the scenario checks fail. Read `final`; do not copy the latest candidate and call it game-ready.
+
+## Review the solved motion
+
+Each renderable build gets three sheets for its fastest required gait: an IK-off source control, a cross-slope
+and a short obstacle scene. Each sheet has side and quarter views, up to seven frames, actual graph stance
+labels and matching trace metadata. Context frames accompany the worst failed contact or motion check and
+its immediate neighbours. The renderer draws the actual skinned mesh and the same triangles queried by the
+reference runtime. No Blender, browser, GPU or separate reviewer API call is needed.
+
+The obstacle scene has stairs, an uneven ridge and a low wall scaled to leg reach. Its route follows rig size
+at the measured gait speed, with an eight-second cap and flat margins for approach and exit. It is diagnostic and does
+not change the job's acceptance limits. It is not the reference site's full course. Review its saved scenario
+and checks alongside the pictures; a finite strip cannot certify every footfall or every clip. Inspect the
+final consuming browser/game for its materials, full route, action clips, landing and loop boundaries.
+
+Look for planted-foot sliding or sudden jumps, sole penetration, implausible folds and abrupt body movement.
+A lifted swing foot is expected. Compare the source control and adjacent frames before calling it a defect.
+Record unresolved issues with `needs_revision: true`; that attempt cannot be delivered. Review feedback is
+self-review by the builder, not an independent visual score or certificate.
+
+Failed package measurements remain failed. When a diagnostic runtime can be derived, it lives only under
+`attempts/<name>/package/diagnostic/`, marked `accepted: false`, so the agent can still inspect and revise it.
+It never fills the normal delivery paths. Invalid contracts or missing measured travel may prevent rendering;
+the build reports that failure. Picture hashes bind review to the exact images, and missing, changed or
+unreviewed evidence prevents delivery. Scene images, traces, reviews and transcripts stay in the private job.
 
 The harness checks each required gait with ground adaptation off, on flat ground and on a cross-slope, using
 variable frame times. It also checks measured contacts, clip coverage, loop/blend measurements and playback

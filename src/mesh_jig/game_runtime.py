@@ -124,6 +124,7 @@ class Runtime:
         if self.first:                    # the ground weight starts where the calls before the first frame left it
             self.ground_weight = 1.0 if self.ground_on else 0.0
         pose, votes = self.animate(dt)
+        self.votes = votes                 # diagnostic stance/clip labels; never consumed by the solver
         model = self.body.world(pose)
         world = {n: self.place(root, model[self.body.node[n]]) for n in self.names}
         self.adapt(world, root, votes, ground, dt)
@@ -590,7 +591,7 @@ def apply(runtime, ground, event):
         ground.patch(event['rect'], event['offset'])
 
 
-def run(package, scenario, scenario_sha256=None):
+def run(package, scenario, scenario_sha256=None, *, observe=None):
     """Play a scenario: the player stands in for the game, moving the root, making the calls at their times and
     handing the runtime the ground as it is that frame. Returns the trace. `scenario_sha256` is the SHA-256 of the
     scenario file's bytes (game_scenario.load); a scenario held in memory uses game_scenario.digest_json."""
@@ -606,6 +607,8 @@ def run(package, scenario, scenario_sha256=None):
             next_event += 1
         root = game_scenario.root_matrix(*game_scenario.root_at(scenario, t))
         world = runtime.step(float(t-times[k-1]) if k else 0.0, root, ground.snapshot())
+        if observe is not None:
+            observe(runtime, float(t), root, world, ground)
         frames.append({'time': round(float(t), 9), 'root': game_scenario.column_major(root),
                        'joints': [game_scenario.column_major(world[n]) for n in runtime.names]})
     return {'format': game_scenario.TRACE_FORMAT, 'version': 1, 'runtime': {'name': NAME, 'version': VERSION},

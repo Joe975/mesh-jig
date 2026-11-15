@@ -9,7 +9,8 @@ Making a reference sheet from a video or photos of a real object: read `skill/me
 Using mesh-jig to build a model: read `skill/mesh-jig/SKILL.md`. It is the whole loop.
 
 Preparing a rigged character for animation blends and ground IK: read `docs/GAME_AGENT.md`.
-The bounded game agent consumes numeric measurements/checks; it does not review rendered footage.
+The bounded game agent receives numeric checks and temporal scene renders. It must review those pictures before
+revising or delivering. Final browser/game inspection remains separate from the CPU reference scenes.
 
 For facial geometry requirements and controls, read `docs/FACE_CAPABILITIES.md` and `docs/FACE.md`.
 For adding those controls to an animated body, read `docs/CHARACTER.md`.

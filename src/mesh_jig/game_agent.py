@@ -12,7 +12,7 @@ import shutil
 import time
 from pathlib import Path
 
-from . import agent, game, game_check, game_measure, game_package, game_runtime, game_scenario, llm, terrain
+from . import agent, game, game_check, game_scene_review, game_measure, game_package, game_runtime, game_scenario, llm, terrain
 
 CRITERIA = dict(loop_seam_mm_max=2, contact_gap_mm_max=5, stance_s_min=.05, root_travel_mm_max=5,
                 skate_mps_max=.35, gait_phase_difference_max=.1, blend_slip_mps_max=.35,
@@ -35,7 +35,13 @@ motion is measured for gaits (their measured forward speed), authored for horizo
 for idle/actions that stay put, or airborne for an in-place jump travelling at a required gait's speed only
 while all feet are airborne (name that gait as reference). cycles is 1..4; exit is end or landing. Landing
 requires a fully airborne interval. Do not rename clips, invent motion or omit difficult feet. The full
-individual clip will repeat when selected in the viewer. Call done with the best passing attempt. If nothing
+individual clip will repeat when selected in the viewer. Build also returns two-angle temporal scene pictures,
+including an IK-off source control and obstacle stress. Inspect the actual skinned feet and body across adjacent
+frames: stance labels distinguish planted contacts from normal swing/flight. Look for penetration, sliding,
+target flips, unnatural folds and body jumps; a smaller gap alone is not improvement. Call review with specific
+clip/time/limb observations and needs_revision before revising or delivering. You cannot review in the same
+turn as build: its pictures arrive afterward. Scene stress is diagnostic; it cannot waive numeric failures.
+Call done with the best numerically passing and visually reviewed attempt. If nothing
 passes, call report_failure and explain the frozen rig/clip defects. A valid contract is not evidence of good animation or physics."""
 
 
@@ -61,6 +67,9 @@ by the harness. Contact boxes are in Blender rest coordinates; pick the sole ver
 TOOLS = [
     _fn('build', 'Measure/package this character JSON and check every job scenario. Each call uses an attempt.',
         {'character_json': {'type': 'string'}, 'playback_json': {'type': 'string'}}, ['character_json', 'playback_json']),
+    _fn('review', 'Record your inspection of the scene pictures already shown for this attempt. Cite clip/time/limb and explain any revision.',
+        {'attempt': {'type':'string'}, 'observations': {'type':'string'}, 'needs_revision': {'type':'boolean'}},
+        ['attempt','observations','needs_revision']),
     _fn('done', 'Deliver a passing attempt (a01 etc.), or report why the frozen rig cannot pass.',
         {'best': {'type': 'string'}, 'summary': {'type': 'string'}}, ['best', 'summary']),
     _fn('report_failure', 'Stop without delivery when the frozen rig/clip defects prevent acceptance.',
@@ -246,6 +255,7 @@ class Session:
         self.frozen = {n: terrain.digest(self.root/n) for n in ('game.json','animated.glb','brief.md')}
         self.out.mkdir(parents=True)
         self.builds, self.results, self.final, self.failure = builds, {}, None, ''
+        self.pictures, self.presented = {}, set()
 
     def check_frozen(self):
         if any((self.root/n).is_symlink() or terrain.digest(self.root/n) != sha for n,sha in self.frozen.items()):
@@ -255,6 +265,8 @@ class Session:
         self.check_frozen()
         if len(self.results) >= self.builds:
             raise ValueError('build budget exhausted')
+        if any(r.get('scene_review',{}).get('status')=='pending' for r in self.results.values()):
+            raise ValueError('review the previous scene pictures before another build')
         name = f'a{len(self.results)+1:02d}'
         target = self.out/'attempts'/name
         result = {'passed': False}
@@ -268,34 +280,67 @@ class Session:
             dump(target/'character.json', spec)
             dump(target/'playback.json', policy)
             package = target/'package'
-            report = game_package.build(self.root/'animated.glb', spec, package)
+            report = game_package.build(self.root/'animated.glb', spec, package, diagnostic=True)
             result.update(package_passed=report['passed'], issues=report['issues'],
                           gates=report['gates'], readings=report['readings'])
-            if report['passed']:
-                runtime = json.loads((package/'character.runtime.json').read_text())
-                measured_policy(policy,runtime)
+            preview = package if report['passed'] else package/'diagnostic'
+            if (preview/'character.runtime.json').is_file():
+                runtime = json.loads((preview/'character.runtime.json').read_text())
+                policy_ok = True
+                try:
+                    measured_policy(policy,runtime)
+                except ValueError as error:
+                    result['issues'].append(str(error)); policy_ok = False
                 if len(runtime['skeleton']['roots'])!=1:raise ValueError('browser profile needs one skeleton root')
-                checks = {}
+                checks, cases = {}, []
                 for label, scenario in scenarios(runtime, self.job):
-                    trace = game_runtime.run(package, scenario)
-                    checked = game_check.check(package, scenario, trace)
+                    trace = game_runtime.run(preview, scenario)
+                    checked = game_check.check(preview, scenario, trace)
                     dump(target/(label+'.scenario.json'), scenario)
                     dump(target/(label+'.check.json'), checked)
                     checks[label] = {'passed': checked['passed'], 'issues': checked['issues'], 'gates': checked['gates']}
+                    cases.append({'label':label,'scenario':scenario,'trace':trace,'check':checked})
                 coverage=not report['readings'].get('missed_contacts')
-                result.update(checks=checks, passed=coverage and bool(checks) and all(c['passed'] for c in checks.values()))
+                result.update(checks=checks, passed=report['passed'] and policy_ok and coverage and bool(checks)
+                              and all(c['passed'] for c in checks.values()))
                 if not coverage:result['issues'].append('declared contacts miss measured ground-contact clusters')
                 result['issues'] += [label+': '+issue for label,c in checks.items() if not c['passed'] for issue in c['issues']]
-        except (ValueError, KeyError, TypeError, IndexError) as error:
-            result['issues'] = [str(error)]
+                paths = game_scene_review.capture(preview,cases,target/'scene-review')
+                if not paths:raise ValueError('scene review produced no pictures')
+                self.pictures[name] = paths
+                result['scene_review'] = {'status':'pending', 'pictures':{
+                    p.relative_to(self.root).as_posix():terrain.digest(p) for p in paths}}
+        except (ValueError, KeyError, TypeError, IndexError, OSError) as error:
+            result['passed'] = False
+            result.setdefault('issues',[]).append(str(error))
         self.check_frozen()
         dump(target/'result.json', result)
         return {'attempt': name, **result}
+
+    def review(self, attempt, observations, needs_revision):
+        self.check_frozen()
+        if attempt not in self.presented:
+            raise ValueError('review requires scene pictures from an earlier model turn')
+        if not isinstance(observations,str) or not observations.strip() or len(observations)>8000:
+            raise ValueError('review needs concrete observations, at most 8000 characters')
+        if type(needs_revision) is not bool:raise ValueError('needs_revision must be boolean')
+        result = self.results[attempt]
+        review = result['scene_review']
+        if any(terrain.digest(self.root/p)!=sha for p,sha in review['pictures'].items()):
+            raise ValueError('scene pictures changed after presentation')
+        review.update(status='reviewed',observations=observations.strip(),needs_revision=needs_revision)
+        dump(self.out/'attempts'/attempt/'result.json',result)
+        return {'attempt':attempt, **review}
 
     def done(self, best, summary):
         self.check_frozen()
         if not isinstance(best,str) or best not in self.results or not self.results[best]['passed']:
             raise ValueError('delivery needs a passing attempt from this run')
+        review = self.results[best].get('scene_review',{})
+        if review.get('status')!='reviewed' or review.get('needs_revision',True):
+            raise ValueError('delivery needs scene review with no outstanding revision')
+        if any(terrain.digest(self.root/p)!=sha for p,sha in review['pictures'].items()):
+            raise ValueError('scene pictures changed after review')
         self.final = {'best': best, 'summary': str(summary), 'package': f'attempts/{best}/package'}
         return dict(self.final)
 
@@ -324,13 +369,17 @@ def run(root, chat_fn, *, out, builds=5, max_turns=0, model='', log=print):
             session.failure=str(message.get('content') or '')
             stop = 'model ended without a passing delivery'
             break
+        pending = []
         for call in tool_calls:
             try:
                 args = json.loads(call['function']['arguments'])
                 if call['function']['name'] == 'build':
                     result = session.build(args.get('character_json'),args.get('playback_json'))
+                    if result['attempt'] in session.pictures:pending.append(result['attempt'])
                     log(f"game {result['attempt']}: {'passed' if result['passed'] else 'failed'}")
                     for issue in result.get('issues',[])[:3]:log('  '+issue)
+                elif call['function']['name'] == 'review':
+                    result = session.review(args['attempt'],args['observations'],args['needs_revision'])
                 elif call['function']['name'] == 'done':
                     result = session.done(args['best'],args['summary'])
                 elif call['function']['name'] == 'report_failure':
@@ -341,6 +390,16 @@ def run(root, chat_fn, *, out, builds=5, max_turns=0, model='', log=print):
                 result = {'error':str(error)}
             messages.append({'role':'tool','tool_call_id':call['id'],'content':json.dumps(result,allow_nan=False)})
             if session.final or session.failure:break
+        if pending and not (session.final or session.failure):
+            parts = []
+            for name in pending:
+                parts.append({'type':'text','text':f'Scene pictures for {name}. Read stance and time labels; compare source-off, slope and obstacle strips. '
+                              'These are simplified CPU reference scenes, not screenshots of the consuming browser/game. '
+                              'Review concrete defects before another build or done. Numeric failures remain failures.'})
+                for path in session.pictures[name]:
+                    parts.append({'type':'image_url','image_url':{'url':llm.image_to_data_url(str(path),max_dim=2048)}})
+                session.presented.add(name)
+            messages.append({'role':'user','content':parts})
         agent.atomic_write_text(session.out/'transcript.jsonl','\n'.join(json.dumps(m,allow_nan=False) for m in messages)+'\n')
         if session.final:
             stop = 'delivered'

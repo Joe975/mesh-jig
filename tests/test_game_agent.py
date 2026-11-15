@@ -62,10 +62,16 @@ def test_valid_proposal_runs_independent_scenarios_and_offline_agent_delivers(jo
     def chat(messages,tools):
         if len(messages)==2:
             fn,args='build',{'character_json':json.dumps(proposal),'playback_json':json.dumps(policy)}
-        else:
-            answer=json.loads(messages[-1]['content'])
+        elif isinstance(messages[-1]['content'],list):
+            assert messages[-1]['role']=='user'
+            assert sum(p['type']=='image_url' for p in messages[-1]['content'])==3
+            answer=json.loads(next(m['content'] for m in reversed(messages) if m['role']=='tool'))
             assert answer['passed'],answer
             assert set(answer['checks'])=={'walk-playback','walk-flat','walk-slope','run-playback','run-flat','run-slope'}
+            fn,args='review',{'attempt':answer['attempt'],'observations':'Run control: source-off and slope show alternating support; obstacle strip has visible swing clearance.', 'needs_revision':False}
+        else:
+            answer=json.loads(messages[-1]['content'])
+            assert answer['status']=='reviewed'
             fn,args='done',{'best':answer['attempt'],'summary':'four-leg synthetic control'}
         return {'role':'assistant','content':None,'tool_calls':[{'id':f'call{len(messages)}','type':'function',
                 'function':{'name':fn,'arguments':json.dumps(args)}}]},{}
@@ -75,6 +81,42 @@ def test_valid_proposal_runs_independent_scenarios_and_offline_agent_delivers(jo
     assert report['inputs']['animated.glb']==G.terrain.digest(root/'animated.glb')
     transcript=(root/'agent/offline/transcript.jsonl').read_text().splitlines()
     assert json.loads(transcript[-1])['role']=='tool'
+    assert report['attempts']['a01']['scene_review']['status']=='reviewed'
+
+
+def test_review_cannot_be_claimed_in_build_turn_or_skipped(job):
+    root,proposal,policy=job
+    s=G.Session(root,root/'review-order',2)
+    result=s.build(proposal,policy)
+    assert result['passed'],result
+    with pytest.raises(ValueError,match='earlier model turn'):s.review('a01','looks fine',False)
+    with pytest.raises(ValueError,match='scene review'):s.done('a01','skip pictures')
+    with pytest.raises(ValueError,match='previous scene'):s.build(proposal,policy)
+    s.presented.add('a01')
+    s.review('a01','Run slope at 1.0s: front support needs revision.',True)
+    with pytest.raises(ValueError,match='outstanding revision'):s.done('a01','ignore review')
+    s.review('a01','Run at 1.0s: the raised front is swing, not missed stance.',False)
+    path=s.pictures['a01'][0]
+    path.write_bytes(b'changed image')
+    with pytest.raises(ValueError,match='changed'):s.done('a01','stale evidence')
+
+
+def test_failed_package_still_gets_diagnostic_scenes_without_delivery(job):
+    root,proposal,policy=job
+    owner=json.loads((root/'game.json').read_text())
+    owner['criteria']['blend_slip_mps_max']=.000001
+    G.dump(root/'game.json',owner)
+    s=G.Session(root,root/'failed-review',1)
+    result=s.build(proposal,policy)
+    assert not result['package_passed'] and not result['passed']
+    package=root/'failed-review/attempts/a01/package'
+    assert not (package/'character.runtime.json').exists()
+    assert (package/'diagnostic/character.runtime.json').is_file()
+    assert json.loads((package/'diagnostic/diagnostic.json').read_text())['accepted'] is False
+    assert len(s.pictures['a01'])==3
+    s.presented.add('a01')
+    s.review('a01','Run at 1.0s: visual control cannot waive failed blend slip.',False)
+    with pytest.raises(ValueError,match='passing'):s.done('a01','looks better')
 
 
 def test_failed_runtime_check_never_delivers(job,monkeypatch):
