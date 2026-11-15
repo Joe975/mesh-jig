@@ -1,0 +1,34 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Antigravity subscription CLI",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "gemini-4-hydrogen-high",
+  "notes": [
+    "Five successful model evaluations; the visual selection differs from the numeric leader. Three rig candidates pass the unchanged contract.",
+    "Angular fins and fluke, simplified facial details and cyan markings. Hover, flap and turn remain legible; fin bending is somewhat stiff and tail follow-through restrained.",
+    "Motion reviewed from sampled multiview poses. Contract checks do not certify all collisions or physical behavior. Subscription cost is not reported."
+  ],
+  "result": {
+    "gates_passed": 1,
+    "gates_total": 1,
+    "numeric_score": 0.6431
+  },
+  "schema_version": 1,
+  "scope": "One independent run: five successful model evaluations and three passing rig candidates under the frozen reference contract.",
+  "title": "Sky-whale manta: Gemini 4 Hydrogen High"
+}
