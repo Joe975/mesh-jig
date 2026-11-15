@@ -10,7 +10,7 @@
     "horse-astra-v1": {
       "data": "horse.json",
       "model": "showcase/explore-horse-openai-20261112/model-01.glb",
-      "sha256": "988b7acbeb7a52d861222fcc2b61aa2faefd820023b4a10691eafcee90267787",
+      "sha256": "b8f50a9f8f297c954c49a58cf654629bb05f69bd8f062c0d630126183820a4ce",
       "glb_sha256": "a6f60e202a6eadd75d26ef6f7330c639dd2971fb2184f1ba00de206c6fd9f5bf"
     },
     "horse-fable-v1": {
