@@ -1,0 +1,34 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Antigravity subscription CLI",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "gemini-4-hydrogen-high",
+  "notes": [
+    "Five successful model evaluations; the earlier visual selection preserves visible eyes rather than using the numeric leader or latest model. Three rig candidates pass the unchanged eight-clip contract. Final animation preserves the original geometry, atlas and materials.",
+    "Faceted mantle, angular arms, shallow sucker details and restrained skin markings. Swim has a clear broad arm sweep, while crawl remains paddle-like and curl reads as a one-arm hook or wave. Reach is modest and returns to rest; grasp and release form a coherent closing/opening gesture, but have no object target and can crowd the eyes.",
+    "Independent multiview sampled review found no gross detachment or collapse. Sampled checks do not certify continuous contact, intersections, planted support, object holding or runtime behavior. Subscription cost is not reported."
+  ],
+  "result": {
+    "gates_passed": 1,
+    "gates_total": 1,
+    "numeric_score": 0.6663
+  },
+  "schema_version": 1,
+  "scope": "One independent run: five successful model evaluations and three passing rig candidates under the frozen reference contract.",
+  "title": "Eight-arm octopus: Gemini 4 Hydrogen High"
+}
