@@ -78,7 +78,7 @@ def forbidden_path(name: str) -> bool:
             return True
     return (path.is_absolute() or ".." in path.parts or ":" in name or "\\" in name
             or any(part in {"experiments", "local-work", "private", "attempts", "agent", "overnight", ".git", ".venv"} for part in path.parts)
-            or (path.suffix.lower() in {".blend", ".blend1", ".glb", ".png", ".jpg", ".jpeg", ".webp", ".jsonl", ".log", ".out"}
+            or (path.suffix.lower() in {".blend", ".blend1", ".glb", ".png", ".gif", ".jpg", ".jpeg", ".webp", ".jsonl", ".log", ".out"}
                 and not (path.parts[:1] == ("showcase",) and len(path.parts) == 3 and curator.MEDIA.fullmatch(path.name)))
             or (path.name.startswith(".env") and path.name != ".env.example"))
 

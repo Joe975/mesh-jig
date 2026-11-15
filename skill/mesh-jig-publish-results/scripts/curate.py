@@ -20,7 +20,7 @@ import zlib
 from PIL import Image
 
 SCHEMA = 1
-MEDIA = re.compile(r"(?:image-[0-9]{2}\.png|model-[0-9]{2}\.glb)\Z")
+MEDIA = re.compile(r"(?:image-[0-9]{2}\.png|animation-[0-9]{2}\.gif|model-[0-9]{2}\.glb)\Z")
 SLUG = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 PRIVATE = re.compile(
     r"[A-Za-z]:[\\/]|/(?:home|Users)/|/(?:mnt/)?[a-z]/Users/|"
@@ -150,6 +150,33 @@ def image_bytes(raw):
         output = io.BytesIO()
         fresh.save(output, format="PNG")
         return output.getvalue()
+
+
+def gif_bytes(raw):
+    """Fresh bounded RGB frames: no comments, source metadata or arbitrary GIF extensions."""
+    if len(raw)>10_000_000:raise ValueError('GIF exceeds 10 MB')
+    frames,durations=[],[]
+    with Image.open(io.BytesIO(raw)) as image:
+        if image.format!='GIF':raise ValueError('expected animated GIF')
+        width,height=image.size
+        if not 1<=width<=1280 or not 1<=height<=1280:raise ValueError('GIF dimensions exceed bounds')
+        count=image.n_frames
+        if not 2<=count<=180 or width*height*count>80_000_000:raise ValueError('GIF frame budget exceeded')
+        for i in range(count):
+            image.seek(i)
+            duration=image.info.get('duration',0)
+            if type(duration) is not int or not 20<=duration<=1000 or duration%10:
+                raise ValueError('GIF needs frame durations of 20..1000 ms')
+            rgb=Image.frombytes('RGB',image.size,image.convert('RGB').tobytes())
+            frames.append(rgb.quantize(colors=128,method=Image.Quantize.MEDIANCUT,dither=Image.Dither.NONE))
+            durations.append(duration)
+    if sum(durations)>15_000:raise ValueError('GIF duration exceeds 15 seconds')
+    output=io.BytesIO()
+    frames[0].save(output,format='GIF',save_all=True,append_images=frames[1:],duration=durations,
+                   loop=0,disposal=2,optimize=False)
+    result=output.getvalue()
+    if len(result)>10_000_000:raise ValueError('normalized GIF exceeds 10 MB')
+    return result
 
 
 def validate_png(raw):
@@ -314,18 +341,18 @@ def readme(doc, media):
     output += ["", "Token counts use the report's provider conventions. Reasoning is included in completion tokens; cache counters are not extra prompt tokens. Estimated cost is not an invoiced charge.", ""]
     output += [note + "\n" for note in doc["notes"]]
     for name in sorted(media):
-        output += [(f"![Selected output]({name})" if name.endswith(".png") else f"[Download selected model]({name})"), ""]
+        output += [(f"![Selected output]({name})" if name.endswith((".png",".gif")) else f"[Download selected model]({name})"), ""]
     return ("\n".join(output).rstrip() + "\n").encode()
 
 
-def prepare(report_path, destination, *, images=(), models=(), evaluation_path=None, **metadata):
+def prepare(report_path, destination, *, images=(), models=(), animations=(), evaluation_path=None, **metadata):
     if destination.exists():
         raise ValueError("destination already exists; choose a fresh draft")
     report = json.loads(report_path.read_text(encoding="utf-8"))
     evaluation = json.loads(evaluation_path.read_text(encoding="utf-8")) if evaluation_path else None
     doc = summary(report, evaluation=evaluation, **metadata)
     files = {"summary.json": encode(doc)}
-    for kind, paths, normalize, suffix in (("image", images, image_bytes, "png"), ("model", models, glb_bytes, "glb")):
+    for kind, paths, normalize, suffix in (("image", images, image_bytes, "png"), ("model", models, glb_bytes, "glb"), ("animation",animations,gif_bytes,"gif")):
         if len(paths) > 99:
             raise ValueError("too many selected assets")
         for index, path in enumerate(paths, 1):
@@ -351,6 +378,8 @@ def validate_files(files, sealed=True):
     for name in media:
         if name.endswith(".png"):
             validate_png(files[name])
+        elif name.endswith('.gif'):
+            if gif_bytes(files[name])!=files[name]:raise ValueError('GIF contains metadata or is not normalized')
         elif glb_bytes(files[name]) != files[name]:
             raise ValueError("GLB contains metadata or is not normalized")
     if sealed:
@@ -601,6 +630,7 @@ def main(argv=None):
     make.add_argument("--evaluation", type=Path)
     make.add_argument("--image", type=Path, action="append", default=[])
     make.add_argument("--glb", type=Path, action="append", default=[])
+    make.add_argument('--animation',type=Path,action='append',default=[],help='Selected short animated GIF (metadata removed)')
     stamp = sub.add_parser("seal")
     stamp.add_argument("--package", type=Path, required=True)
     copy = sub.add_parser("install")
@@ -621,7 +651,7 @@ def main(argv=None):
     try:
         if args.command == "prepare":
             prepare(args.report, args.out, title=args.title, driver=args.driver, scope=args.scope, cost_kind=args.cost_kind,
-                    effort=args.effort, notes=args.note, evaluation_path=args.evaluation, images=args.image, models=args.glb)
+                    effort=args.effort, notes=args.note, evaluation_path=args.evaluation, images=args.image, models=args.glb,animations=args.animation)
             print("Prepared selected metrics and assets. Review visible content before sealing.")
         elif args.command == "seal":
             seal(args.package)

@@ -63,6 +63,8 @@ absolute paths for that machine:
 ```
 
 `--image`, `--glb` and `--note` may repeat. Without visual arguments it produces a metrics-only package.
+`--animation` selects a short animated GIF. It is rebuilt from RGB frames without comments or source metadata,
+limited to 10 MB, 180 frames, 15 seconds and 1280 pixels per side. Review its visible content before sealing.
 The output directory must be new. Output filenames are generic, not the source filenames.
 
 The helper extracts a fixed set of model, usage, runtime, completion and evaluation fields. It excludes
@@ -80,7 +82,8 @@ these are intentional public prose, so review them too.
 - Preserve relevant limitations: one run is not a general ranking; different drivers/prompts are different
   workflows; a changing checkout is not a frozen benchmark. Numeric score is not finished visual quality.
 
-Images are decoded to a fresh RGB/RGBA PNG, removing EXIF, text and other metadata. GLBs retain core glTF 2
+Images are decoded to a fresh RGB/RGBA PNG, removing EXIF, text and other metadata. Animated GIFs use bounded,
+fresh RGB frames and canonical encoding; the guard refuses changed bytes or extra metadata. GLBs retain core glTF 2
 geometry/materials/animation, remove names/extras/generator metadata, repack referenced buffer views and
 normalize embedded images. External URIs, unknown fields and glTF extensions are refused. Do not bypass a
 refusal: export a supported self-contained GLB or omit it. `.blend` and raw scripts/logs are never allowed.

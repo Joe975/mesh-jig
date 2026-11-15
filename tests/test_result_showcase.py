@@ -34,6 +34,31 @@ def report():
             "calls": [{"private": "raw model reply"}, {}], "best": {"numeric_score": .6}}
 
 
+def test_gif_rebuild_strips_metadata_preserves_motion_and_is_idempotent(tmp_path):
+    source=io.BytesIO();frames=[Image.new('RGB',(8,6),c) for c in ('red','blue','green')]
+    frames[0].save(source,format='GIF',save_all=True,append_images=frames[1:],duration=[80,90,80],loop=4,comment=b'PRIVATE-SOURCE')
+    clean=curator.gif_bytes(source.getvalue())
+    assert b'PRIVATE-SOURCE' not in clean and curator.gif_bytes(clean)==clean
+    with Image.open(io.BytesIO(clean)) as image:
+        assert image.n_frames==3 and image.info['loop']==0
+        colors=[];duration=0
+        for i in range(3):image.seek(i);colors.append(image.convert('RGB').getpixel((0,0)));duration+=image.info['duration']
+    assert len(set(colors))==3 and duration==250
+    with pytest.raises(ValueError,match='durations'):
+        bad=io.BytesIO();frames[0].save(bad,format='GIF',save_all=True,append_images=frames[1:],duration=10);curator.gif_bytes(bad.getvalue())
+
+
+def test_gif_selection_is_sealed_and_tampering_is_refused(tmp_path):
+    source=tmp_path/'motion.gif';frames=[Image.new('RGB',(8,6),c) for c in ('red','blue')]
+    frames[0].save(source,save_all=True,append_images=frames[1:],duration=100,loop=0)
+    record=tmp_path/'report.json';record.write_text(json.dumps(report()));out=tmp_path/'draft'
+    files=curator.prepare(record,out,animations=[source],**metadata())
+    assert 'animation-01.gif' in files and b'![Selected output](animation-01.gif)' in files['README.md']
+    curator.seal(out);curator.validate_files(curator.package_files(out))
+    (out/'animation-01.gif').write_bytes(files['animation-01.gif']+b'private')
+    with pytest.raises(ValueError,match='GIF'):curator.validate_files(curator.package_files(out))
+
+
 def png(private=False):
     output = io.BytesIO()
     info = PngImagePlugin.PngInfo()
