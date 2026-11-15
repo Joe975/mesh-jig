@@ -13,7 +13,7 @@ spec=importlib.util.spec_from_file_location('terrain_schema_test',POLICY/'terrai
 schema=importlib.util.module_from_spec(spec);spec.loader.exec_module(schema)
 
 
-@pytest.mark.parametrize('name',['horror','horse'])
+@pytest.mark.parametrize('name',['horror','horse','horse-fable'])
 def test_selected_payloads_and_registry_are_bound_and_anonymous(name):
     raw=(SITE/f'terrain/{name}.json').read_bytes();d=schema.payload(raw)
     assert len(d['runtime']['limbs']) in (4,6)

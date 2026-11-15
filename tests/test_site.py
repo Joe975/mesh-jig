@@ -15,7 +15,7 @@ def test_terrain_characters_are_lazy_anonymous_and_bound_to_their_public_models(
     assert "import('./terrain/viewer.js')" in page
     assert '<script type="module" src="terrain/viewer.js"' not in page
     registry=json.loads((ROOT/'site/terrain/characters.json').read_text(encoding='utf-8'))
-    assert len(registry['characters'])==2
+    assert {'horror-v1','horse-astra-v1','horse-fable-v1'}<=set(registry['characters'])
     for row in registry['characters'].values():
         raw=(ROOT/'site/terrain'/row['data']).read_bytes();data=json.loads(raw)
         assert data['version']==2

@@ -26,13 +26,14 @@ inventory and exclusion of research content reduce that risk.
 ## Selected showcases
 
 Use [mesh-jig-publish-results](../skill/mesh-jig-publish-results/SKILL.md) to extract selected runtime,
-token, cost and evaluation fields into a fresh package, with only explicitly chosen images and GLBs.
+token, cost and evaluation fields into a fresh package, with only explicitly chosen images, short GIFs and GLBs.
 Label reported versus estimated cost and state the run/continuation scope. Source reports, paths,
 prompts and transcripts are excluded. Images lose metadata; supported GLBs lose identifying metadata,
 external resources and unused buffer views. Inspect the sanitized visual outputs before sealing them.
 
 `showcase/<slug>/release.json` pins every selected file by SHA-256. The package contains generated
-README/summary files and optional normalized PNG/GLB files. Installing a sealed package adds its exact
+README/summary files and optional normalized PNG/GIF/GLB files. GIFs are rebuilt from bounded RGB frames without
+comments or source metadata (10 MB, 180 frames, 15 seconds, 1280 pixels per side). Installing a sealed package adds its exact
 paths to `PUBLIC_FILES.txt`. Raw directories remain forbidden, and arbitrary binary files are still
 blocked. The guard validates each historical package with its own manifest, so a later deletion or
 replacement cannot hide an invalid earlier publication. Sealing records reviewed bytes; it does not

@@ -9,6 +9,31 @@ import pytest
 from mesh_jig import anthropic_sweep as native, gauntlet_sweep, llm
 
 
+def test_counted_fable_request_fits_small_cap_and_reserves_before_generation(tmp_path):
+    api=SimpleNamespace(model='claude-fable-5-2',url='https://api.anthropic.com/v1',key='fixture',timeout_s=10)
+    budget=native.Budget(tmp_path/'budget.json',8,api.model);seen=[]
+    def opener(req,**kwargs):
+        seen.append((req.full_url,json.loads(req.data)))
+        if req.full_url.endswith('/count_tokens'):return io.BytesIO(b'{"input_tokens":1000}')
+        assert budget.entries[0]['input_tokens_bound']==2124
+        response=events();response[0]['message']['model']=api.model
+        return stream_events(response)
+    chat=native.chat_for(api,budget,'game',max_tokens=8192,cache=False,count_tokens=True,opener=opener)
+    chat([{'role':'user','content':'frozen rig'}],[])
+    assert len(seen)==2 and seen[0][1]['messages']==seen[1][1]['messages']
+    assert seen[1][1]['output_config']['effort']=='high'
+    assert budget.entries[0]['state']=='completed' and budget.committed()<1
+
+
+def test_invalid_token_count_never_dispatches_generation(tmp_path):
+    api=SimpleNamespace(model='claude-fable-5-2',url='https://api.anthropic.com/v1',key='fixture',timeout_s=10)
+    budget=native.Budget(tmp_path/'budget.json',8,api.model);seen=[]
+    def opener(req,**kwargs):seen.append(req.full_url);return io.BytesIO(b'{"input_tokens":true}')
+    chat=native.chat_for(api,budget,'game',count_tokens=True,opener=opener)
+    with pytest.raises(llm.LLMError,match='token count'):chat([{'role':'user','content':'rig'}],[])
+    assert len(seen)==1 and seen[0].endswith('/count_tokens') and budget.committed()==0
+
+
 def test_budget_reserves_concurrent_calls_and_keeps_failed_requests(tmp_path):
     budget = native.Budget(tmp_path / "budget.json", 12)
     def reserve(_):

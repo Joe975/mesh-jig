@@ -19,7 +19,9 @@ $job = 'C:/path/to/mesh-jig/local-work/my-game-job'
 
 Use the actual leg count and gait names from `game-info`. The API model uses the existing
 [provider configuration](API.md). A reserved cost cap requires the direct Anthropic transport; other transports
-are refused when `--max-cost` is supplied. Calls, builds and reply tokens have separate limits. Invalid build
+are refused when `--max-cost` is supplied. Capped game runs count the exact native input with the provider before
+each generation request and reserve a 10% plus 1,024-token margin, cold-cache input cost and the full reply cap.
+A failed count prevents generation. Calls, builds and reply tokens have separate limits. Invalid build
 proposals consume attempts. This stage needs no Blender or running game engine.
 
 `game-init` copies the GLB to `animated.glb` and writes `game.json` and `brief.md`. Review the required gaits and

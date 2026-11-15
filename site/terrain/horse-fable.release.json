@@ -1,0 +1,8 @@
+{
+  "format": "mesh-jig terrain release",
+  "version": 1,
+  "files": {
+    "horse-fable.json": "afbf4eb7d6158d35d8834ba7393b3b188a32e131a16b45f017170a7af75168cb"
+  },
+  "glb_sha256": "77aef2d34e17e0fbc52916136dd695690ebdb46f7a0c61582b02211520e3dbed"
+}

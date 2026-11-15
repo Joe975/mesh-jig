@@ -654,6 +654,8 @@ site/terrain/ground.js
 site/terrain/hash.js
 site/terrain/horror.json
 site/terrain/horror.release.json
+site/terrain/horse-fable.json
+site/terrain/horse-fable.release.json
 site/terrain/horse.json
 site/terrain/horse.release.json
 site/terrain/locomotion.js

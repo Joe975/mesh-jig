@@ -363,7 +363,7 @@ def drive(root, backend, *, builds=5, max_turns=0, max_tokens=8192, max_cost=0, 
     out = root/'agent'/(time.strftime('%Y%m%d-%H%M%S')+'_'+re.sub(r'[^A-Za-z0-9._-]+','-',backend.model)+'_game')
     budget = anthropic_sweep.Budget(out/'budget.json',max_cost,backend.model) if max_cost else None
     if native:
-        chat = anthropic_sweep.chat_for(backend,budget,'game-agent',max_tokens=max_tokens or 8192,effort=effort,log=log)
+        chat = anthropic_sweep.chat_for(backend,budget,'game-agent',max_tokens=max_tokens or 8192,effort=effort,log=log,count_tokens=bool(budget))
     else:
         chat = agent.chat_for(backend,effort=effort,max_tokens=max_tokens or 8192,idle_s=idle_s,log=log)
     # Meter writes files only after Session has safely created the unique run directory.

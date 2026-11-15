@@ -12,6 +12,12 @@
       "model": "showcase/explore-horse-openai-20261112/model-01.glb",
       "sha256": "988b7acbeb7a52d861222fcc2b61aa2faefd820023b4a10691eafcee90267787",
       "glb_sha256": "a6f60e202a6eadd75d26ef6f7330c639dd2971fb2184f1ba00de206c6fd9f5bf"
+    },
+    "horse-fable-v1": {
+      "data": "horse-fable.json",
+      "model": "showcase/explore-horse-fable-medium-gallop-20261115/model-01.glb",
+      "sha256": "afbf4eb7d6158d35d8834ba7393b3b188a32e131a16b45f017170a7af75168cb",
+      "glb_sha256": "77aef2d34e17e0fbc52916136dd695690ebdb46f7a0c61582b02211520e3dbed"
     }
   }
 }

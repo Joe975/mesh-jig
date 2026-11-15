@@ -50,13 +50,15 @@ class Budget:
                             "charged_or_reserved_usd": round(self.committed(), 8),
                             "entries": self.entries})
 
-    def reserve(self, max_tokens, label, *, wait=False, cache=False):
+    def reserve(self, max_tokens, label, *, wait=False, cache=False, input_tokens=1_100_000):
         # 1.1M conservatively covers either decimal or binary interpretation of 1M.
         if not isinstance(max_tokens, int) or max_tokens <= 0:
             raise ValueError("max_tokens must be a positive integer")
+        if type(input_tokens) is not int or not 1<=input_tokens<=1_100_000:
+            raise ValueError('invalid input reservation bound')
         input_rate, output_rate = RATES[self.model]
         # Any input may be a cold five-minute cache write, billed at 1.25x.
-        amount = input_rate * 1.1 * (1.25 if cache else 1) + max_tokens * output_rate / 1_000_000
+        amount = (input_rate * input_tokens * (1.25 if cache else 1) + max_tokens * output_rate) / 1_000_000
         with self.changed:
             while wait and self.active and self.committed() + amount > self.limit:
                 self.changed.wait(timeout=30)
@@ -64,7 +66,8 @@ class Budget:
                 raise llm.LLMError("budget stop: insufficient room for worst-case request")
             index = len(self.entries)
             self.entries.append({"label": label, "state": "reserved", "max_tokens": max_tokens,
-                                 "charged_or_reserved_usd": amount, "cache_ttl": "5m" if cache else None})
+                                 "charged_or_reserved_usd": amount, "cache_ttl": "5m" if cache else None,
+                                 'input_tokens_bound':input_tokens})
             self.active.add(index)
             self.save()
             return index
@@ -252,7 +255,7 @@ def read_stream(response):
 
 
 def chat_for(api, budget, label, *, max_tokens=65536, opener=urllib.request.urlopen,
-             log=lambda text: None, effort="high", cache=True):
+             log=lambda text: None, effort="high", cache=True, count_tokens=False):
     """The chat function over the native Messages API. `usage["mesh_jig_completion"]` carries the endpoint's own
     stop reason, as `llm.assemble_chunks` does for the other transport. A reply cut at the output cap comes back
     with its text and no tool call (`llm.cut_short(usage)` says so): a call that may have lost its end is not run,
@@ -270,7 +273,16 @@ def chat_for(api, budget, label, *, max_tokens=65536, opener=urllib.request.urlo
         request = urllib.request.Request(api.url + "/messages", data=json.dumps(body).encode(), method="POST",
                   headers={"Content-Type": "application/json", "x-api-key": api.key,
                            "anthropic-version": "2023-06-01"})
-        ticket = budget.reserve(max_tokens, label, wait=True, cache=cache) if budget is not None else None
+        bound=1_100_000
+        if budget is not None and count_tokens:
+            # Count the exact native input, then allow 10% plus 1024 tokens for estimate variance.
+            # A failed count never dispatches a generation request. No silent fallback above the cap.
+            counted={k:v for k,v in body.items() if k in ('model','system','messages','tools','thinking','tool_choice')}
+            counter=urllib.request.Request(api.url+'/messages/count_tokens',data=json.dumps(counted).encode(),method='POST',headers=dict(request.headers))
+            with opener(counter,timeout=api.timeout_s) as response:count=json.loads(response.read(65536)).get('input_tokens')
+            if type(count) is not int or not 0<=count<=1_000_000:raise llm.LLMError('invalid provider input token count')
+            bound=min(1_100_000,math.ceil(count*1.1)+1024)
+        ticket = budget.reserve(max_tokens, label, wait=True, cache=cache,input_tokens=bound) if budget is not None else None
         start = time.monotonic()
         log(f"native {api.model} {effort or 'default'} call; budget reservation {ticket}")
         # One request only. Any transport failure leaves its reservation intact.
