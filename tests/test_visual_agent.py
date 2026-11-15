@@ -75,7 +75,7 @@ def test_the_cli_hands_a_pinned_provider_to_the_backend_and_the_report(seed, mon
     assert json.loads(report.read_text())["provider"] == "deepinfra/fp8"
 
 
-@pytest.mark.parametrize("flags", [["--patience", "3"], ["--cache", "on"], ["--judge"],
+@pytest.mark.parametrize("flags", [["--patience", "3"], ["--judge"],
                                    ["--context-tokens", "65536"]])
 def test_visual_rejects_numeric_only_flags(seed, flags):
     assert cli.main(["agent", str(seed.root), *flags]) == 2

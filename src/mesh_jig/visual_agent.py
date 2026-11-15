@@ -9,7 +9,7 @@ from .gauntlet_sweep import Meter, estimate_cost
 
 
 def run(proj, backend, *, attempts=5, checks="none", max_turns=0, max_tokens=None,
-        max_cost=0, max_wall=0, effort=None, idle_s=900, log=print, review_effort=None, keep_better=False):
+        max_cost=0, max_wall=0, effort=None, idle_s=900, log=print, review_effort=None, keep_better=False, cache="auto"):
     """`review_effort`, when given, is the reviewer's own effort; the builder keeps `effort`. A reviewer call is the
     one offered no tools."""
     if attempts < 1 or max_turns < 0 or any(not math.isfinite(v) or v < 0 for v in (max_cost, max_wall)):
@@ -19,6 +19,7 @@ def run(proj, backend, *, attempts=5, checks="none", max_turns=0, max_tokens=Non
     if checks not in ("none", "builder", "both"):
         raise ValueError("checks must be none, builder or both")
     native = backend.url == gauntlet.URL and backend.model in anthropic_sweep.RATES
+    cached = llm.cache_enabled(backend, cache)
     reported = backend.name == "openrouter"    # it prices every reply itself, in usage["cost"]
     if max_cost and not (native or reported):
         raise ValueError("a spend cap needs direct Anthropic Haiku/Sonnet/Opus 5.5 (reserved) or OpenRouter "
@@ -31,8 +32,8 @@ def run(proj, backend, *, attempts=5, checks="none", max_turns=0, max_tokens=Non
     def chat_at(level):
         if native:
             return anthropic_sweep.chat_for(backend, budget, "visual-agent", max_tokens=max_tokens,
-                                            effort=level, log=log)
-        return agent.chat_for(backend, effort=level, max_tokens=max_tokens, idle_s=idle_s, log=log)
+                                            effort=level, log=log, cache=cached)
+        return agent.chat_for(backend, effort=level, max_tokens=max_tokens, idle_s=idle_s, log=log, cache=cached)
 
     chat = chat_at(effort)
     if review_effort and review_effort != effort:
@@ -41,7 +42,8 @@ def run(proj, backend, *, attempts=5, checks="none", max_turns=0, max_tokens=Non
         def chat(messages, tools, *rest):
             return (builder if tools else reviewer)(messages, tools, *rest)
     meter = Meter(chat, out, backend.model,
-                  price_fn=estimate_cost if native else reported_cost if reported else lambda usage, model: None)
+                  price_fn=estimate_cost if native else reported_cost if reported else lambda usage, model: None,
+                  cost_kind="reported" if reported else "estimated")
     # outside the meter, so a call the cap refuses is never made and never counted
     capped = reported_cap(meter, max_cost) if max_cost and not native else meter
     log(f"visual review: {backend.describe()}, {attempts} iterations, checks={checks}"
@@ -53,7 +55,9 @@ def run(proj, backend, *, attempts=5, checks="none", max_turns=0, max_tokens=Non
                           url=backend.url, max_tokens=max_tokens, out=out,
                           max_total_turns=max_turns, max_wall=max_wall, log=log, keep_better=keep_better)
     account = meter.summary()
-    result.update(effort=effort, review_effort=review_effort or effort, provider=backend.provider,
+    result.update(effort=effort, review_effort=review_effort or effort, provider=backend.provider, cache=cache,
+                  cached_tokens=account["cached_tokens"], cache_write_tokens=account["cache_write_tokens"],
+                  cache_read_fraction=account["cache_read_fraction"],
                   accounting={k: v for k, v in account.items() if k != "calls"},
                   max_cost=max_cost, max_wall=max_wall,
                   cost_usd=account["estimated_usd"] if not account["unpriced_calls"] else None,

@@ -86,7 +86,7 @@ def test_native_failure_unknown_and_success_usage(requests):
     ]
     def opener(*args, **kwargs):
         return io.BytesIO(b''.join(b'data: ' + json.dumps(e).encode() + b'\n\n' for e in events))
-    native.chat_for(api, None, 'test', opener=opener)([{'role': 'user', 'content': 'x'}], [])
+    native.chat_for(api, None, 'test', opener=opener, cache=False)([{'role': 'user', 'content': 'x'}], [])
     assert len(requests) == 2 and not requests[1]['failed']
     assert requests[1]['usage'] == {'input_tokens': 5, 'output_tokens': 2}
     assert requests[1]['dialect'] == 'anthropic'

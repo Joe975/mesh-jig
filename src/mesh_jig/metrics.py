@@ -44,6 +44,8 @@ def normalize(raw, dialect='openai'):
     else:
         raise ValueError('unsupported usage dialect')
     values = dict(zip(FIELDS, (i, o, r, w, reason)))
+    if i is not None and r is not None and w is not None and r + w > i:
+        values['cache_read_tokens'] = values['cache_write_tokens'] = None
     for key, total in (('cache_read_tokens', i), ('cache_write_tokens', i), ('reasoning_tokens', o)):
         if total is not None and values[key] is not None and values[key] > total:
             values[key] = None

@@ -155,10 +155,12 @@ CPU pose film strips. Inspect every clip, then play it in an animation-capable v
 natural motion, foot planting or freedom from intersections. There is no animation-quality score.
 
 An [API rig builder](docs/RIGGING.md#an-api-model-writes-the-rig) is also available with
-`--workflow rig`. [Procedural sounds](docs/SOUND.md) can follow rigging.
+`--workflow rig`. The [post-rig game agent](docs/GAME_AGENT.md) prepares measured animation blends and ground IK
+from a frozen animated GLB, with independent checks before delivery. The reference site's terrain playback is
+experimental; see each model's limitations. [Procedural sounds](docs/SOUND.md) can follow rigging.
 [Facial controls](docs/FACE.md) and [body/face composition](docs/CHARACTER.md) are optional stages;
 declare [facial geometry requirements](docs/FACE_CAPABILITIES.md) before modelling when needed.
-The examples generate their own puppet geometry. Terrain/scene/runtime-IK stages remain outside public `main`.
+The examples generate their own puppet geometry.
 
 ## See the models
 

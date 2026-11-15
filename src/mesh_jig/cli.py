@@ -465,7 +465,7 @@ def cmd_build(a) -> int:
 
 CHECKOUT = Path(__file__).resolve().parents[2]
 DOCS = {"organic": "docs/ORGANIC.md", "contract": "examples/character-contract/jig.example.json",
-        "recipe": "examples/organic/recipe.py"}
+        "recipe": "examples/organic/recipe.py", "game": "docs/GAME_AGENT.md"}
 
 
 def cmd_docs(a) -> int:
@@ -751,6 +751,8 @@ def cmd_agent(a) -> int:
         return cmd_rig_agent(a)
     if a.workflow == "sound":
         return cmd_sound_agent(a)
+    if a.workflow == "game":
+        return cmd_game_agent(a)
     if a.workflow == "visual":
         return cmd_visual_agent(a)
     if a.checks != "none":
@@ -808,13 +810,33 @@ def cmd_rig_agent(a) -> int:
         backend.timeout_s = call_cap(a.timeout, a.max_wall)
         rep, out = rig_agent.drive(a.project, backend, builds=a.attempts, max_turns=a.max_turns,
                                    max_tokens=a.max_tokens, max_cost=a.max_cost, effort=a.effort, idle_s=a.idle,
-                                   reviewer=a.reviewer, log=print)
+                                   reviewer=a.reviewer, log=print, cache=a.cache)
     except llm.LLMError as error:
         print(str(error), file=sys.stderr)
         return 2
     print(rig_agent.summary(rep))
     print(f"-> {out / 'report.json'}")
     return 0 if rep["final"] else 1
+
+
+def cmd_game_agent(a) -> int:
+    from . import game_agent, gauntlet
+    try:
+        if a.reviewer or a.checks != 'none':
+            raise ValueError('--reviewer is rig-only; --checks is visual-only')
+        game_agent.load(a.project)
+        backend = llm.resolve_backend(prefix=llm.AGENT_PREFIX, url=a.url, model=a.model, provider=a.provider)
+        if backend.url == gauntlet.URL:
+            backend = gauntlet.backend(backend.model)
+        backend.timeout_s = call_cap(a.timeout, a.max_wall)
+        report, out = game_agent.drive(a.project, backend, builds=a.attempts, max_turns=a.max_turns,
+                                       max_tokens=a.max_tokens, max_cost=a.max_cost, effort=a.effort,
+                                       idle_s=a.idle, log=print)
+    except (ValueError, llm.LLMError) as error:
+        print(str(error), file=sys.stderr)
+        return 2
+    print(f"game agent: {report['stop']} -> {out / 'report.json'}")
+    return 0 if report['final'] else 1
 
 
 def cmd_sound_agent(a) -> int:
@@ -838,10 +860,10 @@ def cmd_sound_agent(a) -> int:
 
 def cmd_visual_agent(a) -> int:
     from . import gauntlet, visual_agent
-    if (a.patience or a.judge or a.context_tokens or a.keep_images is not None or a.cache == "on"
+    if (a.patience or a.judge or a.context_tokens or a.keep_images is not None
             or a.max_previews != 2 or a.allow_pending_candidates or a.reply_reserve != 8192
             or a.margin != streak.MARGIN):
-        raise ValueError("preview, context, cache, patience and pairwise-judge options require --workflow numeric; "
+        raise ValueError("preview, context, patience and pairwise-judge options require --workflow numeric; "
                          "visual review uses a fresh reviewer after each evaluation")
     proj = project.load(a.project, getattr(a, "target", None))
     if proj.problems():
@@ -854,7 +876,7 @@ def cmd_visual_agent(a) -> int:
         rep, out = visual_agent.run(proj, backend, attempts=a.attempts, checks=a.checks,
                                     max_turns=a.max_turns, max_tokens=a.max_tokens, max_cost=a.max_cost,
                                     max_wall=a.max_wall, effort=a.effort, idle_s=a.idle, log=print,
-                                    review_effort=a.review_effort, keep_better=a.keep_better)
+                                    review_effort=a.review_effort, keep_better=a.keep_better, cache=a.cache)
     except llm.LLMError as error:
         print(str(error), file=sys.stderr)
         return 2
@@ -964,6 +986,10 @@ def parser() -> argparse.ArgumentParser:
     ap.add_argument('--metrics-stage', help='stage identifier; defaults to workflow or command family')
     ap.add_argument('--metrics-run', default='run', help='stable run identifier across stages')
     subs = ap.add_subparsers(dest="cmd", required=True)
+    from . import game
+    game.add_commands(subs)
+    from . import game_agent
+    game_agent.add_commands(subs)
     from . import face
     face.add_commands(subs)
     from . import character
@@ -1194,10 +1220,11 @@ def parser() -> argparse.ArgumentParser:
 
     s = subs.add_parser("agent", help="build, validate, render and get fresh visual feedback (model calls, costs money)")
     s.add_argument("project", type=Path)
-    s.add_argument("--workflow", choices=("visual", "numeric", "rig", "sound"), default="visual",
+    s.add_argument("--workflow", choices=("visual", "numeric", "rig", "sound", "game"), default="visual",
                    help="visual review (default), the legacy numeric tool loop, rig: PROJECT is then a rig "
                         "directory (source.glb, rig.json, brief.md) and --attempts the builds in contract, or sound: "
-                        "PROJECT is a sound directory (sound.json, brief.md, animated.glb)")
+                        "PROJECT is a sound directory (sound.json, brief.md, animated.glb), or game: PROJECT is a "
+                        "frozen game-init job (animated.glb, game.json, brief.md)")
     s.add_argument("--reviewer", action="store_true",
                    help="rig only: a fresh call of the same model reviews each build's film strips (off by default: "
                         "it costs a call a build and has not been measured to help)")
@@ -1229,7 +1256,7 @@ def parser() -> argparse.ArgumentParser:
                         "5.5 models and holds OpenRouter's reported cost per call; numeric uses the legacy "
                         "endpoint-cost heuristic")
     s.add_argument("--cache", choices=("auto", "on", "off"), default="auto",
-                   help="numeric only: mark the conversation for the endpoint's prompt cache (auto: Anthropic models on OpenRouter, "
+                        help="prompt caching for numeric, visual and rig workflows (auto: Claude on Anthropic or OpenRouter, "
                         "which cache nothing unmarked)")
     s.add_argument("--keep-images", type=int, default=None,
                    help=f"picture-bearing turns that keep their pictures (default {agent.KEEP_IMAGE_TURNS}; all of "

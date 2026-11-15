@@ -37,6 +37,14 @@ FOLDED = 0.5                  # an edge under this share of its rest length: the
 STRETCHED = 1.5               # an edge past this many times its rest length, as the contract's stretch gate counts
 MOVES_MM = 5.0                # a part that travels less than this in a clip is still
 NEAR_GROUND_MM = 8.0
+DRIFT_MPS = 0.02              # feet moving slower than this while down, either way, stay put
+FOOT_M = 0.03                 # a bone whose part rests this close to the ground may be a foot
+SOLE_M = 0.02                 # a foot's sole: its corners this close to its lowest at rest
+LIFTS_M = 0.005               # a foot that lifts less than this in a clip says nothing about direction
+CONTACT_GAP_MM = 5.0          # ground contact as a game would read it: a vertex this near the rest ground touches it
+STANCE_S = 0.05               # a touch shorter than this is a graze, not a stance
+SKATE_SAID_MPS = 0.05         # a planted contact whose skate passes this is marked
+BELOW_SAID_MM = 1.0           # a clip that goes this far below the rest ground between keys is marked
 
 
 def to_blender(points: np.ndarray) -> np.ndarray:
@@ -281,7 +289,9 @@ def motion(rigged: str | Path, spec: dict) -> dict[str, dict]:
                 if d.max() > worst:
                     worst, at, where = float(d.max()), float(t), rest[a[d.argmax(), 0], a[d.argmax(), 1]]
             parting[f"{one}/{other}"] = {"mm": round(worst * 1000, 1), "at_s": round(at, 3), "at": where.round(3).tolist()}
-        out[clip] = {"seconds": c["seconds"], "parts": parts, "pairs": sides, "worn": slides, "parting": parting,
+        out[clip] = {"seconds": c["seconds"], "loop": bool(c.get("loop")),
+                     "stance": stance(frames, times, rest, strongest, names, ground, bool(c.get("loop"))),
+                     "parts": parts, "pairs": sides, "worn": slides, "parting": parting,
                      "stretch": stretched(rest, frames, times, weights, names, doc, blob, clip),
                      "ground": {"sinks_mm": round(float(max(0.0, -low.min()) * 1000), 1),
                                 "sinks_at_s": round(float(times[low.argmin()]), 3),
@@ -291,6 +301,42 @@ def motion(rigged: str | Path, spec: dict) -> dict[str, dict]:
                                 "highest_at_s": round(float(times[low.argmax()]), 3),
                                 "share_of_keys_on_ground": round(float((low * 1000 <= NEAR_GROUND_MM).mean()), 2)}}
     return out
+
+
+def stance(frames: list, times: np.ndarray, rest: np.ndarray, strongest: np.ndarray, names: list, ground: float,
+           loop: bool) -> dict | None:
+    """Which way each foot goes while it is down. A foot is a bone whose part rests within FOOT_M of the ground and
+    lifts at least LIFTS_M in the clip; its sole is that part's corners within SOLE_M of its lowest at rest. It is
+    down at the keys where its sole is within max(NEAR_GROUND_MM, a quarter of its lift) of the sole's lowest in the
+    clip, so a foot that only grazes the ground is read too. Its backward speed (Blender -Y, m/s) is the mean over
+    pairs of such keys in a row (the last and the first, for a loop). Feet under a body going forward on the spot
+    are carried backward; a gait that plays backwards reads negative. None when no foot lifts."""
+    if len(times) < 2:
+        return None
+    frames = np.asarray(frames)
+    dt = float(times[1] - times[0])
+    feet = {}
+    for k, bone in enumerate(names):
+        mask = strongest == k
+        if not mask.any() or rest[mask][:, 2].min() - ground > FOOT_M:
+            continue
+        where = np.argwhere(mask)
+        low = where[rest[mask][:, 2] <= rest[mask][:, 2].min() + SOLE_M]
+        height = frames[:, low[:, 0], low[:, 1], 2].min(axis=1)
+        lift = float(height.max() - height.min())
+        if lift < LIFTS_M:
+            continue
+        y = frames[:, low[:, 0], low[:, 1], 1].mean(axis=1)
+        down = height <= height.min() + max(NEAR_GROUND_MM / 1000, 0.25 * lift)
+        back = (y - np.roll(y, -1)) / dt
+        pairs = down & np.roll(down, -1)
+        if not loop:
+            pairs[-1] = False
+        if pairs.any():
+            feet[bone] = round(float(back[pairs].mean()), 3)
+    if not feet:
+        return None
+    return {"backward_mps": round(float(np.median(list(feet.values()))), 3), "feet": feet}
 
 
 def carries(doc: dict, blob: bytes, clip: str, t: float) -> np.ndarray:
@@ -462,4 +508,87 @@ def text(rigged: str | Path, spec: dict, report: dict | None = None) -> str:
             lines.append(f"  ground: something is within {NEAR_GROUND_MM:g} mm of it in {g['share_of_keys_on_ground'] * 100:.0f}% of "
                          f"the keys; the lowest point is highest, {max(0.0, g['lowest_point_highest_mm']):.0f} mm up, at "
                          f"{g['highest_at_s']:.2f} s")
+        st = m.get("stance")
+        if m.get("loop") and st:
+            speed, each = st["backward_mps"], ", ".join(f"{b} {v:+.2f}" for b, v in st["feet"].items())
+            if speed < -DRIFT_MPS:
+                lines.append(f"! feet slide FORWARD while they are down ({-speed:.2f} m/s; backward speed by foot: "
+                             f"{each}). A gait on the spot that does this plays backwards, and no gate reads it: feet "
+                             "under a body going forward are carried toward the back while they are down")
+            elif speed > DRIFT_MPS:
+                lines.append(f"  feet are carried backward while they are down ({speed:.2f} m/s; by foot: {each}), "
+                             "as under a body going forward on the spot")
+            else:
+                lines.append(f"  feet stay put while they are down (by foot: {each}): a clip that steps in place or "
+                             "travels over the ground")
+    lines += contact_text(ground_contacts(rigged, spec))
     return "\n".join(lines)
+
+
+def ground_contacts(rigged: str | Path, spec: dict) -> dict[str, dict]:
+    """clip -> how the clip meets the ground as the game-ready stage reads it, with no contract: how far the model
+    goes below its rest ground (sampled at 120 Hz, so a sag between keys shows), and for each cluster of vertices that
+    touches the ground (game_measure's cluster finder) its planted backward speed (median), skate (RMS difference of
+    the planted velocity from the clip's travel speed), duty, touchdown phases and grazes (touches under STANCE_S).
+    Readings only: no gate reads them."""
+    from . import game_measure as gm
+    body = gm.Body(rigged)
+    gap = CONTACT_GAP_MM/1000
+    out = {}
+    for clip, c in spec['clips'].items():
+        if clip not in body.clips:
+            continue
+        loop = bool(c.get('loop', False))
+        first = gm.clip_sample(body, clip, loop, {})
+        hit = np.flatnonzero(((first.z-first.ground) <= gap).any(axis=0))
+        groups = gm.clusters(body, hit)
+        contacts = {f'{g["joint"]}#{k}': g['ids'] for k, g in enumerate(groups)}
+        sampled = gm.clip_sample(body, clip, loop, contacts) if contacts else first
+        read = gm.legs_read(sampled.contacts, sampled.times, sampled.duration, loop, sampled.ground, gap, STANCE_S)
+        planted = {k: x for k, x in read.items() if x['stance']}
+        travel, per = gm.speeds(planted, np.array([0.0, 1.0])) if planted else (None, {})
+        rows = []
+        for k, g in enumerate(groups):
+            key = f'{g["joint"]}#{k}'
+            x = read[key]
+            if not x['stance'] and not x['grazes']:
+                continue
+            rows.append({**gm.describe(body, g), 'duty': round(x['duty'], 3),
+                         'touchdown_phases': [round(t/sampled.duration, 3) for t in x['touchdowns']],
+                         'speed_mps': _r3(per.get(key, {}).get('speed_mps')),
+                         'skate_mps': _r3(per.get(key, {}).get('skate_mps')),
+                         'grazes': [{'time_s': round(gz['time_s'], 3), 'clearance_mm': round(gz['clearance_mm'], 1)+0.0}
+                                    for gz in x['grazes']]})
+        out[clip] = {'below_rest_ground_mm': round(max(0.0, first.ground-first.lowest)*1000, 1),
+                     'travel_speed_mps': None if travel is None else round(travel, 3)+0.0, 'contacts': rows}
+    return out
+
+
+def _r3(v):
+    return None if v is None else round(float(v), 3)+0.0
+
+
+def contact_text(found: dict[str, dict]) -> list[str]:
+    """The ground-contact readings as lines: what a game that plants these feet would make of each clip."""
+    if not found:
+        return []
+    lines = [f"GROUND CONTACT AS A GAME WOULD USE IT (vertices within {CONTACT_GAP_MM:g} mm of the rest ground, grouped "
+             "by the bone that carries them; a planted contact should move back at one speed through its whole stance, "
+             f"toe-off included; readings, no gate). Speeds in m/s, phases as shares of the clip:"]
+    for clip, f in found.items():
+        head = f"  {clip}: travel {f['travel_speed_mps']:.3f}" if f['travel_speed_mps'] is not None else f"  {clip}: nothing planted"
+        lines.append(head)
+        if f['below_rest_ground_mm'] >= BELOW_SAID_MM:
+            lines.append(f"! {clip} goes {f['below_rest_ground_mm']:.1f} mm below the rest ground, read 120 times a second (a "
+                         "planted limb that sags between keys does this; more keys or easing between them cure it)")
+        for c in f['contacts']:
+            bits = [f"{c['joint']} on {', '.join(c['nodes'][:2])}", f"duty {c['duty']:.2f}"]
+            if c['speed_mps'] is not None:
+                bits.append(f"planted {c['speed_mps']:.3f} back, skate {c['skate_mps']:.3f}")
+            if c['touchdown_phases']:
+                bits.append('touches down at ' + ', '.join(f'{p:.2f}' for p in c['touchdown_phases']))
+            if c['grazes']:
+                bits.append('grazes ' + ', '.join(f"at {g['time_s']:.2f} s ({g['clearance_mm']:.1f} mm)" for g in c['grazes']))
+            marked = (c['skate_mps'] or 0) >= SKATE_SAID_MPS or c['grazes']
+            lines.append(('! ' if marked else '    ')+'; '.join(bits))
+    return lines

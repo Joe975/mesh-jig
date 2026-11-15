@@ -251,10 +251,11 @@ def test_install_updates_only_selected_paths_and_keeps_raw_runs_ignored(tmp_path
     source_guard = ROOT / "publication/check_publication.py"
     if not source_guard.exists(): source_guard = ROOT / "tools/check_publication.py"
     shutil.copyfile(source_guard, guard)
+    shutil.copyfile(source_guard.with_name('terrain_schema.py'),guard.with_name('terrain_schema.py'))
     source_ignore = ROOT / "publication/gitignore"
     if not source_ignore.exists(): source_ignore = ROOT / ".gitignore"
     shutil.copyfile(source_ignore, repo / ".gitignore")
-    names = [".gitignore", "PUBLIC_FILES.txt", str(script.relative_to(repo)).replace("\\", "/"), "tools/check_publication.py"]
+    names = [".gitignore", "PUBLIC_FILES.txt", str(script.relative_to(repo)).replace("\\", "/"), "tools/check_publication.py", "tools/terrain_schema.py"]
     (repo / "PUBLIC_FILES.txt").write_text("\n".join(sorted(names)) + "\n")
     commit(repo)
     hook = curator.protect(repo)

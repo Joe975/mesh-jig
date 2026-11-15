@@ -172,6 +172,20 @@ SHOULDER, HAND, ARM_RADIUS = (0.3, 0, 0.35), (0.3, 0, 0.05), 0.05
     assert idle["hips"]["across_mm"] == pytest.approx(2000 * (0.2 * 0.1 - 0.09 * np.sin(np.radians(2.0))), abs=1)   # the weight shifts
     assert max(idle["foot.L"][k] for k in ("across_mm", "fore_aft_mm", "up_down_mm")) < 0.5     # over feet that stay
     assert moves["idle"]["ground"]["sinks_mm"] < 0.01 and moves["idle"]["ground"]["share_of_keys_on_ground"] == 1
+    # a foot that is down is carried backward under a walk or a run going forward; the idle's feet never lift, so it
+    # says nothing. The same walk played backwards slides its feet forward while they are down, which no gate reads
+    # (three horse rigs passed every gate galloping backwards)
+    for clip in ("walk", "run"):
+        st = moves[clip]["stance"]
+        assert st["backward_mps"] > 10 * rig_read.DRIFT_MPS and set(st["feet"]) == {"foot.L", "foot.R"}
+    assert moves["idle"]["stance"] is None
+    said = rig_read.text(out, spec)
+    assert "carried backward" in said and "plays backwards" not in said
+    reverse = script + ("\n_forward = pose\nSECONDS = {'walk': 1.0, 'run': 0.6, 'idle': 2.0}\n"
+                        "def pose(clip, t):\n    return _forward(clip, (SECONDS[clip] - t) % SECONDS[clip])\n")
+    back = build(tmp_path, parts, reverse, spec, "back")[1]
+    assert rig_read.motion(back, spec)["walk"]["stance"]["backward_mps"] < -10 * rig_read.DRIFT_MPS
+    assert "feet slide FORWARD while they are down" in rig_read.text(back, spec)
     # a stride the legs cannot reach lowers the hips and leaves the feet on the ground
     long = build(tmp_path, parts, script.replace("stride=0.8 * LEG", "stride=1.4 * LEG"), spec, "long")[1]
     far = rig_read.motion(long, spec)["walk"]

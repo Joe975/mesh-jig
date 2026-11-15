@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "cycle": [
+    {"clip": "sprint", "motion": "measured", "cycles": 3, "exit": "end"},
+    {"clip": "leap", "motion": "authored", "cycles": 1, "exit": "landing"}
+  ]
+}

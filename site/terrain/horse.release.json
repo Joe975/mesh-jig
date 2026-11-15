@@ -1,0 +1,8 @@
+{
+  "format": "mesh-jig terrain release",
+  "version": 1,
+  "files": {
+    "horse.json": "988b7acbeb7a52d861222fcc2b61aa2faefd820023b4a10691eafcee90267787"
+  },
+  "glb_sha256": "a6f60e202a6eadd75d26ef6f7330c639dd2971fb2184f1ba00de206c6fd9f5bf"
+}

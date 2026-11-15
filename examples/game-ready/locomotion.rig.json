@@ -1,0 +1,13 @@
+{
+  "fps": 60,
+  "max_influences": 4,
+  "bones": {"required": ["root", "hips", "spine", "head", "thigh.L", "shin.L", "foot.L", "thigh.R", "shin.R", "foot.R"], "max": 40},
+  "loop_mm_max": 1,
+  "clips": {
+    "idle": {"seconds": 2, "loop": true, "min_displacement_mm": 5, "ground_drop_mm_max": 1},
+    "walk": {"seconds": 1, "loop": true, "min_displacement_mm": 100, "ground_drop_mm_max": 1},
+    "run": {"seconds": 0.6, "loop": true, "min_displacement_mm": 150, "ground_drop_mm_max": 1},
+    "jump": {"seconds": 0.8, "loop": false, "min_displacement_mm": 200, "ground_drop_mm_max": 1,
+             "events": [{"time": 0.2, "name": "takeoff"}, {"time": 0.65, "name": "landing"}]}
+  }
+}

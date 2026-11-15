@@ -7,6 +7,26 @@ PAGE = ROOT / "site" / "index.html"
 PUBLIC = set((ROOT / "PUBLIC_FILES.txt").read_text(encoding="utf-8").split())
 
 
+def test_terrain_characters_are_lazy_anonymous_and_bound_to_their_public_models():
+    import hashlib
+    import json
+    page=PAGE.read_text(encoding='utf-8')
+    assert 'All animations' in page and 'main.play(defaultAnimation(' in page
+    assert "import('./terrain/viewer.js')" in page
+    assert '<script type="module" src="terrain/viewer.js"' not in page
+    registry=json.loads((ROOT/'site/terrain/characters.json').read_text(encoding='utf-8'))
+    assert len(registry['characters'])==2
+    for row in registry['characters'].values():
+        raw=(ROOT/'site/terrain'/row['data']).read_bytes();data=json.loads(raw)
+        assert data['version']==2
+        assert hashlib.sha256(raw).hexdigest()==row['sha256']
+        assert hashlib.sha256((ROOT/row['model']).read_bytes()).hexdigest()==data['glb_sha256']==row['glb_sha256']
+        assert len(data['runtime']['limbs']) in (4,6)
+        assert all(j['name']=='j'+str(j['node']) for j in data['runtime']['skeleton']['joints'])
+        assert not any(s in json.dumps(data) for s in ('local-work','C:\\','contract_sha256','provenance'))
+    assert all('site/'+p.relative_to(ROOT/'site').as_posix() in PUBLIC for p in (ROOT/'site/terrain').rglob('*') if p.is_file())
+
+
 def test_stage_scorecards_and_unranked_overall_coverage_preserve_missing_data():
     import html
     import json

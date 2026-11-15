@@ -35,7 +35,8 @@ def stream_events(events):
 
 def events():
     return [
-        {"type": "message_start", "message": {"model": "claude-opus-5-5", "usage": {"input_tokens": 20, "output_tokens": 1}}},
+        {"type": "message_start", "message": {"model": "claude-opus-5-5", "usage": {
+            "input_tokens": 20, "output_tokens": 1, "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0}}},
         {"type": "content_block_start", "index": 0, "content_block": {"type": "thinking", "thinking": "", "signature": ""}},
         {"type": "content_block_delta", "index": 0, "delta": {"type": "signature_delta", "signature": "opaque"}},
         {"type": "content_block_start", "index": 1, "content_block": {"type": "tool_use", "id": "call1", "name": "read_file", "input": {}}},
@@ -53,7 +54,8 @@ def test_stream_empty_tool_delta_preserves_initial_input_and_usage():
     assert stop is None
     assert blocks[1]["input"] == {}
     assert blocks[0]["signature"] == "opaque"
-    assert usage == {"input_tokens": 20, "output_tokens": 100}
+    assert usage == {"input_tokens": 20, "output_tokens": 100,
+                     "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0}
     assert model == "claude-opus-5-5"
 
 
@@ -114,7 +116,7 @@ def test_incomplete_stream_is_not_retried_and_retains_reservation(tmp_path):
     with pytest.raises(llm.LLMError, match="incomplete"):
         chat([{"role": "user", "content": "hello"}], [])
     assert len(count) == 1
-    assert budget.committed() == pytest.approx(5.71072)
+    assert budget.committed() == pytest.approx(6.81072)
 
 
 def test_opus_rates_and_effort_are_explicit():
@@ -184,7 +186,7 @@ def test_unexpected_serving_model_keeps_full_reservation(tmp_path):
     budget = native.Budget(tmp_path / "budget.json", 10)
     with pytest.raises(llm.LLMError, match="unexpected serving"):
         native.chat_for(api, budget, "test", opener=opener)([{"role": "user", "content": "hi"}], [])
-    assert budget.committed() == pytest.approx(5.71072)
+    assert budget.committed() == pytest.approx(6.81072)
     assert budget.entries[0]["state"] == "unknown_charge_reserved"
 
 

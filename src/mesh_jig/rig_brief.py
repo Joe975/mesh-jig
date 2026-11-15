@@ -706,9 +706,24 @@ def gates(spec: dict) -> str:
     return "\n".join(lines)
 
 
+PACKAGEABLE = """CLIPS A GAME CAN USE (said when the contract has a clip that loops; `game-build` packages a rig for a game, and
+`rig-check --readings` reads each of these under GROUND CONTACT AS A GAME WOULD USE IT):
+- Gaits play in place and loop: the game moves the character, so the root does not travel.
+- A planted foot moves back at ONE constant speed through its whole stance, toe-off and heel-strike included. A toe
+  that rolls off slower than the rest of the stance slides once the game moves the root (skate).
+- An idle, so a speed blend has somewhere to start.
+- Gaits that are to blend plant their feet in the same order, at the same shares of the cycle.
+- No sag between keys: a planted leg solved at each key and turned linearly between keys dips below the ground in
+  between. Key it densely (60 a second for a run) or ease it so the foot stays on the ground at every instant.
+- A swinging foot clears the ground by more than a few millimetres all the way: a near miss reads as a graze, and
+  a toe that brushes the ground looks like a stumble."""
+
+
 def text(source: str | Path, spec: dict) -> str:
     # a model whose every piece rides one bone has no blend to get wrong and no use for the recipe
-    return "\n\n".join([facts(source), RULES] + ([] if spec.get("rigid") else [RECIPE]) + [gates(spec)])
+    loops = any(c.get("loop") for c in spec["clips"].values())
+    return "\n\n".join([facts(source), RULES] + ([] if spec.get("rigid") else [RECIPE]) + [gates(spec)]
+                       + ([PACKAGEABLE] if loops else []))
 
 
 def contract(path: str | Path) -> dict:

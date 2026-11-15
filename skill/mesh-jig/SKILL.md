@@ -217,6 +217,17 @@ the subject. `mesh-jig criteria <dir>` reads back what is in force, where it is 
 `--write` puts it all in the block without moving a number. Set the criteria before the first attempt and do not
 change them while attempts are being compared. `docs/JIG.md`, Criteria, has each key.
 
+## A model that will be rigged
+
+When the user, the brief or the project says the model will be rigged or animated, build it in the sheet's pose but
+shape every part a rig will move, and the places where those parts meet the body, so that each one is a separate
+part a rig can lift and swing without dragging the body or the clothing: arms, armpits and sleeves on a biped; each
+leg, the tail and the neck on a quadruped. No measure rewards this. Builders told so in those words left the arms of
+a cartoon cat clear of its body for 0.15 to 0.30 m instead of 0.15 m or less, at the same score, and every such
+build rigged within its contract where every build without the words failed its run at the arm-body join. On a
+horse the words helped once (the plain build had fused its legs nearly to the hooves) and made no difference in a
+second pair.
+
 ## Standing/organic models (opt-in)
 
 The three files linked below live in the mesh-jig checkout, which a copy of this skill may not sit beside:
@@ -249,3 +260,11 @@ triangle ceiling is the contract's and every evaluation ends with a MESH READINE
 not (buried triangles, pieces, open edges, slivers, symmetry, materials). They do not fail a build or move the
 score. Read them as you read a failed gate: a model that matches the reference and holds them is worth more to
 the stages after this one than one that only matches. Pass the same `--target` on every command of a run.
+
+## Post-rig game preparation
+
+When the user needs animation blends or ground IK after rigging, follow [GAME_AGENT.md](../../docs/GAME_AGENT.md).
+Create a fresh `game-init` job from the animated GLB with explicit leg count and gait names, then use
+`agent --workflow game`. Review the job's limits before running; the agent cannot edit the frozen rig or weaken
+them. Deliver only the passing attempt named by `report.json.final`. Failed gait/contact/reach checks go back to
+rigging. A candidate package or a working terrain preview alone is not evidence of game-ready animation.

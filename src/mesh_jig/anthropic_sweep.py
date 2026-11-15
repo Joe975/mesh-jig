@@ -1,7 +1,7 @@
 """Native Messages transport for explicit effort and a conservative shared spend cap.
 
 No retries: a failed request retains its entire worst-case reservation. At verified Anthropic
-5.5 model rates, a full 1M input context plus the output cap is reserved
+5.5 model rates, a full 1M input context (including any cold cache-write premium) plus the output cap is reserved
 before dispatch. This intentionally stops short of the cap when headroom is low.
 """
 from __future__ import annotations
@@ -50,12 +50,13 @@ class Budget:
                             "charged_or_reserved_usd": round(self.committed(), 8),
                             "entries": self.entries})
 
-    def reserve(self, max_tokens, label, *, wait=False):
+    def reserve(self, max_tokens, label, *, wait=False, cache=False):
         # 1.1M conservatively covers either decimal or binary interpretation of 1M.
         if not isinstance(max_tokens, int) or max_tokens <= 0:
             raise ValueError("max_tokens must be a positive integer")
         input_rate, output_rate = RATES[self.model]
-        amount = input_rate * 1.1 + max_tokens * output_rate / 1_000_000
+        # Any input may be a cold five-minute cache write, billed at 1.25x.
+        amount = input_rate * 1.1 * (1.25 if cache else 1) + max_tokens * output_rate / 1_000_000
         with self.changed:
             while wait and self.active and self.committed() + amount > self.limit:
                 self.changed.wait(timeout=30)
@@ -63,22 +64,15 @@ class Budget:
                 raise llm.LLMError("budget stop: insufficient room for worst-case request")
             index = len(self.entries)
             self.entries.append({"label": label, "state": "reserved", "max_tokens": max_tokens,
-                                 "charged_or_reserved_usd": amount})
+                                 "charged_or_reserved_usd": amount, "cache_ttl": "5m" if cache else None})
             self.active.add(index)
             self.save()
             return index
 
     def settle(self, index, usage):
-        # No cache writes requested; unexpected ones must retain the reservation.
-        if usage.get("cache_creation_input_tokens"):
-            raise llm.LLMError("unexpected cache write: retain full budget reservation")
-        if "input_tokens" not in usage or "output_tokens" not in usage:
-            raise llm.LLMError("missing usage: retain full budget reservation")
         from .gauntlet_sweep import estimate_cost
-        cached = usage.get("cache_read_input_tokens", 0)
-        amount = estimate_cost({"prompt_tokens": usage["input_tokens"] + cached,
-                                "completion_tokens": usage["output_tokens"],
-                                "prompt_tokens_details": {"cached_tokens": cached}}, self.model)
+        normalized = normalize_usage(usage, cache_ttl=self.entries[index].get("cache_ttl"))
+        amount = estimate_cost(normalized, self.model)
         if amount is None:
             raise llm.LLMError("unpriced usage: retain full budget reservation")
         with self.lock:
@@ -96,6 +90,37 @@ class Budget:
             self.active.discard(index)
             self.save()
             self.changed.notify_all()
+
+
+def normalize_usage(raw, *, cache_ttl=None):
+    """Native input, cache reads and cache writes are disjoint, not overlapping totals.
+
+    An omitted write-TTL breakdown is known only when our request explicitly chose
+    the five-minute policy. Unknown or inconsistent usage cannot settle a reservation.
+    """
+    if cache_ttl and any(k not in raw for k in ("cache_read_input_tokens", "cache_creation_input_tokens")):
+        raise llm.LLMError("missing cache usage: retain full budget reservation")
+    values = [metrics.number(raw.get(k, 0)) for k in
+              ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens", "output_tokens")]
+    if "input_tokens" not in raw or "output_tokens" not in raw or any(v is None for v in values):
+        raise llm.LLMError("missing usage or invalid token counts: retain full budget reservation")
+    fresh, read, write, output = values
+    breakdown = raw.get("cache_creation")
+    if breakdown is not None:
+        if not isinstance(breakdown, dict):
+            raise llm.LLMError("invalid cache write breakdown")
+        five = metrics.number(breakdown.get("ephemeral_5m_input_tokens", 0))
+        hour = metrics.number(breakdown.get("ephemeral_1h_input_tokens", 0))
+        if five is None or hour is None or five + hour != write:
+            raise llm.LLMError("inconsistent cache write breakdown")
+    elif write and cache_ttl != "5m":
+        raise llm.LLMError("unknown cache write TTL: retain full budget reservation")
+    else:
+        five, hour = write, 0
+    return {"prompt_tokens": fresh + read + write, "completion_tokens": output,
+            "prompt_tokens_details": {"cached_tokens": read, "cache_write_tokens": write,
+                                      "cache_write_tokens_5m": five, "cache_write_tokens_1h": hour},
+            "native_usage": raw}
 
 
 def identity(message):
@@ -122,7 +147,7 @@ def text_blocks(content):
     return blocks
 
 
-def payload(messages, schemas, history, model, max_tokens, effort="high"):
+def payload(messages, schemas, history, model, max_tokens, effort="high", *, cache=True):
     system, converted = [], []
     for message in messages:
         role = message["role"]
@@ -157,6 +182,19 @@ def payload(messages, schemas, history, model, max_tokens, effort="high"):
         out["tools"] = [{"name": t["function"]["name"],
                          "description": t["function"].get("description", ""),
                          "input_schema": t["function"]["parameters"]} for t in schemas]
+    if cache:
+        # Four breakpoints at most: system, opening, previous request, current request.
+        # The previous endpoint survives even a tool result with >20 image blocks.
+        users = [m for m in converted if m["role"] == "user"]
+        targets = ([system] if system else [])
+        if users:
+            indices = {0, *range(max(0, len(users) - 2), len(users))}
+            targets.extend(users[i]["content"] for i in sorted(indices))
+        for blocks in targets:
+            for block in reversed(blocks):
+                if block["type"] in ("text", "image", "tool_result", "tool_use"):
+                    block["cache_control"] = {"type": "ephemeral", "ttl": "5m"}
+                    break
     return out
 
 
@@ -214,7 +252,7 @@ def read_stream(response):
 
 
 def chat_for(api, budget, label, *, max_tokens=65536, opener=urllib.request.urlopen,
-             log=lambda text: None, effort="high"):
+             log=lambda text: None, effort="high", cache=True):
     """The chat function over the native Messages API. `usage["mesh_jig_completion"]` carries the endpoint's own
     stop reason, as `llm.assemble_chunks` does for the other transport. A reply cut at the output cap comes back
     with its text and no tool call (`llm.cut_short(usage)` says so): a call that may have lost its end is not run,
@@ -228,11 +266,11 @@ def chat_for(api, budget, label, *, max_tokens=65536, opener=urllib.request.urlo
     history = {}
 
     def chat(messages, schemas, left_s=None):
-        body = payload(messages, schemas, history, api.model, max_tokens, effort)
+        body = payload(messages, schemas, history, api.model, max_tokens, effort, cache=cache)
         request = urllib.request.Request(api.url + "/messages", data=json.dumps(body).encode(), method="POST",
                   headers={"Content-Type": "application/json", "x-api-key": api.key,
                            "anthropic-version": "2023-06-01"})
-        ticket = budget.reserve(max_tokens, label, wait=True) if budget is not None else None
+        ticket = budget.reserve(max_tokens, label, wait=True, cache=cache) if budget is not None else None
         start = time.monotonic()
         log(f"native {api.model} {effort or 'default'} call; budget reservation {ticket}")
         # One request only. Any transport failure leaves its reservation intact.
@@ -260,12 +298,9 @@ def chat_for(api, budget, label, *, max_tokens=65536, opener=urllib.request.urlo
         if calls:
             message["tool_calls"] = calls
             history[identity(message)] = copy.deepcopy(blocks)
-        cached = raw_usage.get("cache_read_input_tokens", 0)
-        usage = {"prompt_tokens": raw_usage["input_tokens"] + cached,
-                 "completion_tokens": raw_usage["output_tokens"],
-                 "prompt_tokens_details": {"cached_tokens": cached},
-                 "native_usage": raw_usage, "served_model": served,
-                 "mesh_jig_completion": {"finish_reason": stop_reason, "ambiguous": False}}
+        usage = normalize_usage(raw_usage, cache_ttl="5m" if cache else None)
+        usage.update(served_model=served,
+                     mesh_jig_completion={"finish_reason": stop_reason, "ambiguous": False})
         log(f"native call completed in {time.monotonic()-start:.1f}s"
             + (f"; cut at the {max_tokens}-token output cap" if stop_reason == CUT else ""))
         return message, usage

@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 import time
 
-from . import agent, cpu, evaluate, gauntlet, project, sheet
+from . import agent, cpu, evaluate, gauntlet, metrics, project, sheet
 
 ARMS = {"gauntlet": "none", "mesh-jig": None,
         "checks-builder": "builder", "checks-both": "both"}
@@ -19,7 +19,7 @@ MODELS = (gauntlet.MODEL, "claude-sonnet-5-5", "claude-opus-5-5")
 
 
 def estimate_cost(usage, model=gauntlet.MODEL):
-    """USD list-price estimate, per request (not invoice); no caching requested.
+    """USD list-price estimate, per request (not invoice), with disjoint cache writes.
 
     Compatibility API prompt_tokens includes cached tokens. Refuse unknown cache
     writes rather than guessing their TTL. Reasoning is already in completion_tokens.
@@ -27,11 +27,14 @@ def estimate_cost(usage, model=gauntlet.MODEL):
     if "prompt_tokens" not in usage or "completion_tokens" not in usage:
         return None
     details = usage.get("prompt_tokens_details") or {}
-    if details.get("cache_write_tokens") or usage.get("cache_creation_input_tokens"):
-        return None
     prompt, output = usage["prompt_tokens"], usage["completion_tokens"]
-    cached = details.get("cached_tokens", 0) or 0
-    if not 0 <= cached <= prompt or output < 0:
+    cached = details.get("cached_tokens", 0)
+    writes = details.get("cache_write_tokens", usage.get("cache_creation_input_tokens", 0))
+    five = details.get("cache_write_tokens_5m", 0)
+    hour = details.get("cache_write_tokens_1h", 0)
+    if any(metrics.number(v) is None for v in (prompt, output, cached, writes, five, hour)):
+        return None
+    if cached + writes > prompt or five + hour != writes:
         return None
     if model == gauntlet.MODEL:
         multiplier = 5 if prompt > 100_000 else 1
@@ -44,7 +47,8 @@ def estimate_cost(usage, model=gauntlet.MODEL):
         input_rate, output_rate, cache_rate = 8., 40., .20
     else:
         return None
-    return round(((prompt - cached) * input_rate + cached * cache_rate + output * output_rate) / 1_000_000, 8)
+    return round(((prompt - cached - writes) * input_rate + cached * cache_rate
+                  + (1.25 * five + 2 * hour) * input_rate + output * output_rate) / 1_000_000, 8)
 
 
 def effort_control(model, effort):
@@ -59,10 +63,11 @@ def effort_control(model, effort):
 
 
 class Meter:
-    def __init__(self, chat, root, model=gauntlet.MODEL, *, price_fn=estimate_cost):
+    def __init__(self, chat, root, model=gauntlet.MODEL, *, price_fn=estimate_cost, cost_kind="estimated"):
         self.chat, self.root = chat, root
         self.model = model
         self.price_fn = price_fn
+        self.cost_kind = cost_kind
         self.started = time.monotonic()
         self.calls = []
 
@@ -86,12 +91,22 @@ class Meter:
 
     def summary(self):
         known = [c["estimated_usd"] for c in self.calls if c.get("estimated_usd") is not None]
-        return {"cost_kind": "estimated", "model": self.model,
-                "pricing_url": PRICING_URL, "pricing_date": "2026-10-09",
+        counts = [metrics.normalize(c.get("usage")) for c in self.calls]
+        reads = [c["cache_read_tokens"] for c in counts if c["cache_read_tokens"] is not None]
+        writes = [c["cache_write_tokens"] for c in counts if c["cache_write_tokens"] is not None]
+        inputs = [c.get("usage", {}).get("prompt_tokens") for c in self.calls]
+        complete = len(reads) == len(self.calls) and all(metrics.number(i) is not None for i in inputs)
+        return {"cost_kind": self.cost_kind, "model": self.model,
+                "pricing_url": PRICING_URL if self.cost_kind == "estimated" else None,
+                "pricing_date": "2026-10-09" if self.cost_kind == "estimated" else None,
                 "estimated_usd": round(sum(known), 6), "unpriced_calls": len(self.calls) - len(known),
                 "api_wall_s": round(sum(c["wall_s"] for c in self.calls), 3),
                 "prompt_tokens": sum(c.get("usage", {}).get("prompt_tokens", 0) for c in self.calls),
                 "completion_tokens": sum(c.get("usage", {}).get("completion_tokens", 0) for c in self.calls),
+                "cached_tokens": sum(reads) if reads else None,
+                "cache_write_tokens": sum(writes) if writes else None,
+                "cache_read_calls": len(reads), "cache_write_calls": len(writes),
+                "cache_read_fraction": sum(reads) / sum(inputs) if complete and sum(inputs) else None,
                 "calls": self.calls}
 
 

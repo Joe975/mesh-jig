@@ -39,6 +39,9 @@ prompts, responses, raw errors, session IDs, credentials, local paths or endpoin
   not extra tokens to add. Anthropic's separate input/cache fields are normalized explicitly.
 - Tokens are **known subtotals** with reporting coverage. Missing/failed calls never become zero.
   Explicit provider zero is valid. Provider totals are not estimates from character length.
+  Visual and rig accounting also expose cache read/write subtotals and reporting-call coverage.
+  Native Anthropic compatibility totals include uncached input plus cache reads plus cache writes exactly once;
+  per-TTL writes are priced separately. An incomplete cache receipt cannot release a reserved spend cap.
 - Only provider-reported numeric USD cost is included by this ledger. Missing cost is unknown,
   not free; subscription prices, list-price estimates and budget reservations are not invoices.
   The Markdown table shows each run, stage and known USD subtotal with reporting coverage.

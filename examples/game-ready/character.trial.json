@@ -1,0 +1,186 @@
+{
+  "version": 1,
+  "rig_sha256": "f1905ddefeac1f95c20b7d01366a52e9bfe0414976f86b36c35dff8929918aee",
+  "forward": [
+    0,
+    1,
+    0
+  ],
+  "parameters": {
+    "speed": {
+      "min": 0,
+      "max": 2.5,
+      "default": 0
+    }
+  },
+  "graph": {
+    "layers": [
+      {
+        "name": "base",
+        "node": {
+          "type": "blend1d",
+          "parameter": "speed",
+          "sync": true,
+          "points": [
+            {
+              "clip": "idle",
+              "value": 0
+            },
+            {
+              "clip": "walk",
+              "value": "measured"
+            },
+            {
+              "clip": "run",
+              "value": "measured"
+            }
+          ]
+        }
+      },
+      {
+        "name": "upper",
+        "mask": [
+          "spine"
+        ],
+        "node": {
+          "type": "oneshots",
+          "clips": {
+            "fire": {
+              "fade_in_s": 0.15,
+              "fade_out_s": 0.25
+            },
+            "slash": {
+              "fade_in_s": 0.1,
+              "fade_out_s": 0.25
+            }
+          }
+        }
+      }
+    ]
+  },
+  "body": {
+    "joint": "hips"
+  },
+  "limbs": [
+    {
+      "name": "leg.L",
+      "role": "leg",
+      "joints": [
+        "thigh.L",
+        "shin.L",
+        "foot.L"
+      ],
+      "solver": "two_bone",
+      "pole": [
+        0,
+        1,
+        0
+      ],
+      "bend_degrees": [
+        3,
+        175
+      ],
+      "contact": {
+        "node": "footL.Sole__black",
+        "box": [
+          [
+            -0.56,
+            -0.257,
+            -1.101
+          ],
+          [
+            -0.05,
+            0.4,
+            -1.099
+          ]
+        ]
+      }
+    },
+    {
+      "name": "leg.R",
+      "role": "leg",
+      "joints": [
+        "thigh.R",
+        "shin.R",
+        "foot.R"
+      ],
+      "solver": "two_bone",
+      "pole": [
+        0,
+        1,
+        0
+      ],
+      "bend_degrees": [
+        3,
+        175
+      ],
+      "contact": {
+        "node": "footR.Sole__black",
+        "box": [
+          [
+            0.05,
+            -0.257,
+            -1.101
+          ],
+          [
+            0.56,
+            0.4,
+            -1.099
+          ]
+        ]
+      }
+    }
+  ],
+  "ground": {
+    "drop_m_max": 0.25,
+    "rise_m_max": 0.15,
+    "tilt": false,
+    "relock_m": 0.12,
+    "blend_s": 0.08,
+    "lookahead_s": 0.15
+  },
+  "aims": [
+    {
+      "name": "head",
+      "joints": [
+        "spine",
+        "head"
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "yaw_degrees": [
+        -70,
+        70
+      ],
+      "pitch_degrees": [
+        -40,
+        40
+      ],
+      "degrees_per_s": 240
+    }
+  ],
+  "sockets": [
+    {
+      "name": "grip.R",
+      "joint": "hand.R",
+      "offset": [
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "criteria": {
+    "loop_seam_mm_max": 2,
+    "contact_gap_mm_max": 2.0,
+    "root_travel_mm_max": 5,
+    "skate_mps_max": 0.3,
+    "gait_phase_difference_max": 0.05,
+    "blend_slip_mps_max": 0.9,
+    "fade_joint_speed_mps_max": 5,
+    "stance_s_min": 0.05
+  }
+}

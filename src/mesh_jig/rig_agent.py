@@ -441,7 +441,7 @@ def review(chat_fn, root: Path, attempt: Path, spec: dict, lo, hi, drawn: dict |
 
 def run(root: Path, chat_fn: Callable, *, builds: int = 8, max_turns: int = 0, model: str = "", url: str = "",
         out: Path | None = None, reviewer: bool = False, context_tokens: int = CONTEXT_TOKENS, reply_reserve: int = 8192,
-        log: Callable[[str], None] = lambda s: None) -> dict:
+        log: Callable[[str], None] = lambda s: None, keep_images: int | None = KEEP_IMAGE_TURNS) -> dict:
     """Drive the model until done(), the turn cap or a chat failure. Writes report.json (and transcript.jsonl) to
     `out` after returned replies, tool results and every turn (not crash-proof).
     The delivered rig is copied to `<root>/animated.glb` beside its `rig.py`."""
@@ -493,7 +493,10 @@ def run(root: Path, chat_fn: Callable, *, builds: int = 8, max_turns: int = 0, m
         while rep["turns"] < max_turns and not rep["done"]:
             rep["turns"] += 1
             tools.closing = max_turns - rep["turns"] < TURNS_LEFT_NOTE
-            agent.prune_images(messages, KEEP_IMAGE_TURNS)
+            if keep_images is None:
+                agent.cap_images(messages)  # preserve cached prefixes until the provider image ceiling
+            else:
+                agent.prune_images(messages, keep_images)
             # compact on what the endpoint last counted, not on agent_state's own estimate: that counts 4096 a
             # picture, and a run whose calls were 20,000 tokens was cut back to its checkpoint twelve turns in 21
             limit = context_tokens if last_prompt >= context_tokens - reply_reserve else 0
@@ -635,14 +638,17 @@ def summary(rep: dict) -> str:
 
 def drive(root: Path, backend: llm.Backend, *, builds: int = 8, max_turns: int = 0, max_tokens: int | None = None,
           max_cost: float = 0.0, effort: str | None = None, idle_s: float = 900, reviewer: bool = False,
-          log: Callable[[str], None] = print) -> tuple[dict, Path]:
+          log: Callable[[str], None] = print, cache: str = "auto") -> tuple[dict, Path]:
     """`run` over a real endpoint, with the visual workflow's transport and accounting: direct Anthropic 5.5 models
     go through the native Messages transport (explicit effort, a reserved spend cap), anything else through the
     OpenAI-compatible client. -> (report, the run's directory under <root>/agent/)."""
     from . import anthropic_sweep, gauntlet
     from .gauntlet_sweep import Meter, estimate_cost
+    from .visual_agent import reported_cost
     root = Path(root).resolve()
     native = backend.url == gauntlet.URL and backend.model in anthropic_sweep.RATES
+    reported = backend.name == "openrouter"
+    cached = llm.cache_enabled(backend, cache)
     if max_cost and not native:
         raise ValueError("a reserved spend cap needs a direct Anthropic Haiku/Sonnet/Opus 5.5 endpoint")
     # as the visual workflow: thinking and the reply share the cap, and three Haiku rig replies were all thinking
@@ -651,18 +657,24 @@ def drive(root: Path, backend: llm.Backend, *, builds: int = 8, max_turns: int =
     out = root / agent.RUNS_DIR / f"{time.strftime('%Y%m%d-%H%M%S')}_{slug}_rig"
     budget = anthropic_sweep.Budget(out / "budget.json", max_cost, backend.model) if max_cost else None
     if native:
-        chat = anthropic_sweep.chat_for(backend, budget, "rig-agent", max_tokens=max_tokens, effort=effort, log=log)
+        chat = anthropic_sweep.chat_for(backend, budget, "rig-agent", max_tokens=max_tokens, effort=effort,
+                                        log=log, cache=cached)
     else:
-        chat = agent.chat_for(backend, effort=effort, max_tokens=max_tokens, idle_s=idle_s, log=log)
+        chat = agent.chat_for(backend, effort=effort, max_tokens=max_tokens, idle_s=idle_s, log=log, cache=cached)
     out.mkdir(parents=True, exist_ok=True)
-    meter = Meter(chat, out, backend.model, price_fn=estimate_cost if native else lambda usage, model: None)
+    meter = Meter(chat, out, backend.model,
+                  price_fn=estimate_cost if native else reported_cost if reported else lambda usage, model: None,
+                  cost_kind="reported" if reported else "estimated")
     log(f"rig agent: {backend.describe()}, {builds} builds, reviewer {'on' if reviewer else 'off'} -> {out}")
     rep = run(root, meter, builds=builds, max_turns=max_turns, model=backend.model, url=backend.url, out=out,
-              reviewer=reviewer, log=log)
+              reviewer=reviewer, log=log, keep_images=None if cached else KEEP_IMAGE_TURNS)
     account = meter.summary()
-    rep.update(effort=effort, max_cost=max_cost,
+    rep.update(effort=effort, max_cost=max_cost, cache=cache,
+               accounting={k: v for k, v in account.items() if k != "calls"},
+               cached_tokens=account["cached_tokens"], cache_write_tokens=account["cache_write_tokens"],
+               cache_read_fraction=account["cache_read_fraction"],
                cost_usd=account["estimated_usd"] if not account["unpriced_calls"] else None,
-               cost_kind="estimated" if not account["unpriced_calls"] else "unpriced")
+               cost_kind=("reported" if reported else "estimated") if not account["unpriced_calls"] else "unpriced")
     if budget:
         budget.save()
     agent.atomic_write_text(out / "report.json", json.dumps(rep, indent=1) + "\n")

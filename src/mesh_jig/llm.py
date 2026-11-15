@@ -177,6 +177,15 @@ def wants_cache_marks(backend: Backend) -> bool:
     return backend.name == "openrouter" and backend.model.startswith("anthropic/")
 
 
+def cache_enabled(backend: Backend, choice: str = "auto") -> bool:
+    """Explicit caching for Claude; other providers retain their implicit cache behavior."""
+    if choice not in ("auto", "on", "off"):
+        raise ValueError("cache must be auto, on or off")
+    return choice == "on" or (choice == "auto" and (
+        wants_cache_marks(backend) or
+        (backend.url == "https://api.anthropic.com/v1" and backend.model.startswith("claude-"))))
+
+
 def _marked(message: dict) -> dict:
     """A copy of the message with a cache breakpoint on its last text part (a string content becomes one part); the
     message itself when it has no text to carry one."""

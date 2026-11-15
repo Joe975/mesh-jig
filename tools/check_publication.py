@@ -6,6 +6,9 @@ Install as a pre-push hook using --pre-push; matching values are never printed.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
+import math
 from collections import OrderedDict
 import importlib.util
 from pathlib import Path, PurePosixPath
@@ -24,6 +27,43 @@ PATTERNS = {
     "credential": re.compile(rb"(?:sk-(?:proj-|or-v1-)?[A-Za-z0-9_-]{20,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{30,}|AKIA[0-9A-Z]{16}|-----BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY-----)"),
 }
 
+TERRAIN_DATA='site/terrain/horror.json'
+TERRAIN_SEAL='site/terrain/horror.release.json'
+TERRAIN_MODEL='showcase/explore-horror-fable-api-20261110/model-01.glb'
+
+
+_schema_spec = importlib.util.spec_from_file_location('terrain_schema',Path(__file__).with_name('terrain_schema.py'))
+terrain_schema = importlib.util.module_from_spec(_schema_spec)
+_schema_spec.loader.exec_module(terrain_schema)
+TERRAIN_REGISTRY='site/terrain/characters.json'
+
+
+def terrain_payload(data):
+    return terrain_schema.legacy_payload(data) if json.loads(data).get('version')==1 else terrain_schema.payload(data)
+
+
+def terrain_release(files):
+    terrain_json={n for n in files if n.startswith('site/terrain/') and n.endswith('.json')}
+    if not terrain_json:return []
+    try:
+        if TERRAIN_REGISTRY not in files:
+            if terrain_json!={TERRAIN_DATA,TERRAIN_SEAL}:raise ValueError('unregistered terrain JSON')
+            d=terrain_schema.legacy_payload(files[TERRAIN_DATA]);seal=json.loads(files[TERRAIN_SEAL]);digest=hashlib.sha256(files[TERRAIN_DATA]).hexdigest()
+            if seal!={'format':'mesh-jig terrain release','version':1,'files':{'horror.json':digest},'glb_sha256':d['glb_sha256']} or hashlib.sha256(files[TERRAIN_MODEL]).hexdigest()!=d['glb_sha256']:raise ValueError('legacy terrain binding differs')
+            return []
+        registry=terrain_schema.registry(files[TERRAIN_REGISTRY])
+        expected={TERRAIN_REGISTRY}
+        for row in registry['characters'].values():
+            name='site/terrain/'+row['data'];seal_name=name[:-5]+'.release.json';expected.update((name,seal_name))
+            d=terrain_schema.payload(files[name]);seal=json.loads(files[seal_name])
+            digest=hashlib.sha256(files[name]).hexdigest()
+            if digest!=row['sha256'] or d['glb_sha256']!=row['glb_sha256']:raise ValueError('registry binding differs')
+            if seal!={'format':'mesh-jig terrain release','version':1,'files':{row['data']:digest},'glb_sha256':d['glb_sha256']}:raise ValueError('terrain release differs')
+            if hashlib.sha256(files[row['model']]).hexdigest()!=d['glb_sha256']:raise ValueError('terrain character differs')
+        if terrain_json!=expected:raise ValueError('unregistered terrain JSON')
+    except (ValueError,TypeError,KeyError,AttributeError,IndexError):
+        return ['site/terrain: unsealed, altered, unregistered or unsupported terrain package']
+    return []
 
 def git(root: Path, *args: str) -> bytes:
     return subprocess.check_output(["git", "-c", "safe.directory=" + root.as_posix(), *args], cwd=root)
@@ -45,6 +85,9 @@ def forbidden_path(name: str) -> bool:
 
 def scan(name: str, data: bytes, allowed: set[str], released: set[str] | None = None) -> list[str]:
     failures = []
+    if name.startswith('site/terrain/') and name.endswith('.json') and name!=TERRAIN_REGISTRY and not name.endswith('.release.json'):
+        try:terrain_payload(data)
+        except (ValueError,TypeError,KeyError,AttributeError,IndexError):failures.append(name+': invalid terrain payload schema')
     if name not in allowed or forbidden_path(name):
         failures.append(name + ": outside public inventory")
     if name.startswith("showcase/") and name not in (released or set()):
@@ -188,6 +231,13 @@ def historical_showcases(entries, reader, cache):
         selected, invalid = result
         released.update(selected)
         failures.extend(invalid)
+    terrain_names={n for n in entries if n.startswith('site/terrain/') and n.endswith('.json')}
+    if terrain_names:
+        models={TERRAIN_MODEL}
+        if TERRAIN_REGISTRY in entries:
+            try:models={r['model'] for r in terrain_schema.registry(reader.read(entries[TERRAIN_REGISTRY][1]))['characters'].values()}
+            except (ValueError,TypeError,KeyError,AttributeError):models=set()
+        failures.extend(terrain_release({n:reader.read(entries[n][1]) for n in terrain_names|models if n in entries}))
     return released, failures
 
 
@@ -240,6 +290,7 @@ def audit(root: Path, refs: list[str], worktree: bool = True, *, cache: bool = T
                 failures.append(name + ": missing tracked file")
         # Working files are mutable: always read and validate them afresh.
         released, invalid = showcases(contents)
+        invalid.extend(terrain_release(contents))
         failures.extend(invalid)
         for name, data in contents.items():
             failures.extend(scan(name, data, allowed, released))

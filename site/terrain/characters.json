@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "characters": {
+    "horror-v1": {
+      "data": "horror.json",
+      "model": "showcase/explore-horror-fable-api-20261110/model-01.glb",
+      "sha256": "6571e20842c42926ccb0ce87a0908465b70d5aeee081e43dfea40f5e59f0b0b7",
+      "glb_sha256": "900b77ff7ce449b5d13253304aaad56ab0f9e502a8fc70acfa1155a53d05fbc2"
+    },
+    "horse-astra-v1": {
+      "data": "horse.json",
+      "model": "showcase/explore-horse-openai-20261112/model-01.glb",
+      "sha256": "988b7acbeb7a52d861222fcc2b61aa2faefd820023b4a10691eafcee90267787",
+      "glb_sha256": "a6f60e202a6eadd75d26ef6f7330c639dd2971fb2184f1ba00de206c6fd9f5bf"
+    }
+  }
+}
