@@ -34,6 +34,11 @@ Each run is under `agent/<run>/`, with a private transcript, usage accounting an
 build has a proposal, playback policy, package report and independent scenario checks. The scenario checker skins
 the actual mesh from runtime joint traces; a valid contract alone is insufficient.
 
+The API agent receives `game-info` measurements and structured build/check results. Its tools are `build`, `done`
+and `report_failure`; there is no render/look tool or automated visual reviewer. Screenshots, GIFs and video are
+not fed back to it. Inspect rendered motion separately. In the Fable horse trial, package gates failed before
+runtime scenarios ran; browser footage was inspected afterward outside the API loop.
+
 Exit 0 means `report.json.final` names a passing attempt and its package. Exit 1 means there is no accepted
 delivery. Exit 2 means invalid setup/configuration. A candidate package may exist when the package measurements
 pass but the scenario checks fail. Read `final`; do not copy the latest candidate and call it game-ready.

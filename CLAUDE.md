@@ -7,6 +7,10 @@ skills hold the model-building and harness workflows. Tests use synthetic inputs
 For modeling rather than development, use the included `.claude/skills/mesh-jig` entry or read
 `skill/mesh-jig/SKILL.md`. See `docs/CLIENTS.md` for local client/MCP setup.
 
+For post-rig animation blends and ground IK, read `docs/GAME_AGENT.md` (`game-init`, then `agent --workflow game`).
+This agent receives numeric rig measurements and check results. It has no rendered-footage review tool;
+inspect the resulting motion separately before treating it as visually approved.
+
 For a reference sheet from real-object video or photos, use `skill/mesh-jig-video-reference/SKILL.md`.
 Its helper and synthetic tests cover mask cleanup and six-view sheet assembly; source media stays private.
 

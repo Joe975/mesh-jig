@@ -268,3 +268,5 @@ Create a fresh `game-init` job from the animated GLB with explicit leg count and
 `agent --workflow game`. Review the job's limits before running; the agent cannot edit the frozen rig or weaken
 them. Deliver only the passing attempt named by `report.json.final`. Failed gait/contact/reach checks go back to
 rigging. A candidate package or a working terrain preview alone is not evidence of game-ready animation.
+The game agent receives numeric measurements and check results, not rendered footage. Visual review remains a
+separate step; do not describe it as an automated visual feedback loop.
