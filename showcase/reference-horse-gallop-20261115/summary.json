@@ -1,0 +1,32 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "MiniMax H3 local first-frame video",
+  "effort": null,
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": null,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "MiniMax H3",
+  "notes": [
+    "AI-generated motion reference from the cartoon horse sheet. The source video was used to make the motion frames supplied to the Opus and Fable horse trials; it was not used to author the Astra terrain horse."
+  ],
+  "result": {
+    "gates_passed": null,
+    "gates_total": null,
+    "numeric_score": null
+  },
+  "schema_version": 1,
+  "scope": "Two-second excerpt from the six-view AI-generated gallop reference used for the Opus and Fable horse trials",
+  "title": "Horse gallop motion reference"
+}

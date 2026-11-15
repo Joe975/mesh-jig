@@ -569,6 +569,11 @@ showcase/reference-horror/model-03.glb
 showcase/reference-horror/model-04.glb
 showcase/reference-horror/release.json
 showcase/reference-horror/summary.json
+showcase/reference-horse-gallop-20261115/README.md
+showcase/reference-horse-gallop-20261115/animation-01.gif
+showcase/reference-horse-gallop-20261115/image-01.png
+showcase/reference-horse-gallop-20261115/release.json
+showcase/reference-horse-gallop-20261115/summary.json
 showcase/reference-horse/README.md
 showcase/reference-horse/image-01.png
 showcase/reference-horse/image-02.png
