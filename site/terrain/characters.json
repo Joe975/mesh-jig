@@ -48,6 +48,12 @@
       "model": "showcase/explore-horror-carbon-high-20261117/model-01.glb",
       "sha256": "99812ad7650219d58c504f321432abacdb6486da9287f0f669716e38bf07d20c",
       "glb_sha256": "bf4d78d33d7e24d738a0a54b1831eb000c7e8194b3500f51a2fe8157be3d4c96"
+    },
+    "horror-muse-ember-high-v1": {
+      "data": "horror-ember.json",
+      "model": "showcase/explore-horror-muse-ember-high-20261117/model-01.glb",
+      "sha256": "6b67036a762727061daa7deb5228375a027d800311b0acca993d5d0ba59b6f2c",
+      "glb_sha256": "8295063ffba8396e84619a4d6e0a7de039439ac3d5526a004437fc2d737f5160"
     }
   }
 }

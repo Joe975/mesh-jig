@@ -1,0 +1,8 @@
+{
+  "format": "mesh-jig terrain release",
+  "version": 1,
+  "files": {
+    "horror-ember.json": "6b67036a762727061daa7deb5228375a027d800311b0acca993d5d0ba59b6f2c"
+  },
+  "glb_sha256": "8295063ffba8396e84619a4d6e0a7de039439ac3d5526a004437fc2d737f5160"
+}

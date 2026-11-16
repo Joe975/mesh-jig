@@ -255,6 +255,12 @@ showcase/explore-horror-kimi-k31-pro-high-20261114/image-02.png
 showcase/explore-horror-kimi-k31-pro-high-20261114/model-01.glb
 showcase/explore-horror-kimi-k31-pro-high-20261114/release.json
 showcase/explore-horror-kimi-k31-pro-high-20261114/summary.json
+showcase/explore-horror-muse-ember-high-20261117/README.md
+showcase/explore-horror-muse-ember-high-20261117/image-01.png
+showcase/explore-horror-muse-ember-high-20261117/image-02.png
+showcase/explore-horror-muse-ember-high-20261117/model-01.glb
+showcase/explore-horror-muse-ember-high-20261117/release.json
+showcase/explore-horror-muse-ember-high-20261117/summary.json
 showcase/explore-horror-nex-high-20261113/README.md
 showcase/explore-horror-nex-high-20261113/image-01.png
 showcase/explore-horror-nex-high-20261113/model-01.glb
@@ -704,6 +710,8 @@ site/index.html
 site/terrain/characters.json
 site/terrain/ground.js
 site/terrain/hash.js
+site/terrain/horror-carbon.json
+site/terrain/horror-carbon.release.json
 site/terrain/horror-deepseek-high.json
 site/terrain/horror-deepseek-high.release.json
 site/terrain/horror-deepseek.json
@@ -918,5 +926,5 @@ tests/test_workflow_checkpoints.py
 tools/check_publication.py
 tools/scrub_home_paths.py
 tools/terrain_schema.py
-site/terrain/horror-carbon.json
-site/terrain/horror-carbon.release.json
+site/terrain/horror-ember.json
+site/terrain/horror-ember.release.json

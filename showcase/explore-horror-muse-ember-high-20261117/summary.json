@@ -1,0 +1,34 @@
+{
+  "completed": false,
+  "cost": {
+    "amount_usd": 0.137802,
+    "kind": "reported"
+  },
+  "driver": "mesh-jig API agent through OpenRouter",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": 0,
+    "cached_prompt_tokens": 1127188,
+    "completion_tokens": 148364,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": 56,
+    "prompt_tokens": 1718301,
+    "reasoning_tokens": 89342,
+    "runtime_seconds": null
+  },
+  "model": "meta/muse-ember",
+  "notes": [
+    "Experimental terrain demo; qualification failed. Resemblance 0.2276 fails the 0.40 gate. Three passing rigs from eight submissions. All three game proposals failed; a03 misses six foot-contact clusters and slips 0.35209 m/s against 0.35. No accepted game-ready package.",
+    "Provider-reported settled cost covers all 56 completed model, selection, rig and game calls. Zero unpriced entries.",
+    "Visual choice scored 0.3112; numeric leader a01 scored 0.3627. Geometry, clips and failed IK were not repaired for publication."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 1,
+    "numeric_score": 0.3112
+  },
+  "schema_version": 1,
+  "scope": "One five-evaluation visual run; selected a02; three passing rigs; three failed game proposals.",
+  "title": "Muse Ember high: horror sprint and leap"
+}

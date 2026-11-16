@@ -7,6 +7,18 @@ PAGE = ROOT / "site" / "index.html"
 PUBLIC = set((ROOT / "PUBLIC_FILES.txt").read_text(encoding="utf-8").split())
 
 
+def test_ember_failed_ik_is_available_with_qualification_visible():
+    import html
+    import json
+    picks=[json.loads(html.unescape(s)) for s in re.findall(r'data-explore="([^"]*)"',PAGE.read_text(encoding='utf-8'))]
+    pick=next(p for rows in picks for p in rows if p['model']=='Muse Ember high, OpenRouter')
+    assert pick['terrain']=='horror-muse-ember-high-v1' and pick['builds']==5
+    assert 'qualification failed' in pick['warning'] and 'six foot-contact clusters' in pick['warning']
+    assert 'No accepted game-ready package' in pick['warning']
+    assert pick['facts']['stages']['rig']['submissions']==8
+    assert pick['facts']['stages']['efficiency']['total_usd']==.137802
+
+
 def test_carbon_partial_run_keeps_visual_and_browser_failures_visible():
     import html
     import json
