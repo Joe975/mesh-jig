@@ -7,6 +7,24 @@ PAGE = ROOT / "site" / "index.html"
 PUBLIC = set((ROOT / "PUBLIC_FILES.txt").read_text(encoding="utf-8").split())
 
 
+def test_changelog_has_three_recent_and_twenty_collapsed_publishes():
+    page = PAGE.read_text(encoding='utf-8')
+    recent = page.split('<ol class="publish-recent"', 1)[1].split('</ol>', 1)[0]
+    archive = page.split('<details class="publish-archive">', 1)[1].split('</details>', 1)[0]
+    assert recent.count('<li>') == 3
+    assert archive.count('<li>') == 20
+    assert '<summary>Last 20 publishes</summary>' in archive
+    assert 'tabindex="0" role="region" aria-label="Last 20 publishes"' in archive
+    assert '.publish-scroll { max-height:320px; overflow-y:auto;' in page
+    assert page.index('id="changelog"') < page.index('<nav aria-label="Sections">')
+    assert recent.count('<a ') == 3 and archive.count('<a ') == 20
+    assert 'class="publish-title" href="?subject=' in recent
+    assert 'Six-limbed horror: Muse Ember High, OpenRouter' in recent
+    workflow = (ROOT / '.github/workflows/pages.yml').read_text(encoding='utf-8')
+    assert 'fetch-depth: 0' in workflow
+    assert 'tools/build_publish_history.py --repo' in workflow
+
+
 def test_ember_failed_ik_is_available_with_qualification_visible():
     import html
     import json
