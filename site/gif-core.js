@@ -72,16 +72,19 @@ export function comparisonTime(clip, seconds) {
 
 export function exportLabel(pick = {}) {
   const facts = pick.facts || {};
-  const effortWord = /\b(ultra|xhigh|max|high|medium|low|minimal)\b/i;
+  const effortWord = /\b(ultra|xhigh|max|high|medium|low|minimal)\b/gi;
   let model = (pick.model || 'Unknown model')
     .replace(/\b\d{4}-\d{2}-\d{2}\b/g, '')
     .replace(/\b\d{1,2}\s+(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)(?:\s+\d{4})?\b/gi, '')
     .replace(/\s*,\s*(?=,|$)/g, '').replace(/,\s*$/, '').trim();
   const recorded = pick.effort || facts.effort;
-  const inModel = model.match(effortWord)?.[1]?.toLowerCase();
+  // Max is part of the Qwen model name. Preserve it when reading a separate effort suffix.
+  const effortText = model.replace(/\b(Qwen[\d.]*\s+)Max\b/gi, (_, prefix) => prefix + '___');
+  const match = [...effortText.matchAll(effortWord)].at(-1);
+  const inModel = match?.[1]?.toLowerCase();
   // Keep effort once. Explicit metadata wins over an older model label.
   if (recorded && inModel && recorded.toLowerCase() !== inModel)
-    model = model.replace(effortWord, recorded);
+    model = model.slice(0, match.index) + recorded + model.slice(match.index + match[0].length);
   const effort = recorded || inModel;
   const cost = String(facts.cost || '').trim();
   const knownCost = cost && !/^(?:not reported|unknown|unavailable|n\/?a)\b/i.test(cost);

@@ -129,3 +129,14 @@ for(const boxes of [[{width:800,height:600}], [{width:500,height:400},{width:500
 }
 assert.throws(()=>exportLayout([{width:0,height:0}]));
 """)
+
+
+def test_qwen_max_is_a_model_name_and_effort_is_shown_once():
+    run_js("""
+assert.deepEqual(exportLabel({model:'Qwen4 Max high, OpenRouter',effort:'high'}),
+  ['Qwen4 Max high, OpenRouter','Triangles: not reported']);
+assert.deepEqual(exportLabel({model:'Qwen4 Max',effort:'high'}),
+  ['Qwen4 Max','Effort: high','Triangles: not reported']);
+assert.ok(exportLabel({model:'Qwen3.8 Max low, API',effort:'high'}).includes('Qwen3.8 Max high, API'));
+assert.ok(exportLabel({model:'GPT Astra max, Codex',effort:'high'}).includes('GPT Astra high, Codex'));
+""")
