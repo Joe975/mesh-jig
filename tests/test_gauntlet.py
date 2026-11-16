@@ -29,6 +29,28 @@ def fake_eval(proj, script, attempt, **kwargs):
             "compare": {"front": proj.references["front"]}, "gates": []}
 
 
+def test_completed_builder_reasoning_blocks_return_unchanged_with_tool_results(seed):
+    blocks=[{'type':'reasoning.encrypted','data':'opaque-state','signature':'sig','index':0}]
+    turns=0
+    def chat(messages,schemas):
+        nonlocal turns
+        if not schemas:
+            assert 'opaque-state' not in json.dumps(messages)
+            return {'content':'Keep the shape.'},{}
+        turns+=1
+        if turns==1:
+            reply=tool('write_file',path='attempts/a01/model.py',text='def build(): pass')
+            reply.update(reasoning_details=blocks,reasoning='do not replay plain reasoning',other='drop')
+            return reply,{}
+        prior=next(m for m in messages if m['role']=='assistant')
+        assert prior['reasoning_details']==blocks
+        assert 'reasoning' not in prior and 'other' not in prior
+        assert messages[-1]['role']=='tool'
+        return tool('submit'),{}
+    result=gauntlet.run(seed,chat,iterations=1,evaluate_fn=fake_eval,log=lambda _:None)
+    assert result['done'] and turns==2
+
+
 def test_exactly_ten_rounds_feedback_reaches_next_implementor_but_reviewer_is_fresh(seed):
     impl_round, reviewed, writing = 0, 0, False
 

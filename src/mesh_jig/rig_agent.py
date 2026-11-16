@@ -455,7 +455,8 @@ def run(root: Path, chat_fn: Callable, *, builds: int = 8, max_turns: int = 0, m
     max_turns = max_turns or TURNS_PER_BUILD * builds
     rep = {"workflow": "rig", "model": model, "url": url, "builds_allowed": builds, "max_turns": max_turns,
            "reviewer": reviewer, "reviews": 0, "builds": 0, "failed_builds": 0, "looks": 0, "turns": 0, "tool_calls": 0,
-           "rejected_calls": 0, "invalid_tool_batches": 0, "dropped_calls": 0, "attempts": [], "latest": None, "final": None, "done": False, "summary": "",
+           "rejected_calls": 0, "invalid_tool_batches": 0, "dropped_calls": 0, "truncated_replies": 0,
+           "attempts": [], "latest": None, "final": None, "done": False, "summary": "",
            "error": "", "harness": harness.version(), "prompt_tokens": 0, "completion_tokens": 0,
            "completion_evidence": [], "context_compactions": 0, "wall_s": 0.0}
     tools = Tools(root, spec, rep, builds=builds, log=log)
@@ -510,10 +511,24 @@ def run(root: Path, chat_fn: Callable, *, builds: int = 8, max_turns: int = 0, m
             last_prompt = int(usage.get("prompt_tokens") or 0)
             rep["prompt_tokens"] += int(usage.get("prompt_tokens") or 0)
             rep["completion_tokens"] += int(usage.get("completion_tokens") or 0)
-            message = {k: v for k, v in message.items() if k in ("role", "content", "tool_calls")}
+            message = {k: v for k, v in message.items() if k in ("role", "content", "tool_calls", "reasoning_details")}
             message["role"] = "assistant"
             transcript.append(message)
             save()
+            if llm.cut_short(usage):
+                # Keep the raw reply and completion evidence privately. Even a
+                # syntactically complete tool in a truncated batch must not run.
+                rep["truncated_replies"] += 1
+                silent = 0
+                note = {"role": "user", "content": (
+                    "Your previous reply reached its output token limit and was discarded. "
+                    "No tools from that reply ran. Use less reasoning and send a complete rig tool call; "
+                    "write long scripts in parts, then build for concrete feedback.")}
+                messages.append(note)
+                transcript.append(note)
+                save()
+                log("  rig reply reached the output cap; retrying within the turn limit")
+                continue
             calls = message.get("tool_calls")
             try:
                 parsed = llm.parse_tool_batch([] if calls is None else calls)

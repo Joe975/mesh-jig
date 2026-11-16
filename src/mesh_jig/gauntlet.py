@@ -351,7 +351,7 @@ def run(proj: project.Project, chat_fn, *, iterations=10, max_turns=24, model=MO
                     "it is told so and asked again")
                 save()
                 continue
-            message = {k: v for k, v in message.items() if k in ("role", "content", "tool_calls")}
+            message = {k: v for k, v in message.items() if k in ("role", "content", "tool_calls", "reasoning_details")}
             message["role"] = "assistant"
             try:
                 calls = message.get("tool_calls")

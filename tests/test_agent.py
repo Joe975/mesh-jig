@@ -582,6 +582,22 @@ def test_no_thinking_is_an_explicit_effort_not_an_omitted_default():
     assert llm.effort_extra(router, None) == {}
 
 
+@pytest.mark.parametrize('workflow', ['visual', 'numeric', 'rig', 'sound', 'game'])
+def test_max_effort_reaches_openrouter_without_downgrading(workflow, monkeypatch):
+    args = cli.parser().parse_args(['agent', 'p', '--model', 'deepseek/deepseek-v4.1-flash-1017',
+                                   '--workflow', workflow, '--effort', 'max', '--review-effort', 'max'])
+    assert args.effort == args.review_effort == 'max'
+    backend = llm.Backend('openrouter', llm.DEFAULT_URL, args.model, 'test-key')
+    sent = {}
+    def stream(backend, messages, **kwargs):
+        sent.update(kwargs)
+        return {'message': {'role':'assistant','content':'complete'}, 'usage': {}}
+    monkeypatch.setattr(llm, 'chat_stream', stream)
+    agent.chat_for(backend, effort=args.effort, max_tokens=65536)([], [])
+    assert sent['extra'] == {'reasoning': {'effort':'max'}}
+    assert sent['max_tokens'] == 65536
+
+
 def test_the_agent_chat_sends_tools_and_no_sampling_defaults():
     sent = {}
 

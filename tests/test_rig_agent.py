@@ -40,6 +40,66 @@ def last_tool_text(messages):
     return next(m["content"] for m in reversed(messages) if m["role"] == "tool")
 
 
+@pytest.mark.parametrize("reason", ["length", "max_tokens"])
+def test_truncated_rig_reply_never_executes_or_replays_tools(root, reason):
+    bad = tool("write_file", path="attempts/cut/rig.py", text="cutoff script")
+    bad['reasoning_details']=[{'type':'reasoning.encrypted','data':'incomplete-state','index':0}]
+    replies = iter([
+        (bad, {"mesh_jig_completion": {"finish_reason": reason}}),
+        (tool("write_file", path="attempts/a01/rig.py", text=walk()), {}),
+        (tool("build", script="attempts/a01/rig.py"), {}),
+        (tool("done", best="a01", summary="walks"), {}),
+    ])
+    calls = 0
+
+    def chat(messages, schemas):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            assert not (root / "attempts/cut/rig.py").exists()
+            assert "cutoff script" not in json.dumps(messages)
+            assert 'incomplete-state' not in json.dumps(messages)
+            assert messages[-1]["role"] == "user" and "discarded" in messages[-1]["content"]
+        return next(replies)
+
+    out = root / "agent/cutoff"
+    rep = rig_agent.run(root, chat, builds=1, max_turns=4, out=out)
+    assert rep["done"] and rep["final"] == "a01" and rep["truncated_replies"] == 1
+    assert rep["builds"] == 1 and rep["invalid_tool_batches"] == 0
+    assert not (root / "attempts/cut/rig.py").exists()
+    assert "cutoff script" in (out / "transcript.jsonl").read_text()
+    assert rep["completion_evidence"][0]["completion"]["finish_reason"] == reason
+
+
+def test_repeated_rig_cutoffs_use_the_turn_budget_without_counting_as_silence(root):
+    def chat(*args):
+        return {"role": "assistant", "content": "unfinished"}, {
+            "mesh_jig_completion": {"finish_reason": "length"}}
+
+    rep = rig_agent.run(root, chat, builds=1, max_turns=4)
+    assert rep["turns"] == rep["truncated_replies"] == 4
+    assert "turn cap" in rep["error"] and not rep["final"] and not rep["builds"]
+
+
+def test_completed_rig_reasoning_blocks_return_unchanged_with_tool_results(root):
+    blocks=[{'type':'reasoning.encrypted','data':'opaque-state','signature':'sig','index':0}]
+    replies=iter([tool('write_file',path='attempts/a01/rig.py',text=walk()),
+                  tool('build',script='attempts/a01/rig.py'),tool('done',best='a01',summary='walks')])
+    turns=0
+    def chat(messages,schemas):
+        nonlocal turns
+        turns+=1
+        if turns>1:
+            prior=next(m for m in messages if m['role']=='assistant')
+            assert prior['reasoning_details']==blocks
+            assert 'reasoning' not in prior and 'other' not in prior
+        reply=next(replies)
+        if turns==1:reply.update(reasoning_details=blocks,reasoning='drop plain reasoning',other='drop')
+        return reply,{}
+    rep=rig_agent.run(root,chat,builds=1,max_turns=3)
+    assert rep['done'] and rep['final']=='a01'
+
+
 def test_a_run_from_a_failed_build_to_a_delivered_rig(root):
     seen = []
     chat = scripted([

@@ -352,6 +352,7 @@ def run(root, chat_fn, *, out, builds=5, max_turns=0, model='', log=print):
     turns = max_turns or builds*4+4
     if type(turns) is not int or not 1<=turns<=200:raise ValueError('max_turns must be 1..200')
     calls = 0
+    truncated = []
     stop = 'turn limit'
     for _ in range(turns):
         session.check_frozen()
@@ -362,6 +363,17 @@ def run(root, chat_fn, *, out, builds=5, max_turns=0, model='', log=print):
             session.failure = 'The model call failed; no delivery was accepted.'
             break
         calls += 1
+        if llm.cut_short(usage):
+            # A cutoff can contain only reasoning or an incomplete tool call.
+            # Retain the evidence privately, but never execute or replay it.
+            truncated.append({'call': calls, 'message': message, 'usage': usage})
+            dump(session.out/'truncated-replies.json', truncated)
+            messages.append({'role':'user','content':
+                'Your previous reply reached its output token limit and was discarded. '
+                'No tools from that reply ran. Use less reasoning and submit a complete game tool call.'})
+            agent.atomic_write_text(session.out/'transcript.jsonl','\n'.join(json.dumps(m,allow_nan=False) for m in messages)+'\n')
+            log('game reply reached the output cap; retrying within the turn limit')
+            continue
         messages.append(message)
         agent.atomic_write_text(session.out/'transcript.jsonl','\n'.join(json.dumps(m,allow_nan=False) for m in messages)+'\n')
         tool_calls = message.get('tool_calls') or []
@@ -406,7 +418,7 @@ def run(root, chat_fn, *, out, builds=5, max_turns=0, model='', log=print):
             break
         if session.failure:
             stop='failed checks';break
-    report = {'version':1,'model':model,'calls':calls,'stop':stop,'summary':session.failure,'final':session.final,
+    report = {'version':1,'model':model,'calls':calls,'truncated_replies':len(truncated),'stop':stop,'summary':session.failure,'final':session.final,
               'attempts':session.results,'inputs':session.frozen}
     dump(session.out/'report.json', report)
     return report

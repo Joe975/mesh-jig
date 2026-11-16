@@ -39,7 +39,7 @@ AGENT_PREFIX = "MESH_JIG_AGENT"
 # the key a provider's own endpoint takes when <PREFIX>_KEY is unset; any other host falls back to OPENAI_API_KEY
 KEY_BY_HOST = (("openrouter.ai", "OPENROUTER_API_KEY"), ("api.anthropic.com", "ANTHROPIC_API_KEY"),
                ("generativelanguage.googleapis.com", "GEMINI_API_KEY"))
-EFFORTS = ("none", "low", "medium", "high")
+EFFORTS = ("none", "low", "medium", "high", "max")
 ENV_FILE_VAR = "MESH_JIG_ENV_FILE"
 DEFAULT_ENV_FILE = ".env"          # relative: the directory mesh-jig is run from
 # OpenAI's reasoning families reject `temperature` and want `max_completion_tokens`

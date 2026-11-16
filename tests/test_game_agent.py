@@ -162,6 +162,39 @@ def test_transport_failure_records_no_delivery(job):
     assert (root/'agent/transport/report.json').exists()
 
 
+@pytest.mark.parametrize('reason', ['length', 'max_tokens'])
+def test_cutoff_discards_tool_calls_and_recovers_within_turn_budget(job, monkeypatch, reason):
+    root,_,_=job
+    monkeypatch.setattr(G.Session,'build',lambda *a:pytest.fail('cutoff tools must never run'))
+    replies = iter([
+        ({'role':'assistant','content':'unfinished reasoning','tool_calls':[
+            {'id':'partial','function':{'name':'build','arguments':'{'}}]},
+         {'mesh_jig_completion':{'finish_reason':reason}}),
+        ({'role':'assistant','content':None,'tool_calls':[{'id':'stop','function':{
+            'name':'report_failure','arguments':json.dumps({'summary':'frozen gait fails slip'})}}]}, {})])
+    def chat(messages, tools):
+        if len(messages)>2:
+            assert messages[-1]['role']=='user' and 'discarded' in messages[-1]['content']
+            assert 'unfinished reasoning' not in json.dumps(messages)
+            assert 'partial' not in json.dumps(messages)
+        return next(replies)
+    report=G.run(root,chat,out=root/'agent'/'cutoff',max_turns=2,log=lambda _:None)
+    assert report['calls']==2 and report['truncated_replies']==1
+    assert report['stop']=='failed checks' and 'slip' in report['summary']
+    assert report['attempts']=={} and report['final'] is None
+    evidence=json.loads((root/'agent/cutoff/truncated-replies.json').read_text())
+    assert evidence[0]['usage']['mesh_jig_completion']['finish_reason']==reason
+
+
+def test_repeated_reasoning_only_cutoffs_stop_at_turn_limit(job):
+    root,_,_=job
+    def chat(*a):
+        return {'role':'assistant','content':''},{'mesh_jig_completion':{'finish_reason':'length'}}
+    report=G.run(root,chat,out=root/'agent'/'all-cutoff',max_turns=2,log=lambda _:None)
+    assert report['calls']==report['truncated_replies']==2
+    assert report['stop']=='turn limit' and report['final'] is None and not report['attempts']
+
+
 def test_malformed_json_build_consumes_attempt(job):
     root,_,policy=job;s=G.Session(root,root/'malformed',1)
     assert not s.build('{',json.dumps(policy))['passed']

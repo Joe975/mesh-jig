@@ -1,0 +1,8 @@
+{
+  "format": "mesh-jig terrain release",
+  "version": 1,
+  "files": {
+    "horse-deepseek-high.json": "b7dce11eedf57ef6aea4d778eba8414944338a4a664548fd7347fa08e228d094"
+  },
+  "glb_sha256": "9643e65d2549f6d574b9423fbe56b990cf06e1e1022cacc7f057208d997e7c5b"
+}

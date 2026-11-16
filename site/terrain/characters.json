@@ -24,6 +24,18 @@
       "model": "showcase/explore-horror-deepseek-1017-20261116/model-01.glb",
       "sha256": "b22f005358477d0ebda21c612b8750a1855bdbd7714110672f688219eab112c7",
       "glb_sha256": "87be6606e5eabe719f83b4bb954cf46404c1e727b04087026cdc4bffcd9260ce"
+    },
+    "horse-deepseek-high-v1": {
+      "data": "horse-deepseek-high.json",
+      "model": "showcase/explore-horse-deepseek-high-1017-20261116/model-01.glb",
+      "sha256": "b7dce11eedf57ef6aea4d778eba8414944338a4a664548fd7347fa08e228d094",
+      "glb_sha256": "9643e65d2549f6d574b9423fbe56b990cf06e1e1022cacc7f057208d997e7c5b"
+    },
+    "horror-deepseek-high-v1": {
+      "data": "horror-deepseek-high.json",
+      "model": "showcase/explore-horror-deepseek-high-1017-20261116/model-01.glb",
+      "sha256": "be65e01511a072ed97ae46fd210914840141c7d7cec990bb53fb2f8a9a8776a9",
+      "glb_sha256": "7567dcecdaf6cb96f1035c7b43c7593690461abe0618f37dd4a174412f7e0f13"
     }
   }
 }

@@ -22,6 +22,12 @@ MESH_JIG_AGENT_KEY=REPLACE_WITH_YOUR_PROVIDER_KEY
 ```
 
 Environment variables override `.env`; `--url` and `--model` override their settings.
+The API CLI accepts `--effort none|low|medium|high|max` and the same values for visual `--review-effort`.
+OpenRouter receives the requested value unchanged in `reasoning.effort`; the selected provider/model must
+support it. DeepSeek V4.1 Flash has native none/low/high/max tiers. Direct Anthropic retains its own validated
+effort restrictions. Effort and the output-token cap are independent: thinking shares the reply allowance.
+Completed OpenRouter `reasoning_details` stay intact with tool results in the modelling and rig loops.
+In those loops, replies cut at the output cap are retained as private evidence and excluded from subsequent provider history.
 `MESH_JIG_ENV_FILE` selects another env file by absolute path. [Fallback keys and defaults](JIG.md#environment)
 are provider-specific. Keep keys out of Git and command arguments. API access/billing is separate from
 coding-client subscriptions.
