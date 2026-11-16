@@ -7,6 +7,22 @@ PAGE = ROOT / "site" / "index.html"
 PUBLIC = set((ROOT / "PUBLIC_FILES.txt").read_text(encoding="utf-8").split())
 
 
+def test_qwen4_horror_retains_failed_game_status_and_unpriced_cost_scope():
+    import html
+    import json
+    section = PAGE.read_text(encoding='utf-8').split('<section id="horror">', 1)[1].split('</section>', 1)[0]
+    picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section).group(1)))
+    pick = next(p for p in picks if p['model'] == 'Qwen4 Max high, OpenRouter')
+    assert pick['provider'] == 'Alibaba (Qwen)' and pick['clipLabels'] == ['sprint', 'leap']
+    assert pick['score'] == .3938 and pick['best'] == .4207 and pick['builds'] == 5
+    assert 'terrain' not in pick and 'No accepted game-ready package' in pick['warning']
+    assert 'All three game proposals failed' in pick['warning']
+    assert pick['facts']['stages']['rig']['passed']
+    assert pick['facts']['stages']['rig']['passing_candidates'] == 3
+    efficiency = pick['facts']['stages']['efficiency']
+    assert efficiency['total_usd'] == 1.570083 and 'unpriced' in efficiency['kind']
+
+
 def test_swordsman_preserves_selected_clips_and_unknown_static_score():
     import html
     import json
