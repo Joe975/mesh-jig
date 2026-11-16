@@ -1,0 +1,8 @@
+{
+  "format": "mesh-jig terrain release",
+  "version": 1,
+  "files": {
+    "horror-qwen4.json": "ad2a554d0f2633f05c97cf6e88f98271b3b555698af90ca6413cc1d0bc977ef3"
+  },
+  "glb_sha256": "7811ce56227ef2c78403b726a4ab20c285ba1c74a58d9b04234622a611df2433"
+}

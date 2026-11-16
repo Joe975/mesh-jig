@@ -5,6 +5,21 @@ description: Keep mesh-jig runs private by default and prepare selected public s
 
 # Share selected results
 
+## Publish benchmark failures
+
+These results benchmark what the model produced. When publishing a run, include its available model,
+animations and IK/game scene even when they are messy or fail qualification. A renderable failed runtime can
+be shown as an **experimental diagnostic**; it must not be described as an accepted game-ready delivery.
+Keep specific failed checks, incomplete attempt counts and cost limitations visible beside the selected result.
+Do not silently omit a failed stage, hand-repair its output or relax its gates to make the benchmark look better.
+
+Use the model's existing candidate package. Prepare and seal the anonymous runtime sidecar against the exact
+sanitized public GLB, then review actual scene playback and controls. Verify browser/reference agreement
+separately from animation/contact quality: physical failures remain failed and are evidence worth showing.
+Privacy, export validation and unsupported runtime capabilities still apply. If the output cannot render,
+show the available native clips or diagnostic images and explain that limitation; do not present an invented
+or repaired scene as the model's result. Keep any necessary harness repair separate from the model's work.
+
 ## Reference-site publishing
 
 Keep the reference site visual-first and concise: each section heading leads **directly to its sheet**, and the

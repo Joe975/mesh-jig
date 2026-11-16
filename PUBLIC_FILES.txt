@@ -910,3 +910,5 @@ tests/test_workflow_checkpoints.py
 tools/check_publication.py
 tools/scrub_home_paths.py
 tools/terrain_schema.py
+site/terrain/horror-qwen4.json
+site/terrain/horror-qwen4.release.json

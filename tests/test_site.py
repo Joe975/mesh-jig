@@ -15,7 +15,8 @@ def test_qwen4_horror_retains_failed_game_status_and_unpriced_cost_scope():
     pick = next(p for p in picks if p['model'] == 'Qwen4 Max high, OpenRouter')
     assert pick['provider'] == 'Alibaba (Qwen)' and pick['clipLabels'] == ['sprint', 'leap']
     assert pick['score'] == .3938 and pick['best'] == .4207 and pick['builds'] == 5
-    assert 'terrain' not in pick and 'No accepted game-ready package' in pick['warning']
+    assert pick['terrain']=='horror-qwen4-high-v1' and 'No accepted game-ready package' in pick['warning']
+    assert 'Experimental terrain demo; qualification failed' in pick['warning']
     assert 'All three game proposals failed' in pick['warning']
     assert pick['facts']['stages']['rig']['passed']
     assert pick['facts']['stages']['rig']['passing_candidates'] == 3

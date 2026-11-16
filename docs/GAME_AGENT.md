@@ -103,6 +103,8 @@ Site maintainers prepare a sidecar against an already curated public GLB, review
 seal its exact bytes, register its model binding and enable that key in the site selection. Preserve the
 [publication rules](PUBLICATION.md): raw jobs, contracts, source paths and agent transcripts stay private.
 Any experimental result needs a model-specific visible limitation. A registry entry records reviewed playback,
-not a certificate that every terrain check passed. Before publication, check shared links, reduced motion,
+not a certificate that every terrain check passed. Benchmark publication should retain renderable failed IK
+candidates as diagnostic scenes; follow [Publish benchmark failures](../skill/mesh-jig-publish-results/SKILL.md#publish-benchmark-failures).
+Before publication, check shared links, reduced motion,
 comparison, GIF restoration, disposal and a phone viewport. Measure performance on actual mobile hardware;
 desktop software rendering cannot establish a mobile frame budget.

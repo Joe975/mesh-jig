@@ -44,6 +44,15 @@ bringing private ancestors along. Replacing an existing remote history requires 
 Previously public commits may remain in clones, forks, caches or hosting-provider retention after replacement.
 
 
+## Benchmark failures
+
+Publish available model, animation and IK results even when they fail qualification. A renderable failed
+IK package belongs in the explorer as an experimental diagnostic, with its failed checks visible. Keep
+the model's output intact: do not hand-repair it, relax gates or silently omit an unsuccessful stage.
+Runtime agreement, supported exports and privacy checks still apply. If a stage cannot render, show its
+available native clips or diagnostic images and state the limitation. Follow the
+[publishing skill](../skill/mesh-jig-publish-results/SKILL.md#publish-benchmark-failures) for review and sealing.
+
 ## Repeated history checks
 
 Every audit still visits all commits reachable from every requested ref, checks each commit's metadata
