@@ -7,6 +7,19 @@ PAGE = ROOT / "site" / "index.html"
 PUBLIC = set((ROOT / "PUBLIC_FILES.txt").read_text(encoding="utf-8").split())
 
 
+def test_carbon_partial_run_keeps_visual_and_browser_failures_visible():
+    import html
+    import json
+    page=(ROOT/'site/index.html').read_text(encoding='utf-8')
+    choices=[json.loads(html.unescape(s)) for s in re.findall(r'data-explore="([^"]*)"',page)]
+    pick=next(p for rows in choices for p in rows if p['model']=='Gemini 4 Carbon high, OpenRouter')
+    assert pick['terrain']=='horror-carbon-high-v1'
+    assert '2 of 5 reviewed attempts' in pick['warning'] and '0.40 gate' in pick['warning']
+    assert 'still fails slip (1.73 m/s)' in pick['warning']
+    assert pick['facts']['stages']['rig']['submissions']==4
+    assert pick['facts']['stages']['efficiency']['total_usd']==7.995875
+
+
 def test_qwen4_horror_retains_failed_game_status_and_unpriced_cost_scope():
     import html
     import json

@@ -42,6 +42,12 @@
       "model": "showcase/explore-horror-qwen4-max-high-20261117/model-01.glb",
       "sha256": "ad2a554d0f2633f05c97cf6e88f98271b3b555698af90ca6413cc1d0bc977ef3",
       "glb_sha256": "7811ce56227ef2c78403b726a4ab20c285ba1c74a58d9b04234622a611df2433"
+    },
+    "horror-carbon-high-v1": {
+      "data": "horror-carbon.json",
+      "model": "showcase/explore-horror-carbon-high-20261117/model-01.glb",
+      "sha256": "99812ad7650219d58c504f321432abacdb6486da9287f0f669716e38bf07d20c",
+      "glb_sha256": "bf4d78d33d7e24d738a0a54b1831eb000c7e8194b3500f51a2fe8157be3d4c96"
     }
   }
 }

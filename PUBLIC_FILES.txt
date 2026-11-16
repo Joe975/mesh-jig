@@ -208,6 +208,12 @@ showcase/explore-horror-astra-max-motion-20261110/model-01.glb
 showcase/explore-horror-astra-max-motion-20261110/model-02.glb
 showcase/explore-horror-astra-max-motion-20261110/release.json
 showcase/explore-horror-astra-max-motion-20261110/summary.json
+showcase/explore-horror-carbon-high-20261117/README.md
+showcase/explore-horror-carbon-high-20261117/image-01.png
+showcase/explore-horror-carbon-high-20261117/image-02.png
+showcase/explore-horror-carbon-high-20261117/model-01.glb
+showcase/explore-horror-carbon-high-20261117/release.json
+showcase/explore-horror-carbon-high-20261117/summary.json
 showcase/explore-horror-deepseek-1017-20261116/README.md
 showcase/explore-horror-deepseek-1017-20261116/image-01.png
 showcase/explore-horror-deepseek-1017-20261116/image-02.png
@@ -702,6 +708,8 @@ site/terrain/horror-deepseek-high.json
 site/terrain/horror-deepseek-high.release.json
 site/terrain/horror-deepseek.json
 site/terrain/horror-deepseek.release.json
+site/terrain/horror-qwen4.json
+site/terrain/horror-qwen4.release.json
 site/terrain/horror.json
 site/terrain/horror.release.json
 site/terrain/horse-deepseek-high.json
@@ -910,5 +918,5 @@ tests/test_workflow_checkpoints.py
 tools/check_publication.py
 tools/scrub_home_paths.py
 tools/terrain_schema.py
-site/terrain/horror-qwen4.json
-site/terrain/horror-qwen4.release.json
+site/terrain/horror-carbon.json
+site/terrain/horror-carbon.release.json

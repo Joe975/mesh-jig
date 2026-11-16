@@ -1,0 +1,8 @@
+{
+  "format": "mesh-jig terrain release",
+  "version": 1,
+  "files": {
+    "horror-carbon.json": "99812ad7650219d58c504f321432abacdb6486da9287f0f669716e38bf07d20c"
+  },
+  "glb_sha256": "bf4d78d33d7e24d738a0a54b1831eb000c7e8194b3500f51a2fe8157be3d4c96"
+}
