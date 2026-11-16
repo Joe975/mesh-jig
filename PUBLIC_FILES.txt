@@ -186,6 +186,10 @@ showcase/explore-cyborg-astra-high-20261115/image-02.png
 showcase/explore-cyborg-astra-high-20261115/model-01.glb
 showcase/explore-cyborg-astra-high-20261115/release.json
 showcase/explore-cyborg-astra-high-20261115/summary.json
+showcase/explore-cyborg-fable-high-20261115/README.md
+showcase/explore-cyborg-fable-high-20261115/model-01.glb
+showcase/explore-cyborg-fable-high-20261115/release.json
+showcase/explore-cyborg-fable-high-20261115/summary.json
 showcase/explore-horror-antigravity-opus-high-a01-20261111/README.md
 showcase/explore-horror-antigravity-opus-high-a01-20261111/image-01.png
 showcase/explore-horror-antigravity-opus-high-a01-20261111/model-01.glb
