@@ -234,7 +234,9 @@ def cmd_init(a) -> int:
             facial = {"version": 1, "required": a.face_required or [], "optional": a.face_optional or [],
                       "eyes": a.face_eyes or []}
         written = sheet.init(a.dir, name=a.name, length_m=1.0 if a.length is None else a.length, sheet=a.sheet,
-                             height_m=a.height, **({"face_capabilities": facial} if facial else {}))
+                             height_m=a.height, open_ended=a.open_ended, colour=a.colour,
+                             max_triangles=a.max_triangles, target=a.target,
+                             **({"face_capabilities": facial} if facial else {}))
     except ValueError as error:
         print(str(error), file=sys.stderr)
         return 2
@@ -424,6 +426,13 @@ def cmd_criteria(a) -> int:
     return 0
 
 
+def cmd_choose_production(a) -> int:
+    from . import production
+    resolved = production.choose(project.load(a.project, a.target), a.reason, a.colour, a.max_triangles)
+    print(production.describe(resolved["production"]))
+    return 0
+
+
 def cmd_brief(a) -> int:
     proj = project.load(a.project, getattr(a, "target", None))
     issues = proj.problems()
@@ -443,6 +452,9 @@ def _painted_atlas(proj: project.Project, a, out: Path) -> tuple[Path | None, st
 
 def cmd_build(a) -> int:
     proj = project.load(a.project, getattr(a, "target", None))
+    if "production" in proj.data:
+        from . import production
+        print(production.describe(proj.spec["production"]))
     out = _attempt_dir(a) / "out"
     atlas, err = _painted_atlas(proj, a, out)
     err = err or build.build_variants(a.script, out, proj.spec, **({"atlas": atlas} if atlas else {}),
@@ -524,6 +536,22 @@ def cmd_check(a) -> int:
     report = glb.write_report(out, proj.spec)
     print(json.dumps(report, indent=1))
     return 0 if report["ok"] else 1
+
+
+def cmd_materials(a) -> int:
+    from . import material_review
+    job = project.load(a.project)
+    rows = job.data.get("material_review")
+    if a.out:
+        material_review.apply(a.glb, a.out, job.root, rows)
+    issues = material_review.check(a.out or a.glb, rows)
+    for message in issues:
+        print(message)
+    if not issues:
+        print("Exported material bindings pass. Inspect the finish under the intended light and camera.")
+        for row in rows:
+            print(f"  {row['region']}: {row['check']}")
+    return int(bool(issues))
 
 
 def cmd_ready(a) -> int:
@@ -623,6 +651,9 @@ def cmd_preview(a) -> int:
 
 def cmd_eval(a) -> int:
     proj = project.load(a.project, getattr(a, "target", None))
+    if "production" in proj.data:
+        from . import production
+        print(production.describe(proj.spec["production"]))
     issues = proj.problems()
     if issues:
         print("PROJECT PROBLEMS:\n" + "\n".join(f"- {i}" for i in issues), file=sys.stderr)
@@ -1056,7 +1087,20 @@ def parser() -> argparse.ArgumentParser:
     s.add_argument("--out", type=Path, help="keep the WAVs here, with what each measures as and a spectrogram sheet")
     s.set_defaults(fn=cmd_sound, cmd="sound-check")
 
+    from . import production
+    s = subs.add_parser("choose-production", help="record delegated choices before the first build")
+    s.add_argument("project", type=Path)
+    s.add_argument("--reason", required=True)
+    s.add_argument("--colour", choices=production.COLOURS)
+    s.add_argument("--max-triangles", type=int)
+    _target_arg(s)
+    s.set_defaults(fn=cmd_choose_production)
+
     s = subs.add_parser("init", help="start a project")
+    s.add_argument("--open-ended", action="store_true", help="delegate unspecified production decisions")
+    s.add_argument("--colour", choices=production.COLOURS, help="fix the base-colour method")
+    s.add_argument("--max-triangles", type=int, help="explicit triangle ceiling, overriding a preset")
+    s.add_argument("--target", choices=sorted(target.BUILTIN), help="start with this platform preset")
     s.add_argument("dir", type=Path)
     s.add_argument("--name", default="")
     s.add_argument("--length", type=float, default=None, help="a craft's length in metres (default 1.0)")
@@ -1187,6 +1231,12 @@ def parser() -> argparse.ArgumentParser:
     s.add_argument("attempt", type=Path)
     _target_arg(s)
     s.set_defaults(fn=cmd_check)
+
+    s = subs.add_parser("materials", help="apply or check the final surface decisions")
+    s.add_argument("project", type=Path)
+    s.add_argument("glb", type=Path)
+    s.add_argument("--out", type=Path, help="apply the finish to a separate GLB")
+    s.set_defaults(fn=cmd_materials)
 
     s = subs.add_parser("ready", help="what a built attempt costs an engine and what a rig or a texture would find in it")
     s.add_argument("project", type=Path)

@@ -434,3 +434,62 @@ machine.
 | `MESH_JIG_PRIORITY` | Priority while limited: `below_normal` (default) or `idle`. |
 
 `mesh-jig doctor` prints the CPU limit in force, and each `eval.json` records the one its build ran under (`cpu`).
+## Production choices
+
+Use `mesh-jig init prop --open-ended` for a reference-led evaluation. Freeze the
+reference, dimensions, cameras and scoring criteria before the run. The builder
+chooses a triangle ceiling and the base-colour method after seeing the reference.
+For independent builders, start each from its own copy of the undecided project.
+
+For a model with a delivery budget, select only the constraints you need:
+
+```sh
+mesh-jig init pilot --height 1.8 --target quest --max-triangles 8000
+mesh-jig brief pilot
+mesh-jig choose-production pilot --colour texture --reason "The helmet stripe crosses several faces at game distance."
+```
+
+The last command is the shell workflow. The visual and numeric agents have a
+`choose_production` tool for the same decision. A model with fixed colours can
+start with `--colour vertex`, `texture` (script-painted), `atlas` (plan), or
+`multiply` (vertex colours times an atlas). Use multiply when a small set of
+markings sits on an otherwise vertex-painted surface. Choose texture when a
+marking needs more detail than the mesh provides.
+
+Any production flag opts into this workflow. In `jig.json`, `production: {}`
+enables it for a hand-written project. User settings in `model.max_triangles`
+and `production.colour` take precedence. A target supplies its triangle ceiling
+when the user leaves it open. The agent fills the remaining decisions. Existing
+model colour fields also count as explicit constraints. The brief shows each
+value and its source. The builder's choices and rationale are written once in
+`production-decisions.json` beside the contract and reused on later attempts.
+Start a new run directory to compare a different decision. A plain `init` and
+older benchmark contracts keep their established model defaults.
+
+Each measured attempt records its production choices in `eval.json`. Compare
+its fidelity measurements with `readiness.cost` for actual triangles, materials,
+total GLB bytes, and pixel dimensions per embedded
+image. An unreadable or external image has unknown dimensions. These costs are
+reported separately from the fidelity score.
+
+### Final surface treatment
+
+Base colour and surface finish are independent. Set the top-level
+`material_review` list when a finish is required, or have the agent fill it
+after inspecting the surfaces. An empty list is pending; an entry with empty
+channels explicitly retains the finish. Each entry names the visual cue and
+how to check it. For example:
+
+```json
+{"region":"Shell","nodes":["Shell"],"cue":"A narrow reflection crosses the plate",
+ "channels":{"roughness":0.24},"check":"Turn the light across the shell at game distance"}
+```
+
+Apply decisions with `mesh-jig materials PROJECT BASE.glb --out FINISHED.glb`,
+or check a finished export with `mesh-jig materials PROJECT FINISHED.glb`.
+For embedded PNG or JPEG maps, set the channel to true and provide the local
+project file, e.g. `"channels":{"normal_map":true},"maps":{"normal_map":"weave.png"}`.
+Mapped surfaces need UVs. Available channels are roughness, roughness_map,
+normal_map, occlusion_map, emission and emission_map. Optional `emission_rgb`
+sets the linear emissive colour. Run this finish step on the selected build and
+inspect it under matched lighting before handing it to rigging.

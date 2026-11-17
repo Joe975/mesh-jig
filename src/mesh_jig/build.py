@@ -59,6 +59,10 @@ def build_variants(script: str | Path, out_dir: str | Path, spec: dict, *, blend
     one from the script's `paint` (which is handed `palette` as PALETTE) and the judged variant's is left under the
     atlas name. With `blend` in the contract each variant's Blender file is saved beside its GLB."""
     script, out_dir = Path(script), Path(out_dir)
+    if "production" in spec:
+        from . import production
+        if production.pending(spec["production"]):
+            return production.describe(spec["production"])
     if not script.is_file():
         return f"model script {script} does not exist"
     refused = script_check.check_script(script.read_text(encoding="utf-8"))

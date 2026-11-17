@@ -75,6 +75,7 @@ def size_facts(spec: dict) -> str:
 def model_facts(spec: dict) -> str:
     """How a model is built and what the contract checks, in words. A model block without `forward` is not a craft:
     no nose, no wingspan, no mirror plane; the brief orients it."""
+    from . import production
     craft = bool(spec.get("forward"))
     variants = glb.variant_names(spec)
     files = glb.expected_files(spec)
@@ -87,6 +88,7 @@ def model_facts(spec: dict) -> str:
                      "m in Blender axes; station heights and signed endpoints are relative to it. "
                      "Do not recenter the model's bounding box.")
     lines = [
+        production.describe(spec["production"]) if "production" in spec else "",
         "HOW A MODEL IS BUILT HERE (identical for every attempt):",
         f"- You write ONE Blender Python script, {glb.script_name(spec)}, in the attempt directory. It defines `def build():` "
         "at top level and may import only bpy, bmesh, mathutils, math, random, numpy and openvdb (the last two ship in "
@@ -395,6 +397,11 @@ def text(project: Project) -> str:
     if project.brief.strip():
         parts.append("WHAT THE MODEL MUST SHOW (brief):\n" + project.brief.strip())
     parts.append(model_facts(spec))
+    if "material_review" in project.data:
+        import json
+        parts.append("After selecting the base-colour build, review surface finishes against the reference. "
+                     "Use mesh-jig materials to apply or check the final GLB. Material decisions: "
+                     + json.dumps(project.data["material_review"]))
     if project.data.get("face_capabilities") is not None:
         from . import face_capability
         parts.append(face_capability.brief(project.data["face_capabilities"]))

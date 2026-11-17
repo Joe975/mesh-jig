@@ -661,6 +661,11 @@ def _evaluate_locked(project: Project, script: str | Path, out_dir: str | Path, 
         if problems:
             return fail("project", "; ".join(problems))
 
+    if "production" in spec:
+        from . import production
+        rec["production"] = spec["production"]
+        if production.pending(spec["production"]):
+            return fail("project", production.describe(spec["production"]))
     built = out_dir / "out"
     if paint_plan is not None:
         atlas = built / glb.atlas_name(spec)
