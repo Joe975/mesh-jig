@@ -567,6 +567,10 @@ showcase/pirate-cat-qwen-local/image-01.png
 showcase/pirate-cat-qwen-local/model-01.glb
 showcase/pirate-cat-qwen-local/release.json
 showcase/pirate-cat-qwen-local/summary.json
+showcase/reference-anime-swordsman-nav/README.md
+showcase/reference-anime-swordsman-nav/image-01.png
+showcase/reference-anime-swordsman-nav/release.json
+showcase/reference-anime-swordsman-nav/summary.json
 showcase/reference-anime-swordsman/README.md
 showcase/reference-anime-swordsman/image-01.png
 showcase/reference-anime-swordsman/image-02.png

@@ -7,6 +7,16 @@ PAGE = ROOT / "site" / "index.html"
 PUBLIC = set((ROOT / "PUBLIC_FILES.txt").read_text(encoding="utf-8").split())
 
 
+def test_swordsman_card_uses_a_square_reference_thumbnail():
+    from PIL import Image
+    page = PAGE.read_text(encoding='utf-8')
+    card = re.search(r'<a href="#anime-swordsman"><img src="([^"]+)"', page).group(1)
+    assert card == 'showcase/reference-anime-swordsman-nav/image-01.png'
+    with Image.open(ROOT / card) as image:
+        assert image.size == (280, 280)
+    assert card != 'showcase/reference-anime-swordsman/image-02.png'
+
+
 def test_changelog_has_three_recent_and_twenty_collapsed_publishes():
     page = PAGE.read_text(encoding='utf-8')
     recent = page.split('<ol class="publish-recent"', 1)[1].split('</ol>', 1)[0]

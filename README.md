@@ -1,7 +1,7 @@
 # mesh-jig
 
-**[See the models in 3D](https://joe975.github.io/mesh-jig/)**: six reference sheets, each company's best build,
-animated rigs and the worst build, from Claude, Codex, Gemini and local models.
+**[See the models in 3D](https://joe975.github.io/mesh-jig/)**: reference sheets, model builds and animations
+from coding agents and API models, with interactive comparisons.
 
 Build Blender scripts with a coding agent, measure the exported GLB against reference views, then
 rig the selected model and author animation clips without changing its rest geometry.
