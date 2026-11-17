@@ -1,0 +1,36 @@
+{
+  "completed": null,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "GPT-6.2 Sol high",
+  "notes": [
+    "The selected model scored 0.6064 and passes both static checks. The front ivory shin insert is absent.",
+    "All six clips pass the native rig contract. The approved MiniMax H3 motion references guided idle, walk, run, jump and punch from the second rig submission onward. The first, text-guided rig failed its jump deformation check.",
+    "Punch follows the two-second approved grid timing with the artificial right arm. The striking fist sits lower and closes less tightly, and the rear heel stays flatter. Walk, run and jump were retimed to fit the native clips at about 1.42\u00d7, 1.18\u00d7 and 1.11\u00d7 their selected reference cycle rates. The left arm lifts less in Jump. Angry Face follows the written brief.",
+    "Experimental terrain shows the second proposal. Right-foot run skate reached 0.982 m/s and the walk\u2013run blend reached 0.609 m/s against 0.35 m/s allowed. Run slip in the scene reached 1.042 m/s with IK off, 0.560 m/s on flat ground and 0.529 m/s on the cross-slope. The obstacle stress reached 1.457 m/s slip and a 41.2 m/s joint-speed spike.",
+    "Codex subscription usage and cost are unavailable."
+  ],
+  "result": {
+    "gates_passed": 2,
+    "gates_total": 2,
+    "numeric_score": 0.6064
+  },
+  "schema_version": 1,
+  "scope": "Fresh v9 reference trial. Five completed static evaluations from six submissions, three passing native rigs from twelve submissions, and three game proposals.",
+  "title": "Hulking cyborg \u00b7 GPT-6.2 Sol high"
+}

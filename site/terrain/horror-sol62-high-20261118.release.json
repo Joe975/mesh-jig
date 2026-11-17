@@ -1,0 +1,8 @@
+{
+  "format": "mesh-jig terrain release",
+  "version": 1,
+  "files": {
+    "horror-sol62-high-20261118.json": "b1c5634428ac97083ae4bbb84f1f60ed953a0733c4482bc94be4010b249791e4"
+  },
+  "glb_sha256": "58db4e33e5ebd6fd5cfa983b3ea4ef36cd9909a1965d27134a88b06477314009"
+}
