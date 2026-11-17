@@ -1,0 +1,8 @@
+{
+  "format": "mesh-jig terrain release",
+  "version": 1,
+  "files": {
+    "horror-astra62.json": "b51af3b15c096ab6bcb0630c604ee2ee4946a05d568ff0d907840b57a7400041"
+  },
+  "glb_sha256": "1596008d3e1e7b0de0d201ea4d0c3e9401018579468cdaf960531454c09adae7"
+}
