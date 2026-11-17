@@ -126,7 +126,7 @@ def test_terrain_characters_are_lazy_anonymous_and_bound_to_their_public_models(
     assert '<script type="module" src="terrain/viewer.js"' not in page
     registry=json.loads((ROOT/'site/terrain/characters.json').read_text(encoding='utf-8'))
     assert {'horror-v1','horse-astra-v1','horse-fable-v1',
-            'cyborg-astra62-high-v1','horror-astra62-high-v1'} <= set(registry['characters'])
+            'cyborg-astra62-high-video-v1','horror-astra62-high-v1'} <= set(registry['characters'])
     expected_legs = {'cyborg': 2, 'horse': 4, 'horror': 6}
     for key, row in registry['characters'].items():
         raw=(ROOT/'site/terrain'/row['data']).read_bytes();data=json.loads(raw)
@@ -262,3 +262,24 @@ def test_every_model_the_explorer_can_load_is_published():
         for pick in json.loads(html.unescape(block)):
             assert pick["src"].startswith("showcase/explore-") and pick["src"] in PUBLIC, pick["src"]
             assert (ROOT / pick["src"]).is_file(), pick["src"]
+
+
+def test_original_astra62_cyborg_is_withdrawn_and_video_version_remains():
+    import html
+    import json
+    page = PAGE.read_text(encoding='utf-8')
+    picks = [p for block in re.findall(r'data-explore="([^"]+)"', page)
+             for p in json.loads(html.unescape(block))]
+    old = 'showcase/explore-cyborg-astra62-high-20261118'
+    video = 'showcase/explore-cyborg-astra62-high-video-20261118'
+    assert not any(p['src'].startswith(old + '/') for p in picks)
+    assert not (ROOT / old).exists()
+    assert any(p['src'].startswith(video + '/') for p in picks)
+    assert any(p['src'].startswith('showcase/explore-horror-astra62-high-20261118/') for p in picks)
+    registry = json.loads((ROOT / 'site/terrain/characters.json').read_text())['characters']
+    assert 'cyborg-astra62-high-v1' not in registry
+    assert 'cyborg-astra62-high-video-v1' in registry
+    assert not (ROOT / 'site/terrain/cyborg-astra62.json').exists()
+    assert not (ROOT / 'site/terrain/cyborg-astra62.release.json').exists()
+    assert 'subject=cyborg&amp;model=gpt-6-2-astra-high-codex#cyborg' not in page
+    assert 'was withdrawn from the live gallery' in (ROOT / video / 'README.md').read_text()

@@ -61,12 +61,6 @@
       "sha256": "b51af3b15c096ab6bcb0630c604ee2ee4946a05d568ff0d907840b57a7400041",
       "glb_sha256": "1596008d3e1e7b0de0d201ea4d0c3e9401018579468cdaf960531454c09adae7"
     },
-    "cyborg-astra62-high-v1": {
-      "data": "cyborg-astra62.json",
-      "model": "showcase/explore-cyborg-astra62-high-20261118/model-01.glb",
-      "sha256": "ca7e08a56be0c037fe9054dbaaaa1ff1e52a4e8e7a8c45119b1b4c24bbb9d0d8",
-      "glb_sha256": "f71ea5a2b73b6abe5edb11b92d693a9156f82a3914e4ce578c35021d38b238d5"
-    },
     "horror-sol62-high-v1": {
       "data": "horror-sol62-high-20261118.json",
       "model": "showcase/explore-horror-sol62-high-20261118/model-02.glb",

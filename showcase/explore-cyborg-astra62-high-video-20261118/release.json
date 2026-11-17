@@ -1,6 +1,6 @@
 {
   "files": {
-    "README.md": "0a41db43601dce5e0b112d58b59b337db2cc4e343d608aa692fc13faa9be7614",
+    "README.md": "980be93b3ded47c605a15cd8acdb3ce811fd11e615a1377a18522f698818d400",
     "image-01.png": "1d396d582839fdbdddbc8ee95a26239730905a865bae157e64e10b75d110d46f",
     "image-02.png": "ac45ca638a1eb22663b31c04921e4647fd0f9b1f59b55b37938a45a010f65454",
     "image-03.png": "9bd2774360acebe1c2e2408c47aa2432c40019561c827c3f4a789c9dfde38024",
@@ -9,7 +9,7 @@
     "image-06.png": "625a6824b5c563b873732580b1d74825076d4821bfba8345afc86c30d13118d6",
     "model-01.glb": "ae8ce02b536be74184ec0e81a28c9bcaecf90057d2b13af9ff9f7da2c158f9e1",
     "model-02.glb": "404c9e079de97e7f0d125a8859a45485ff8f448efc2dcc1e35652986ce7da6f0",
-    "summary.json": "ec301960f9e601ea316200f8ffa2be60260d4e5595b59cb16e2e8e3e26f23e74"
+    "summary.json": "8ce9e864d0b1ceeccc47c79a0213a4c9018c7ce3947078de3ac577ac3e15fd30"
   },
   "schema_version": 1
 }
