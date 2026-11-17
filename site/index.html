@@ -474,9 +474,10 @@ function panel(root, picks) {
     row(eff,'Cost',e.total_usd != null ? 'US$'+e.total_usd.toFixed(2) : f.cost || 'Unavailable');
     if(e.kind) eff.append(el('p',e.kind));
     function stageCost(amount, detailed = false) {
-      if (!Number.isFinite(amount)) return 'Unavailable';
+      const value = typeof amount === 'string' && amount.trim() ? Number(amount) : amount;
+      if (!Number.isFinite(value)) return 'Unavailable';
       if (detailed) return String(amount);
-      return amount < .01 ? '< US$0.01' : 'US$'+amount.toFixed(2);
+      return value < .01 ? '< US$0.01' : 'US$'+value.toFixed(2);
     }
     if(e.stages) for(const [name,u] of Object.entries(e.stages)) row(eff, words(name)+' cost', stageCost(u.cost));
     row(eff,'Model evaluations',num(pick.builds,0));
