@@ -18,9 +18,14 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-# Already-public GitHub-generated merge. Pin its full identity rather than permitting
-# private author emails or GitHub's bot email on new commits.
-REVIEWED_PUBLIC_MERGES = frozenset({'65698d7815880d7983000db9c93d03d137f8e82d'})
+# Already-public GitHub-generated commits. Pin their full identities rather than
+# permitting private author/committer emails on new commits. See the source publication record.
+REVIEWED_PUBLIC_MERGES = frozenset({
+    '65698d7815880d7983000db9c93d03d137f8e82d',
+    '3add64f8e6b51ee53f257d3b0328069f5ff3b366',
+    'e316b2604a9737245c2e755febe041b9010b1991',
+    '97ca18b3f2789fbefca6d0bb715dbeb13e3c3898',
+})
 spec = importlib.util.spec_from_file_location("showcase_curator", ROOT / "skill/mesh-jig-publish-results/scripts/curate.py")
 curator = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(curator)

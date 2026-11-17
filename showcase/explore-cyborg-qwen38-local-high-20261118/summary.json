@@ -1,0 +1,35 @@
+{
+  "completed": false,
+  "cost": {
+    "amount_usd": 0,
+    "kind": "reported"
+  },
+  "driver": "mesh-jig API agent through local llama-server",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": 4499897,
+    "completion_tokens": 1113726,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": 108,
+    "prompt_tokens": 5066023,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "qwen3.8-27b-local",
+  "notes": [
+    "Failed rig: all 12 submissions failed. Qwen's attempted choice a08 is shown unchanged: idle/walk/run/jump edge stretch 2.92x/8.09x/11.48x/4.17x versus 2.5x. Skin and limb deformation remain. IK was not reached.",
+    "First GLB: unchanged failed animation a08. Second GLB: selected static a05. Numeric leader a04 scored 0.4625; selected a05 scored 0.4569.",
+    "Local Qwen3.8-27B Q4_K_XL, requested high (template xhigh), 120000 reply-token ceiling. No hosted API charge; electricity/hardware costs not estimated.",
+    "All completed model, selection and rig calls included. No repair, altered gates or unmeasured post-budget draft."
+  ],
+  "result": {
+    "gates_passed": 2,
+    "gates_total": 2,
+    "numeric_score": 0.4569
+  },
+  "schema_version": 1,
+  "scope": "Five reviewed models; visual a05; twelve failed rig submissions; attempted rig choice a08; IK not reached.",
+  "title": "Local Qwen3.8 high: cyborg with failed animations"
+}
