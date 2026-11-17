@@ -73,6 +73,20 @@ def test_private_email_and_home_directory_block(tmp_path):
     assert any("email" in f for f in failures) and any("home directory" in f for f in failures)
 
 
+def test_reviewed_merge_exception_is_exact_and_keeps_content_checks(tmp_path, monkeypatch):
+    root = repo(tmp_path)
+    (root / 'safe.py').write_text(repr('C:' + '/Users/' + 'test/private'))
+    git(root, 'add', 'safe.py')
+    git(root, '-c', 'user.name=Test', '-c', 'user.email=private@example.com', 'commit', '-qm', 'safe')
+    reviewed = git(root, 'rev-parse', 'HEAD').decode().strip()
+    monkeypatch.setattr(guard, 'REVIEWED_PUBLIC_MERGES', frozenset({reviewed}))
+    failures = guard.audit(root, ['HEAD'])
+    assert not any('email' in f for f in failures)
+    assert any('home directory' in f for f in failures)
+    git(root, '-c', 'user.name=Test', '-c', 'user.email=private@example.com', 'commit', '--allow-empty', '-qm', 'new')
+    assert any('email' in f for f in guard.audit(root, ['HEAD']))
+
+
 def test_inventory_cannot_opt_in_binary_results_or_environment_secrets():
     for name in ("experiments/results.md", ".env.production", "private/model.py", "demo.glb", "shot.png", "../escape", "link/.git/config"):
         assert guard.forbidden_path(name)

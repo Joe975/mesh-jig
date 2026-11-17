@@ -18,6 +18,9 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+# Already-public GitHub-generated merge. Pin its full identity rather than permitting
+# private author emails or GitHub's bot email on new commits.
+REVIEWED_PUBLIC_MERGES = frozenset({'65698d7815880d7983000db9c93d03d137f8e82d'})
 spec = importlib.util.spec_from_file_location("showcase_curator", ROOT / "skill/mesh-jig-publish-results/scripts/curate.py")
 curator = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(curator)
@@ -251,7 +254,7 @@ def audit(root: Path, refs: list[str], worktree: bool = True, *, cache: bool = T
         for commit in commits:
             metadata = git(root, "show", "-s", "--format=%ae%n%ce%n%B", commit)
             lines = metadata.decode().splitlines()
-            if any(not line.endswith("@users.noreply.github.com") for line in lines[:2]):
+            if commit not in REVIEWED_PUBLIC_MERGES and any(not line.endswith("@users.noreply.github.com") for line in lines[:2]):
                 failures.append(commit[:12] + ": author/committer email is not GitHub noreply")
             for label, pattern in PATTERNS.items():
                 if pattern.search(metadata):
