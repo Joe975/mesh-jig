@@ -25,11 +25,24 @@ def test_changelog_has_three_recent_and_twenty_collapsed_publishes():
     assert 'tools/build_publish_history.py --repo' in workflow
 
 
+def test_ember_cat_and_cyborg_keep_failed_native_clips_and_no_ik():
+    import html
+    import json
+    picks=[p for s in re.findall(r'data-explore="([^"]*)"',PAGE.read_text(encoding='utf-8')) for p in json.loads(html.unescape(s))]
+    for subject,cost,count in [('cyborg',.241716,6),('cat',.268819,4)]:
+        pick=next(p for p in picks if f'explore-{subject}-muse-ember-high-20261117/' in p['src'])
+        assert pick['animated'] and len(pick['clipLabels'])==count and not pick.get('terrain')
+        assert 'all 12 submissions failed' in pick['warning'] and 'IK was not reached' in pick['warning']
+        assert not pick['facts']['stages']['rig']['passed']
+        assert pick['facts']['stages']['rig']['passing_candidates']==0
+        assert pick['facts']['stages']['efficiency']['total_usd']==cost
+
+
 def test_ember_failed_ik_is_available_with_qualification_visible():
     import html
     import json
     picks=[json.loads(html.unescape(s)) for s in re.findall(r'data-explore="([^"]*)"',PAGE.read_text(encoding='utf-8'))]
-    pick=next(p for rows in picks for p in rows if p['model']=='Muse Ember high, OpenRouter')
+    pick=next(p for rows in picks for p in rows if 'explore-horror-muse-ember-high-20261117/' in p['src'])
     assert pick['terrain']=='horror-muse-ember-high-v1' and pick['builds']==5
     assert 'qualification failed' in pick['warning'] and 'six foot-contact clusters' in pick['warning']
     assert 'No accepted game-ready package' in pick['warning']
