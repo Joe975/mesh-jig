@@ -29,7 +29,12 @@ def test_changelog_has_three_recent_and_twenty_collapsed_publishes():
     assert page.index('id="changelog"') < page.index('<nav aria-label="Sections">')
     assert recent.count('<a ') == 3 and archive.count('<a ') == 20
     assert 'class="publish-title" href="?subject=' in recent
-    assert 'Six-limbed horror: Muse Ember High, OpenRouter' in recent
+    row_pattern = r'<li><time datetime="[^"]+">[^<]+</time><a class="publish-title" href="(\?subject=[^"]+)">([^<]+)</a></li>'
+    recent_rows = re.findall(row_pattern, recent)
+    archive_rows = re.findall(row_pattern, archive)
+    assert len(recent_rows) == 3 and len(archive_rows) == 20
+    assert recent_rows == archive_rows[:3]
+    assert all('model=' in link and '#' in link and title.strip() for link, title in archive_rows)
     workflow = (ROOT / '.github/workflows/pages.yml').read_text(encoding='utf-8')
     assert 'fetch-depth: 0' in workflow
     assert 'tools/build_publish_history.py --repo' in workflow
@@ -120,13 +125,16 @@ def test_terrain_characters_are_lazy_anonymous_and_bound_to_their_public_models(
     assert "import('./terrain/viewer.js')" in page
     assert '<script type="module" src="terrain/viewer.js"' not in page
     registry=json.loads((ROOT/'site/terrain/characters.json').read_text(encoding='utf-8'))
-    assert {'horror-v1','horse-astra-v1','horse-fable-v1'}<=set(registry['characters'])
-    for row in registry['characters'].values():
+    assert {'horror-v1','horse-astra-v1','horse-fable-v1',
+            'cyborg-astra62-high-v1','horror-astra62-high-v1'} <= set(registry['characters'])
+    expected_legs = {'cyborg': 2, 'horse': 4, 'horror': 6}
+    for key, row in registry['characters'].items():
         raw=(ROOT/'site/terrain'/row['data']).read_bytes();data=json.loads(raw)
         assert data['version']==2
         assert hashlib.sha256(raw).hexdigest()==row['sha256']
         assert hashlib.sha256((ROOT/row['model']).read_bytes()).hexdigest()==data['glb_sha256']==row['glb_sha256']
-        assert len(data['runtime']['limbs']) in (4,6)
+        subject = key.split('-', 1)[0]
+        assert len(data['runtime']['limbs']) == expected_legs[subject]
         assert all(j['name']=='j'+str(j['node']) for j in data['runtime']['skeleton']['joints'])
         assert not any(s in json.dumps(data) for s in ('local-work','C:\\','contract_sha256','provenance'))
     assert all('site/'+p.relative_to(ROOT/'site').as_posix() in PUBLIC for p in (ROOT/'site/terrain').rglob('*') if p.is_file())

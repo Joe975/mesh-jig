@@ -1,0 +1,34 @@
+{
+  "completed": false,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex desktop subscription with native mesh-jig tools",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "gpt-6.2-astra",
+  "notes": [
+    "Experimental terrain. Static resemblance 0.367 falls short of 0.40. Three native rigs passed. IK a02 passed sprint playback, flat ground and cross-slope. The obstacle review found lost support and a joint-speed spike of 26.4 m/s. The extra leap blend slid at 1.93 m/s. No game-ready delivery.",
+    "The longer ribcage, three leg attachment stations and planted feet led the visual choice. Raised rib tips and simplified face and feet remain visible. The numeric leader was a03 at 0.5174.",
+    "One Codex subscription session authored both subjects at high effort. Per-subject token usage and cost were unavailable."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 1,
+    "numeric_score": 0.5131
+  },
+  "schema_version": 1,
+  "scope": "Five fresh static evaluations, three passing native rigs and three game proposals. Visual selection a05-thorax at 0.5131. Numeric best 0.5174. Selected rig r03-recovery, terrain a02.",
+  "title": "GPT-6.2 Astra high: horror animation and terrain trial"
+}

@@ -1,0 +1,8 @@
+{
+  "format": "mesh-jig terrain release",
+  "version": 1,
+  "files": {
+    "cyborg-astra62.json": "ca7e08a56be0c037fe9054dbaaaa1ff1e52a4e8e7a8c45119b1b4c24bbb9d0d8"
+  },
+  "glb_sha256": "f71ea5a2b73b6abe5edb11b92d693a9156f82a3914e4ce578c35021d38b238d5"
+}
