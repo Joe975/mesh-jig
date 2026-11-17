@@ -1,5 +1,6 @@
 """Production decisions for reference-led projects. Legacy contracts use their original model fields."""
 import json
+import hashlib
 import os
 from pathlib import Path
 import tempfile
@@ -9,11 +10,19 @@ FILE = "production-decisions.json"
 COLOUR_FIELDS = ("textured", "texture_mode", "texture_from", "vertex_colors")
 
 
+def decision_file(project):
+    # A one-off --target run must not consume the default run's open choices.
+    if project.chosen_target and project.chosen_target != project.data.get("target"):
+        key = hashlib.sha256(project.chosen_target.encode("utf-8")).hexdigest()
+        return project.root / f"production-decisions-{key}.json"
+    return project.root / FILE
+
+
 def resolve(project, spec, target):
     policy = project.data["production"]
     if not isinstance(policy, dict) or set(policy) - {"colour"}:
         raise ValueError("production accepts colour; user budgets belong in model.max_triangles")
-    file = project.root / FILE
+    file = decision_file(project)
     chosen = json.loads(file.read_text(encoding="utf-8")) if file.is_file() else {}
     if not isinstance(chosen, dict) or set(chosen) - {"colour", "max_triangles", "reason"}:
         raise ValueError("invalid production decision file")
@@ -94,7 +103,7 @@ def choose(project, reason, colour=None, max_triangles=None):
         raise ValueError("give the reference or delivery reason for the decision")
     decision = {k: v for k, v in (("colour", colour), ("max_triangles", max_triangles)) if v is not None}
     check_values(decision)
-    file = project.root / FILE
+    file = decision_file(project)
     decision["reason"] = reason.strip()
     if file.exists() and json.loads(file.read_text(encoding="utf-8")) == decision:
         return project.spec

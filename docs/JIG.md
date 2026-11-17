@@ -463,6 +463,8 @@ when the user leaves it open. The agent fills the remaining decisions. Existing
 model colour fields also count as explicit constraints. The brief shows each
 value and its source. The builder's choices and rationale are written once in
 `production-decisions.json` beside the contract and reused on later attempts.
+An alternate command-line `--target` has its own decision file. Pass that
+target on subsequent commands to reuse the same decisions.
 Start a new run directory to compare a different decision. A plain `init` and
 older benchmark contracts keep their established model defaults.
 

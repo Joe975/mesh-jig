@@ -57,3 +57,15 @@ def test_cost_reads_dimensions_from_the_export(tmp_path):
     mesh = textured_glb(tmp_path / "test.glb", png=png.getvalue())
     cost = readiness.measure(mesh)["cost"]
     assert cost["image_sizes"] == [[64, 32]] and cost["materials"] == 1 and cost["triangles"] == 12
+
+
+def test_temporary_platform_run_keeps_default_choices_open(tmp_path):
+    sheet.init(tmp_path, open_ended=True)
+    preset = project.load(tmp_path, "quest")
+    tools = agent.Tools(preset, agent.Report(), attempts=1, judge=False)
+    text, _ = tools.call("choose_production", {"colour": "vertex", "reason": "Broad solid plates"})
+    assert "10000 (preset quest)" in text and "vertex (agent)" in text
+    default = project.load(tmp_path)
+    assert set(production.pending(default.spec["production"])) == {"colour", "max_triangles"}
+    production.choose(default, "Thin painted lines", colour="texture", max_triangles=1700)
+    assert preset.spec["vertex_colors"] and default.spec["max_triangles"] == 1700

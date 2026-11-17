@@ -38,7 +38,7 @@ def reading(tmp_path, parts, **kw):
 def test_one_closed_sphere_is_one_piece_with_nothing_buried_open_or_lopsided(tmp_path):
     r = reading(tmp_path, [sphere()])
     assert r["cost"] == {"triangles": 720, "vertices": 362, "positions": 362, "mesh_nodes": 1, "primitives": 1,
-                         "materials": 0, "images": 0, "bytes": (tmp_path / "m.glb").stat().st_size}
+                         "materials": 0, "images": 0, "image_sizes": [], "bytes": (tmp_path / "m.glb").stat().st_size}
     assert r["surface"] == {"pieces": 1, "pieces_90": 1, "largest_piece": 1.0, "open_edges": 0.0, "slivers": 0.0,
                             "buried": 0.0, "symmetry": 1.0}
     assert r["uv"] is None and r["rig"] == {"skins": 0, "animations": 0}
