@@ -254,7 +254,9 @@ def audit(root: Path, refs: list[str], worktree: bool = True, *, cache: bool = T
         for commit in commits:
             metadata = git(root, "show", "-s", "--format=%ae%n%ce%n%B", commit)
             lines = metadata.decode().splitlines()
-            if commit not in REVIEWED_PUBLIC_MERGES and any(not line.endswith("@users.noreply.github.com") for line in lines[:2]):
+            author_private = not lines[0].endswith("@users.noreply.github.com")
+            committer_private = not (lines[1].endswith("@users.noreply.github.com") or lines[1] == "noreply@github.com")
+            if commit not in REVIEWED_PUBLIC_MERGES and (author_private or committer_private):
                 failures.append(commit[:12] + ": author/committer email is not GitHub noreply")
             for label, pattern in PATTERNS.items():
                 if pattern.search(metadata):
