@@ -66,6 +66,24 @@
       "model": "showcase/explore-cyborg-astra62-high-20261118/model-01.glb",
       "sha256": "ca7e08a56be0c037fe9054dbaaaa1ff1e52a4e8e7a8c45119b1b4c24bbb9d0d8",
       "glb_sha256": "f71ea5a2b73b6abe5edb11b92d693a9156f82a3914e4ce578c35021d38b238d5"
+    },
+    "horror-sol62-high-v1": {
+      "data": "horror-sol62-high-20261118.json",
+      "model": "showcase/explore-horror-sol62-high-20261118/model-02.glb",
+      "sha256": "b1c5634428ac97083ae4bbb84f1f60ed953a0733c4482bc94be4010b249791e4",
+      "glb_sha256": "58db4e33e5ebd6fd5cfa983b3ea4ef36cd9909a1965d27134a88b06477314009"
+    },
+    "cyborg-sol62-high-v1": {
+      "data": "cyborg-sol62-high-20261118.json",
+      "model": "showcase/explore-cyborg-sol62-high-20261118/model-02.glb",
+      "sha256": "a4be20f145ec88769333053c93352e450fc096db9a287d1314215ce6419422ae",
+      "glb_sha256": "13ebd79ae658db93f0c92b01115ef498923aff4cc685dee6f16d49dbe09e4c26"
+    },
+    "cyborg-astra62-high-video-v1": {
+      "data": "cyborg-astra62-video.json",
+      "model": "showcase/explore-cyborg-astra62-high-video-20261118/model-01.glb",
+      "sha256": "ab635037dd36dd4a34bfde7b05e9ed22766702bf67d71daa987a86fcd24a2574",
+      "glb_sha256": "ae8ce02b536be74184ec0e81a28c9bcaecf90057d2b13af9ff9f7da2c158f9e1"
     }
   }
 }

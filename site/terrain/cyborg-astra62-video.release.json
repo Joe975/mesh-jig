@@ -1,0 +1,8 @@
+{
+  "format": "mesh-jig terrain release",
+  "version": 1,
+  "files": {
+    "cyborg-astra62-video.json": "ab635037dd36dd4a34bfde7b05e9ed22766702bf67d71daa987a86fcd24a2574"
+  },
+  "glb_sha256": "ae8ce02b536be74184ec0e81a28c9bcaecf90057d2b13af9ff9f7da2c158f9e1"
+}

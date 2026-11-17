@@ -1,0 +1,8 @@
+{
+  "format": "mesh-jig terrain release",
+  "version": 1,
+  "files": {
+    "cyborg-sol62-high-20261118.json": "a4be20f145ec88769333053c93352e450fc096db9a287d1314215ce6419422ae"
+  },
+  "glb_sha256": "13ebd79ae658db93f0c92b01115ef498923aff4cc685dee6f16d49dbe09e4c26"
+}

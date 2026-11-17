@@ -1,0 +1,35 @@
+{
+  "completed": null,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "GPT-6.2 Sol high",
+  "notes": [
+    "The selected static model scored 0.5010. Measured resemblance was 0.353 against the 0.40 gate. The numeric leader scored 0.5057.",
+    "Sprint and Leap passed the native rig contract. The leap travels 0.90 m forward.",
+    "Experimental terrain shows the second game proposal. Sprint slip reached 0.361 m/s with IK off and 0.372 m/s on flat ground and the cross-slope against the 0.35 m/s limit. The obstacle stress scene also shows penetration and abrupt joint motion.",
+    "Codex subscription usage and cost are unavailable."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 1,
+    "numeric_score": 0.501
+  },
+  "schema_version": 1,
+  "scope": "Fresh v8 reference trial. Five submitted static evaluations, three of three native rig builds held the contract, and three game proposals.",
+  "title": "Six-limbed horror \u00b7 GPT-6.2 Sol high"
+}
