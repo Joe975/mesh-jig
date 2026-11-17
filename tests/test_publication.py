@@ -73,6 +73,16 @@ def test_private_email_and_home_directory_block(tmp_path):
     assert any("email" in f for f in failures) and any("home directory" in f for f in failures)
 
 
+def test_github_bot_committer_with_private_author_still_blocks(tmp_path):
+    root = repo(tmp_path)
+    git(root, '-c', 'user.name=GitHub', '-c', 'user.email=noreply@github.com', 'commit',
+        '--allow-empty', '--author=Test <test@users.noreply.github.com>', '-qm', 'public author')
+    assert guard.audit(root, ['HEAD']) == []
+    git(root, '-c', 'user.name=GitHub', '-c', 'user.email=noreply@github.com', 'commit',
+        '--allow-empty', '--author=Test <private@example.com>', '-qm', 'private author')
+    assert any('email' in f for f in guard.audit(root, ['HEAD']))
+
+
 def test_reviewed_merge_exception_is_exact_and_keeps_content_checks(tmp_path, monkeypatch):
     root = repo(tmp_path)
     (root / 'safe.py').write_text(repr('C:' + '/Users/' + 'test/private'))
