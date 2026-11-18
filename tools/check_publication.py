@@ -35,6 +35,7 @@ REVIEWED_PUBLIC_MERGES = frozenset({
     '14b832cc9811c97cf8e15b08dbba50ea8c42d97b',
     'f5f049c1fa34161ed99459fc8c28517a8c859e66',
     '340cd91a4cf0b97c813d6d04fa036cd05f4edf0e',
+    'f39d1c2101e5d7f81ac2891de4daf8cffb1c4eca',
 })
 spec = importlib.util.spec_from_file_location("showcase_curator", ROOT / "skill/mesh-jig-publish-results/scripts/curate.py")
 curator = importlib.util.module_from_spec(spec)
