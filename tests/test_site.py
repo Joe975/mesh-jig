@@ -102,6 +102,7 @@ def test_swordsman_preserves_selected_clips_and_unknown_static_score():
     page = PAGE.read_text(encoding='utf-8')
     section = page.split('<section id="anime-swordsman">', 1)[1].split('</section>', 1)[0]
     picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section).group(1)))
+    picks = [pick for pick in picks if pick['src'].startswith('showcase/explore-anime-swordsman-astra-high-20261116/')]
     assert len(picks) == 2
     assert picks[0]['score'] is None and picks[0]['best'] is None
     assert picks[0]['facts']['triangles'] == 23592
@@ -395,3 +396,35 @@ def test_sol62_gunship_retains_native_mechanics_and_effect_clips():
     assert new['facts']['stages']['model']['triangle_limit'] == 60000
     assert set(new['facts']['stages']['clips']) == expected
     assert isinstance(new['facts']['stages']['rig']['passed'], bool)
+
+
+def test_sol62_swordsman_preserves_native_clips_downloads_and_approved_reference_bindings():
+    import html
+    import json
+    import struct
+    section = PAGE.read_text(encoding='utf-8').split('<section id="anime-swordsman"', 1)[1].split('</section>', 1)[0]
+    picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section)[1]))
+    new = next(p for p in picks if p['model'] == 'GPT-6.2 Sol high, Codex')
+    assert new['effort'] == 'high' and new['builds'] == 5
+    assert new['clipLabels'] == ['guard', 'overhead_chop', 'horizontal_slash', 'guard_talk', 'slash_yell_gaze']
+    assert set(new['motionRefs']) == {'overhead_chop', 'horizontal_slash', 'slash_yell_gaze'}
+    assert new['motionRefs']['horizontal_slash'] == new['motionRefs']['slash_yell_gaze']
+    for name, expected in [('GPT-6 Astra high · sword attacks', {'overhead_chop', 'horizontal_slash'}), ('GPT-6 Astra high · facial composition', {'slash_yell_gaze'})]:
+        old = next(p for p in picks if p['model'] == name)
+        assert set(old['motionRefs']) == expected
+        assert all(old['motionRefs'][key] == new['motionRefs'][key] for key in expected)
+    for number, count in [(1, 5), (2, 12), (3, 13), (4, 0)]:
+        path = f'showcase/explore-anime-swordsman-sol62-high-20261118/model-{number:02d}.glb'
+        assert path in PUBLIC and f'href="{path}"' in section
+        raw = (ROOT / path).read_bytes()
+        size = struct.unpack_from('<I', raw, 12)[0]
+        doc = json.loads(raw[20:20+size])
+        assert len(doc.get('animations', [])) == count
+        if number == 1:
+            assert [a['name'] for a in doc['animations']] == new['clipLabels']
+        if number == 3:
+            assert {'idle', 'walk', 'run', 'jump', 'look_at', 'talk', 'smile', 'anger', 'sadness', 'confusion', 'yell'} <= {a['name'] for a in doc['animations']}
+    assert 'missed colour placement, resemblance and vest colour gates' in new['warning']
+    page = PAGE.read_text(encoding='utf-8')
+    assert 'activeClipLabel(a.availableAnimations,main.current.clipLabels' in page
+    assert 'activeClipLabel(b.availableAnimations,other.current.clipLabels' in page

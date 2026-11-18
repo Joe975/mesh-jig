@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {AnimationCycle,defaultAnimation} from '../site/animation-cycle.js';
+import {AnimationCycle,defaultAnimation,activeClipLabel} from '../site/animation-cycle.js';
 import {Runtime} from '../site/terrain/runtime.js';
 import {Ground} from '../site/terrain/ground.js';
 import {Matrix4} from '../site/terrain/vendor/three.core.js';
@@ -10,6 +10,13 @@ import {createHash} from 'node:crypto';
 import {Locomotion,landingTime} from '../site/terrain/locomotion.js';
 import {readTerrainLink,writeTerrainLink,playbackSpeed} from '../site/viewer-link.js';
 const data=()=>JSON.parse(fs.readFileSync(new URL('../site/terrain/horror.json',import.meta.url)));
+
+test('comparison resolves native animation names through public labels without confusing All clips',()=>{
+  assert.equal(activeClipLabel(['animation_0','animation_1'],['guard','overhead_chop'],'animation_1'),'overhead_chop');
+  assert.equal(activeClipLabel(['guard','overhead_chop'],null,'overhead_chop'),'overhead_chop');
+  assert.notEqual(activeClipLabel(['animation_0','animation_1'],['walk','run'],'animation_0'),activeClipLabel(['walk','run'],null,'run'));
+  assert.equal(activeClipLabel(['idle'],['rest'],'missing'),'missing');
+});
 
 test('default animation prefers run, then sprint, then a single available clip',()=>{
   assert.equal(defaultAnimation(['idle','walk','run','jump']),'run');
