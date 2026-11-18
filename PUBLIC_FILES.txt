@@ -456,6 +456,16 @@ showcase/explore-horse-opus-high-gallop-20261115/image-01.png
 showcase/explore-horse-opus-high-gallop-20261115/model-01.glb
 showcase/explore-horse-opus-high-gallop-20261115/release.json
 showcase/explore-horse-opus-high-gallop-20261115/summary.json
+showcase/explore-horse-qwen38-local-high-20261118/README.md
+showcase/explore-horse-qwen38-local-high-20261118/image-01.png
+showcase/explore-horse-qwen38-local-high-20261118/image-02.png
+showcase/explore-horse-qwen38-local-high-20261118/image-03.png
+showcase/explore-horse-qwen38-local-high-20261118/image-04.png
+showcase/explore-horse-qwen38-local-high-20261118/image-05.png
+showcase/explore-horse-qwen38-local-high-20261118/model-01.glb
+showcase/explore-horse-qwen38-local-high-20261118/model-02.glb
+showcase/explore-horse-qwen38-local-high-20261118/release.json
+showcase/explore-horse-qwen38-local-high-20261118/summary.json
 showcase/explore-horse-sol62-high-20261118/README.md
 showcase/explore-horse-sol62-high-20261118/image-01.png
 showcase/explore-horse-sol62-high-20261118/model-01.glb
