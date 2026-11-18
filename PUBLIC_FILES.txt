@@ -92,6 +92,18 @@ showcase/explore-anime-swordsman-astra-high-20261116/model-02.glb
 showcase/explore-anime-swordsman-astra-high-20261116/model-03.glb
 showcase/explore-anime-swordsman-astra-high-20261116/release.json
 showcase/explore-anime-swordsman-astra-high-20261116/summary.json
+showcase/explore-anime-swordsman-qwen38-local-high-20261119/README.md
+showcase/explore-anime-swordsman-qwen38-local-high-20261119/image-01.png
+showcase/explore-anime-swordsman-qwen38-local-high-20261119/image-02.png
+showcase/explore-anime-swordsman-qwen38-local-high-20261119/image-03.png
+showcase/explore-anime-swordsman-qwen38-local-high-20261119/image-04.png
+showcase/explore-anime-swordsman-qwen38-local-high-20261119/image-05.png
+showcase/explore-anime-swordsman-qwen38-local-high-20261119/image-06.png
+showcase/explore-anime-swordsman-qwen38-local-high-20261119/image-07.png
+showcase/explore-anime-swordsman-qwen38-local-high-20261119/model-01.glb
+showcase/explore-anime-swordsman-qwen38-local-high-20261119/model-02.glb
+showcase/explore-anime-swordsman-qwen38-local-high-20261119/release.json
+showcase/explore-anime-swordsman-qwen38-local-high-20261119/summary.json
 showcase/explore-anime-swordsman-sol62-high-20261118/README.md
 showcase/explore-anime-swordsman-sol62-high-20261118/image-01.png
 showcase/explore-anime-swordsman-sol62-high-20261118/image-02.png
@@ -955,6 +967,8 @@ site/terrain/horse.release.json
 site/terrain/locomotion.js
 site/terrain/runtime.js
 site/terrain/sky.js
+site/terrain/swordsman-qwen38.json
+site/terrain/swordsman-qwen38.release.json
 site/terrain/vendor/LICENSE
 site/terrain/vendor/addons/controls/OrbitControls.js
 site/terrain/vendor/addons/loaders/GLTFLoader.js

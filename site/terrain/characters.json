@@ -78,6 +78,12 @@
       "model": "showcase/explore-cyborg-astra62-high-video-20261118/model-01.glb",
       "sha256": "ab635037dd36dd4a34bfde7b05e9ed22766702bf67d71daa987a86fcd24a2574",
       "glb_sha256": "ae8ce02b536be74184ec0e81a28c9bcaecf90057d2b13af9ff9f7da2c158f9e1"
+    },
+    "swordsman-qwen38-high-v1": {
+      "data": "swordsman-qwen38.json",
+      "model": "showcase/explore-anime-swordsman-qwen38-local-high-20261119/model-01.glb",
+      "sha256": "8c652b7a67c0777dc6f93a0dd49485169b3493b1c5db5b34b5e54b9762d6c3e2",
+      "glb_sha256": "97aeef437288652d28dc837588263d8b6bf456c6a4d60f14f9472211805d9d51"
     }
   }
 }
