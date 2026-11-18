@@ -4,7 +4,7 @@ from PIL import Image
 import pytest
 
 from glbkit import textured_glb
-from mesh_jig import cli, glb, material_review, rig, sheet
+from mesh_jig import cli, glb, material_review, readiness, rig, sheet
 
 
 def decision(channels, **fields):
@@ -28,6 +28,9 @@ def test_new_contract_requires_decision_at_surface_stage(tmp_path):
     out = tmp_path / "finished.glb"
     assert cli.main(args + ["--out", str(out)]) == 0
     assert cli.main(["materials", str(tmp_path), str(out)]) == 0
+    cost = readiness.measure(out)["cost"]
+    assert cost["used_materials"] == 1
+    assert cost["materials"] == 2
 
 
 def test_apply_checks_bound_images_uvs_and_preserves_geometry(tmp_path):

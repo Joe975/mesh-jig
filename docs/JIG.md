@@ -503,4 +503,6 @@ against the same base. Record which differences are visible at delivery scale.
 
 Run `mesh-jig ready PROJECT FINISHED.glb --json` for the delivered file's cost
 and target checks. Pass the same `--target` if the run used a one-off platform.
+Under `cost`, `materials` counts all material definitions in the file and
+`used_materials` counts those assigned to triangle primitives in the active scene.
 The selected attempt's saved score and costs describe its pre-finish export.

@@ -61,6 +61,7 @@ def read(path: str | Path) -> dict:
     no partial reading is returned. Missing UVs keep their NaN sentinel."""
     gltf, blob = glb.read_glb(path)
     tris, ids, uvs, nodes, offset, prims = [], [], [], [], 0, 0
+    used_materials = set()
     for ni, world in glb.mesh_nodes(gltf):
         node = gltf["nodes"][ni]
         mesh = gltf["meshes"][node["mesh"]]
@@ -68,6 +69,8 @@ def read(path: str | Path) -> dict:
         for pi, prim in enumerate(mesh.get("primitives", [])):
             if prim.get("mode", 4) != 4:
                 continue
+            if "material" in prim:
+                used_materials.add(prim["material"])
             pos = glb.accessor(gltf, blob, prim["attributes"]["POSITION"]).astype(np.float64)
             if not np.isfinite(pos).all():
                 raise ValueError(f"{Path(path).name}: node {ni} ({row['name']}), primitive {pi}: "
@@ -93,6 +96,7 @@ def read(path: str | Path) -> dict:
     stack = lambda parts, shape: np.concatenate(parts) if parts else np.zeros(shape)
     return {"tris": stack(tris, (0, 3, 3)), "ids": stack(ids, (0, 3)).astype(np.int64), "uvs": stack(uvs, (0, 3, 2)),
             "nodes": nodes, "vertices": offset, "primitives": prims, "materials": len(gltf.get("materials") or []),
+            "used_materials": len(used_materials),
             "image_sizes": image_sizes(gltf, blob), "images": len(gltf.get("images") or []), "skins": len(gltf.get("skins") or []),
             "animations": len(gltf.get("animations") or []), "bytes": Path(path).stat().st_size}
 
@@ -338,6 +342,7 @@ def measure(path: str | Path, spec: dict | None = None, target: dict | None = No
         "cost": {"triangles": int(len(tris)), "vertices": int(mesh["vertices"]),
                  "positions": int(len(np.unique(weld))), "mesh_nodes": len(mesh["nodes"]),
                  "primitives": mesh["primitives"], "materials": mesh["materials"], "images": mesh["images"],
+                 "used_materials": mesh["used_materials"],
                  "bytes": mesh["bytes"], "image_sizes": mesh["image_sizes"]},
         "nodes": sorted(mesh["nodes"], key=lambda n: (-n["triangles"], n["name"])),
         "surface": {"pieces": int(len(by_piece)), "pieces_90": min(most, int(len(by_piece))),
@@ -403,6 +408,8 @@ def lines(reading: dict) -> list[str]:
     out.append(f"  cost: {cost['triangles']} triangles, {cost['vertices']} vertices ({cost['positions']} positions), "
                f"{cost['mesh_nodes']} mesh nodes, {cost['primitives']} primitives, {cost['materials']} materials, "
                f"{cost['bytes'] / 1024:.0f} KiB")
+    if "used_materials" in cost and cost["used_materials"] != cost["materials"]:
+        out.append(f"  active triangle primitives use {cost['used_materials']} of the declared materials")
     if cost.get("image_sizes"):
         sizes = ["unknown" if size is None else f"{size[0]} x {size[1]}" for size in cost["image_sizes"]]
         out.append("  texture dimensions (px): " + ", ".join(sizes))
