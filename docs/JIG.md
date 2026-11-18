@@ -495,6 +495,9 @@ Mapped surfaces need UVs. Available channels are roughness, roughness_map,
 normal_map, occlusion_map, emission and emission_map. Optional `emission_rgb`
 sets the linear emissive colour.
 
+The standard scored renders show base colour under diffuse lighting. To see
+roughness, normal maps, occlusion and emission, open both exports in a glTF
+material renderer, such as the target engine or Blender after glTF import.
 Compare the selected base and finished GLBs at the intended viewing distance
 with the same camera, pose, lights and exposure. For subtle relief, also inspect
 a close-up with an angled light. For emission, compare the same dim view. When
