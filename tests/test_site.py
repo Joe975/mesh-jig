@@ -313,3 +313,36 @@ def test_sol62_comparisons_keep_prior_models_and_matching_native_clips():
         assert new['clipLabels'] == clips(new['src'])
         assert old['animated'] and set(new['clipLabels']) == set(clips(old_src))
         assert new['facts']['stages']['rig']['passed']
+
+
+def test_head62_comparisons_preserve_prior_choices_and_eight_native_clips():
+    import html
+    import json
+    import struct
+    page = PAGE.read_text(encoding='utf-8')
+    section = page.split('<section id="huge-head"', 1)[1].split('</section>', 1)[0]
+    picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section).group(1)))
+    old = {
+        'showcase/explore-huge-head-animated-astra-high-20261115/model-01.glb',
+        'showcase/explore-huge-head-hydrogen-high-20261114/model-01.glb',
+        'showcase/explore-huge-head-fable-high-20261114/model-01.glb',
+    }
+    assert old <= {p['src'] for p in picks}
+    names = ['idle', 'walk', 'run', 'jump', 'bite', 'grin', 'yell', 'look']
+    for family in ('Sol', 'Astra'):
+        new = next(p for p in picks if p['model'] == f'GPT-6.2 {family} high, Codex')
+        assert new['provider'] == 'OpenAI' and new['effort'] == 'high' and new['animated']
+        assert new['builds'] == 5
+        assert new['src'].startswith(f'showcase/explore-huge-head-{family.lower()}62-high-20261118/')
+        assert new['src'] in PUBLIC
+        assert f'href="{new["src"]}"' in section
+        raw = (ROOT / new['src']).read_bytes()
+        size = struct.unpack_from('<I', raw, 12)[0]
+        native = [a['name'] for a in json.loads(raw[20:20+size]).get('animations', [])]
+        assert native == new['clipLabels']
+        assert len(native) == len(names) and set(native) == set(names)
+        stages = new['facts']['stages']
+        assert stages['model']['triangle_limit'] == 60000
+        assert set(stages['clips']) == set(names)
+        # Structural failure remains publishable evidence, never inferred away by animation presence.
+        assert isinstance(stages['rig']['passed'], bool)

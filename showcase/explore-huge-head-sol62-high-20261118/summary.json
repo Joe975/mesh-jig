@@ -1,0 +1,36 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex desktop, native subscription",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "GPT-6.2 Sol",
+  "notes": [
+    "The selected, highest-scoring and latest sculpt was a05. It has 57,972 triangles, a script-painted 2048 px atlas and three passing static gates.",
+    "The first rig exceeded the run edge-stretch gate. The selected fourth submission delivers idle, walk, run, jump, bite, grin, yell and look with 29 bones. It holds the native rig contract and the same sampled limits between keys.",
+    "The chin retains a wedge-shaped profile and the folds are simplified. A crescent of sclera remains in profile during blink. Bite leaves uneven tooth gaps and grin has limited cheek lift. Walk and run play in place.",
+    "Model 01 is animated and Model 02 is static. Image 01 shows the static hero. Images 02 to 09 show timed poses from the exported rig. Both GLBs carry the same painted atlas.",
+    "The model run used a native Codex subscription. Evaluation ran locally. Model runtime, token usage and billed cost are unavailable. Visual motion review and sampled deformation checks accompany the static score."
+  ],
+  "result": {
+    "gates_passed": 3,
+    "gates_total": 3,
+    "numeric_score": 0.6909
+  },
+  "schema_version": 1,
+  "scope": "Fresh single run with five completed static evaluations and one triangle-cap refusal. Three passing native rigs from four submissions. The same frozen sheet, painted texture limits and eight motion takes guided the run.",
+  "title": "Huge ugly head by GPT-6.2 Sol high"
+}
