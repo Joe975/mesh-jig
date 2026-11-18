@@ -372,3 +372,26 @@ def test_motion_reference_media_belong_to_selected_models_and_clips():
                         assert list(image.size) == ref['size']
                         if key == 'gif':
                             assert image.is_animated
+
+
+def test_sol62_gunship_retains_native_mechanics_and_effect_clips():
+    import html
+    import json
+    import struct
+    section = PAGE.read_text(encoding='utf-8').split('<section id="cannon-gunship"', 1)[1].split('</section>', 1)[0]
+    picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section)[1]))
+    paths = {pick['src'] for pick in picks}
+    assert 'showcase/explore-cannon-gunship-astra-high-20261113/model-01.glb' in paths
+    assert 'showcase/explore-cannon-gunship-hydrogen-high-20261115/model-01.glb' in paths
+    new = next(pick for pick in picks if pick['src'].startswith('showcase/explore-cannon-gunship-sol62-high-20261118/'))
+    assert new['provider'] == 'OpenAI' and new['effort'] == 'high' and new['animated']
+    assert new['builds'] == 5 and new['src'] in PUBLIC
+    assert f'href="{new["src"]}"' in section
+    raw = (ROOT / new['src']).read_bytes()
+    size = struct.unpack_from('<I', raw, 12)[0]
+    native = [animation['name'] for animation in json.loads(raw[20:20 + size]).get('animations', [])]
+    expected = {'idle', 'bank_turn', 'aim', 'fire', 'burst', 'thrust', 'shutdown'}
+    assert len(native) == 7 and set(native) == expected and native == new['clipLabels']
+    assert new['facts']['stages']['model']['triangle_limit'] == 60000
+    assert set(new['facts']['stages']['clips']) == expected
+    assert isinstance(new['facts']['stages']['rig']['passed'], bool)
