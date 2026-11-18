@@ -1,0 +1,8 @@
+{
+  "format": "mesh-jig terrain release",
+  "version": 1,
+  "files": {
+    "swordsman-qwen38.json": "8c652b7a67c0777dc6f93a0dd49485169b3493b1c5db5b34b5e54b9762d6c3e2"
+  },
+  "glb_sha256": "97aeef437288652d28dc837588263d8b6bf456c6a4d60f14f9472211805d9d51"
+}

@@ -1,0 +1,35 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex native subscription",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "GPT-6.2 Sol",
+  "notes": [
+    "Selected fifth model, 0.6707 and three of three static gates. The selected model has 4,224 triangles and one embedded 1024 \u00d7 1024 painted base-colour atlas.",
+    "Selected rig includes idle, walk, run, jump and an empty-hand attack with the sword sheathed. The gaits loop in place, and the skirt and sword can approach the thighs. Sampled deformation and ground clearance checks pass.",
+    "The eyes and fingertips are angular and small. The right-view mask has a back-facing sliver flagged by the static advisory.",
+    "Inference usage and subscription cost are unavailable. Static evaluations took 95.3 seconds in the evaluation tools, excluding model authoring and visual review."
+  ],
+  "result": {
+    "gates_passed": 3,
+    "gates_total": 3,
+    "numeric_score": 0.6707
+  },
+  "schema_version": 1,
+  "scope": "Five successful static evaluations and three passing native rigs on the same frozen ninja inputs as the earlier Sol high run.",
+  "title": "Ninja, GPT-6.2 Sol high"
+}

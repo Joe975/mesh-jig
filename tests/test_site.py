@@ -102,6 +102,7 @@ def test_swordsman_preserves_selected_clips_and_unknown_static_score():
     page = PAGE.read_text(encoding='utf-8')
     section = page.split('<section id="anime-swordsman">', 1)[1].split('</section>', 1)[0]
     picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section).group(1)))
+    picks = [pick for pick in picks if pick['src'].startswith('showcase/explore-anime-swordsman-astra-high-20261116/')]
     assert len(picks) == 2
     assert picks[0]['score'] is None and picks[0]['best'] is None
     assert picks[0]['facts']['triangles'] == 23592
@@ -127,7 +128,7 @@ def test_terrain_characters_are_lazy_anonymous_and_bound_to_their_public_models(
     registry=json.loads((ROOT/'site/terrain/characters.json').read_text(encoding='utf-8'))
     assert {'horror-v1','horse-astra-v1','horse-fable-v1',
             'cyborg-astra62-high-video-v1','horror-astra62-high-v1'} <= set(registry['characters'])
-    expected_legs = {'cyborg': 2, 'horse': 4, 'horror': 6}
+    expected_legs = {'cyborg': 2, 'horse': 4, 'horror': 6, 'swordsman': 2}
     for key, row in registry['characters'].items():
         raw=(ROOT/'site/terrain'/row['data']).read_bytes();data=json.loads(raw)
         assert data['version']==2
@@ -283,3 +284,169 @@ def test_original_astra62_cyborg_is_withdrawn_and_video_version_remains():
     assert not (ROOT / 'site/terrain/cyborg-astra62.release.json').exists()
     assert 'subject=cyborg&amp;model=gpt-6-2-astra-high-codex#cyborg' not in page
     assert 'was withdrawn from the live gallery' in (ROOT / video / 'README.md').read_text()
+
+
+def test_sol62_comparisons_keep_prior_models_and_matching_native_clips():
+    import html
+    import json
+    import struct
+    page = PAGE.read_text(encoding='utf-8')
+    cases = {
+        'ninja': 'showcase/explore-ninja-sol-high-20261112/model-01.glb',
+        'mech': 'showcase/explore-mech-sol-high-20261111/model-01.glb',
+        'caterpillar': 'showcase/explore-caterpillar/model-06.glb',
+        'sky-whale': 'showcase/explore-sky-whale/model-06.glb',
+        'horse': 'showcase/explore-horse-openai-20261112/model-02.glb',
+        'octopus': 'showcase/explore-octopus-sol-high-20261114/model-01.glb',
+        'cat': 'showcase/explore-cat-sol-high-20261112/model-01.glb',
+    }
+    for subject, old_src in cases.items():
+        section = page.split(f'<section id="{subject}"', 1)[1].split('</section>', 1)[0]
+        picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section).group(1)))
+        old = next(p for p in picks if p['src'] == old_src)
+        new = next(p for p in picks if p['src'].startswith(f'showcase/explore-{subject}-sol62-high-20261118/'))
+        assert new['effort'] == 'high' and new['provider'] == 'OpenAI'
+        assert new['model'].startswith('GPT-6.2 Sol high, Codex')
+        def clips(src):
+            raw = (ROOT / src).read_bytes()
+            size = struct.unpack_from('<I', raw, 12)[0]
+            return [a['name'] for a in json.loads(raw[20:20+size]).get('animations', [])]
+        assert new['clipLabels'] == clips(new['src'])
+        assert old['animated'] and set(new['clipLabels']) == set(clips(old_src))
+        assert new['facts']['stages']['rig']['passed']
+
+
+def test_head62_comparisons_preserve_prior_choices_and_eight_native_clips():
+    import html
+    import json
+    import struct
+    page = PAGE.read_text(encoding='utf-8')
+    section = page.split('<section id="huge-head"', 1)[1].split('</section>', 1)[0]
+    picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section).group(1)))
+    old = {
+        'showcase/explore-huge-head-animated-astra-high-20261115/model-01.glb',
+        'showcase/explore-huge-head-hydrogen-high-20261114/model-01.glb',
+        'showcase/explore-huge-head-fable-high-20261114/model-01.glb',
+    }
+    assert old <= {p['src'] for p in picks}
+    names = ['idle', 'walk', 'run', 'jump', 'bite', 'grin', 'yell', 'look']
+    for family in ('Sol', 'Astra'):
+        new = next(p for p in picks if p['model'] == f'GPT-6.2 {family} high, Codex')
+        assert new['provider'] == 'OpenAI' and new['effort'] == 'high' and new['animated']
+        assert new['builds'] == 5
+        assert new['src'].startswith(f'showcase/explore-huge-head-{family.lower()}62-high-20261118/')
+        assert new['src'] in PUBLIC
+        assert f'href="{new["src"]}"' in section
+        raw = (ROOT / new['src']).read_bytes()
+        size = struct.unpack_from('<I', raw, 12)[0]
+        native = [a['name'] for a in json.loads(raw[20:20+size]).get('animations', [])]
+        assert native == new['clipLabels']
+        assert len(native) == len(names) and set(native) == set(names)
+        stages = new['facts']['stages']
+        assert stages['model']['triangle_limit'] == 60000
+        assert set(stages['clips']) == set(names)
+        # Structural failure remains publishable evidence, never inferred away by animation presence.
+        assert isinstance(stages['rig']['passed'], bool)
+
+
+def test_motion_reference_media_belong_to_selected_models_and_clips():
+    import html
+    import json
+    from PIL import Image
+    page = PAGE.read_text(encoding='utf-8')
+    for section in page.split('<section id="')[1:]:
+        subject = section.split('"', 1)[0]
+        data = re.search(r'data-explore="([^"]+)"', section)
+        if not data:
+            continue
+        picks = json.loads(html.unescape(data[1]))
+        for pick in picks:
+            refs = pick.get('motionRefs', {})
+            if refs:
+                assert pick['animated']
+            for clip, ref in refs.items():
+                if pick.get('clipLabels'):
+                    assert clip in pick['clipLabels']
+                for key in ('gif', 'poster'):
+                    assert ref[key] in PUBLIC
+                    with Image.open(ROOT / ref[key]) as image:
+                        assert list(image.size) == ref['size']
+                        if key == 'gif':
+                            assert image.is_animated
+
+
+def test_sol62_gunship_retains_native_mechanics_and_effect_clips():
+    import html
+    import json
+    import struct
+    section = PAGE.read_text(encoding='utf-8').split('<section id="cannon-gunship"', 1)[1].split('</section>', 1)[0]
+    picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section)[1]))
+    paths = {pick['src'] for pick in picks}
+    assert 'showcase/explore-cannon-gunship-astra-high-20261113/model-01.glb' in paths
+    assert 'showcase/explore-cannon-gunship-hydrogen-high-20261115/model-01.glb' in paths
+    new = next(pick for pick in picks if pick['src'].startswith('showcase/explore-cannon-gunship-sol62-high-20261118/'))
+    assert new['provider'] == 'OpenAI' and new['effort'] == 'high' and new['animated']
+    assert new['builds'] == 5 and new['src'] in PUBLIC
+    assert f'href="{new["src"]}"' in section
+    raw = (ROOT / new['src']).read_bytes()
+    size = struct.unpack_from('<I', raw, 12)[0]
+    native = [animation['name'] for animation in json.loads(raw[20:20 + size]).get('animations', [])]
+    expected = {'idle', 'bank_turn', 'aim', 'fire', 'burst', 'thrust', 'shutdown'}
+    assert len(native) == 7 and set(native) == expected and native == new['clipLabels']
+    assert new['facts']['stages']['model']['triangle_limit'] == 60000
+    assert set(new['facts']['stages']['clips']) == expected
+    assert isinstance(new['facts']['stages']['rig']['passed'], bool)
+
+
+def test_sol62_swordsman_preserves_native_clips_downloads_and_approved_reference_bindings():
+    import html
+    import json
+    import struct
+    section = PAGE.read_text(encoding='utf-8').split('<section id="anime-swordsman"', 1)[1].split('</section>', 1)[0]
+    picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section)[1]))
+    new = next(p for p in picks if p['model'] == 'GPT-6.2 Sol high, Codex')
+    assert new['effort'] == 'high' and new['builds'] == 5
+    assert new['clipLabels'] == ['guard', 'overhead_chop', 'horizontal_slash', 'guard_talk', 'slash_yell_gaze']
+    assert set(new['motionRefs']) == {'overhead_chop', 'horizontal_slash', 'slash_yell_gaze'}
+    assert new['motionRefs']['horizontal_slash'] == new['motionRefs']['slash_yell_gaze']
+    for name, expected in [('GPT-6 Astra high · sword attacks', {'overhead_chop', 'horizontal_slash'}), ('GPT-6 Astra high · facial composition', {'slash_yell_gaze'})]:
+        old = next(p for p in picks if p['model'] == name)
+        assert set(old['motionRefs']) == expected
+        assert all(old['motionRefs'][key] == new['motionRefs'][key] for key in expected)
+    for number, count in [(1, 5), (2, 12), (3, 13), (4, 0)]:
+        path = f'showcase/explore-anime-swordsman-sol62-high-20261118/model-{number:02d}.glb'
+        assert path in PUBLIC and f'href="{path}"' in section
+        raw = (ROOT / path).read_bytes()
+        size = struct.unpack_from('<I', raw, 12)[0]
+        doc = json.loads(raw[20:20+size])
+        assert len(doc.get('animations', [])) == count
+        if number == 1:
+            assert [a['name'] for a in doc['animations']] == new['clipLabels']
+        if number == 3:
+            assert {'idle', 'walk', 'run', 'jump', 'look_at', 'talk', 'smile', 'anger', 'sadness', 'confusion', 'yell'} <= {a['name'] for a in doc['animations']}
+    assert 'missed colour placement, resemblance and vest colour gates' in new['warning']
+    page = PAGE.read_text(encoding='utf-8')
+    assert 'activeClipLabel(a.availableAnimations,main.current.clipLabels' in page
+    assert 'activeClipLabel(b.availableAnimations,other.current.clipLabels' in page
+
+
+def test_local_qwen_swordsman_keeps_native_clips_and_failed_ik_visible():
+    import html,json
+    from html.parser import HTMLParser
+    class Picks(HTMLParser):
+        choices=[]
+        def handle_starttag(self,tag,attrs):
+            attrs=dict(attrs)
+            if 'data-explore' in attrs:self.choices.extend(json.loads(attrs['data-explore']))
+    parser=Picks();parser.feed(PAGE.read_text(encoding='utf-8'))
+    pick=next(p for p in parser.choices if 'anime-swordsman-qwen38' in p['src'])
+    assert pick['clipLabels']==['idle','walk','run','jump']
+    assert pick['facts']['stages']['rig']['passing_candidates']==3
+    assert pick['facts']['stages']['rig']['submissions']==5
+    assert pick['terrain']=='swordsman-qwen38-high-v1'
+    assert 'game qualification failed' in pick['warning'] and '0.353845' in pick['warning']
+    assert '238 mm' in pick['warning'] and 'No accepted game-ready package' in pick['warning']
+    assert 'motionRefs' not in pick
+    summary=json.loads((ROOT/'showcase/explore-anime-swordsman-qwen38-local-high-20261119/summary.json').read_text())
+    assert summary['completed'] is False
+    assert summary['metrics']['model_calls']==97 and summary['cost']['amount_usd']==0

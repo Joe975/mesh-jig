@@ -1,0 +1,36 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex subscription session",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": 1530.2
+  },
+  "model": "GPT-6.2 Sol",
+  "notes": [
+    "The fifth static candidate is the visual choice, numeric best and latest at 0.7694. One earlier source script failed before evaluation. The third animation is the visual choice. All three held the same mechanical contract, which has gates without a numeric rank.",
+    "The animated file includes 8,364 active triangles. A 120 Hz check verified muzzle and nozzle attachment, rigid rail motion, 39.3 cm recoil and shutdown effects effectively hidden by 2.35 seconds. The 14.4 cm barrel to canopy envelope clearance covers sampled cross-sections and poses.",
+    "Seven pose strips use a CPU renderer with flat effect materials. The live and static variants have the same original mesh and 1024 px painted atlas. The effects are baked glTF node animation. Polygon edges and faint sparks remain visible limitations at delivery scale.",
+    "Top, underside, front and rear are scored. The side concept is 11.63 percent shallow. The build retains flatter wing relief and partly obstructed vent recesses. No approved motion clip is mapped to this subject.",
+    "Wall time covers the fresh run through model, motion and sanitizer checks. Provider tokens, usage and subscription cost are unavailable."
+  ],
+  "result": {
+    "gates_passed": 1,
+    "gates_total": 1,
+    "numeric_score": 0.7694
+  },
+  "schema_version": 1,
+  "scope": "Fresh build with five evaluated static candidates, three complete rigid and baked-effect variants, and seven native clips.",
+  "title": "Cannon gunship by GPT-6.2 Sol high"
+}

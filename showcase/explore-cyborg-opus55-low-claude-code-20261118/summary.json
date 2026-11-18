@@ -1,0 +1,36 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": 19.3178042,
+    "kind": "estimated"
+  },
+  "driver": "Claude Code subscription CLI",
+  "effort": "low",
+  "metrics": {
+    "cache_write_tokens": 1437775,
+    "cached_prompt_tokens": 29887406,
+    "completion_tokens": 197173,
+    "driver_turns": 151,
+    "evaluations": 7,
+    "model_calls": null,
+    "prompt_tokens": 31325565,
+    "reasoning_tokens": 45168,
+    "runtime_seconds": 3030.8
+  },
+  "model": "claude-opus-5-5",
+  "notes": [
+    "Seven logged evaluations include two accidental copies of a04 (five distinct models). Rigid parts: every piece rides one bone, so stretch stays at zero but knee and shoulder pieces interpenetrate at deep bends. The game package passes only with trial limits: run skate 0.097 m/s and walk\u2013run blend slip 0.457 m/s against 0.05 and 0.1. The 1-in-10 slope walk fails contact gap 3.5 mm (limit 3), penetration 9.7 mm (3) and support 0.61 (0.95) in the reference runtime and Godot.",
+    "Offline game checks only.",
+    "Selected static score 0.5529; numeric best 0.5770. First GLB is the delivered animated rig; second is the selected static model.",
+    "Cost is Claude Code's own list-price estimate for the whole session, US$19.32; the run used a Max subscription, so it is not an invoice. Runtime is active process time; usage-limit pause excluded.",
+    "Geometry, weights and clips are unchanged; no gates relaxed by the publisher. Motion reference videos stay private."
+  ],
+  "result": {
+    "gates_passed": 2,
+    "gates_total": 2,
+    "numeric_score": 0.5529
+  },
+  "schema_version": 1,
+  "scope": "7 completed evaluations; selected a07; 9 rig builds, 9 passing; delivered r09; offline game package.",
+  "title": "Claude Opus 5.5 low: hulking cyborg"
+}

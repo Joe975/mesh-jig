@@ -1,0 +1,34 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex native subscription",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "GPT-6.2 Sol",
+  "notes": [
+    "The fifth model is the visual selection. It and the third model both scored 0.6397 at reported precision. Its 13,408 vertex-colored triangles include the connected fin roots, notched fluke and tapered markings. The 0.580 resemblance exceeds the 0.500 gate.",
+    "Selected rig includes hover_glide, fin_flap and gentle_turn. The bank leads the heading change and the tail follows through. The loops stay in place. The simplified muzzle, thicker fins and relatively flat fluke remain visible.",
+    "Inference usage and subscription cost are unavailable. Static evaluations took 115.4 seconds in the evaluation tools, excluding authoring and visual review."
+  ],
+  "result": {
+    "gates_passed": 1,
+    "gates_total": 1,
+    "numeric_score": 0.6397
+  },
+  "schema_version": 1,
+  "scope": "Five successful static evaluations and three passing native rig candidates on the same frozen reference and clip inputs as the earlier Sol high run.",
+  "title": "Sky Whale, GPT-6.2 Sol high"
+}

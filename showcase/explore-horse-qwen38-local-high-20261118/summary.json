@@ -1,0 +1,35 @@
+{
+  "completed": false,
+  "cost": {
+    "amount_usd": 0,
+    "kind": "reported"
+  },
+  "driver": "mesh-jig API agent through local llama-server",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": 4524087,
+    "completion_tokens": 1288947,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": 116,
+    "prompt_tokens": 4961956,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "qwen3.8-27b-local",
+  "notes": [
+    "Failed rig: 0 passing candidates from 9 submissions; stopped at the 84-turn cap. Last measured animation a08 is shown unchanged. Idle/walk/run/jump/rear_up edge stretch 2.72x/3.60x/4.49x/12.97x/10.27x versus 2.5x. Run/walk sink 17.0/10.8 mm versus 8 mm. Rear-up stretched area is 4.70% versus 3%. IK was not reached.",
+    "First GLB: unchanged failed animation a08. Second GLB: selected static a05. Visual choice and numeric leader a05 scored 0.7463.",
+    "Local Qwen3.8-27B Q4_K_XL, requested high (template xhigh), 120000 reply-token ceiling. No hosted API charge; electricity/hardware costs not estimated.",
+    "All completed model, selection and rig calls included. No repair, altered gates or unmeasured post-budget draft."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 0,
+    "numeric_score": 0.7463
+  },
+  "schema_version": 1,
+  "scope": "Five reviewed models; visual a05; nine failed rig submissions; 84-turn cap; last measured animation a08; IK not reached.",
+  "title": "Local Qwen3.8 high: horse with failed animations"
+}

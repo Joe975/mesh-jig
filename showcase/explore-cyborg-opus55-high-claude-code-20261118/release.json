@@ -1,0 +1,16 @@
+{
+  "files": {
+    "README.md": "37b9349a82e4baee26c4e4ca788e39630f31569a2648f581364371df58b3fb9e",
+    "image-01.png": "00bc2bcea07322deaac72d07da74b7f586274a3d1672818fdca1627afd6c4a61",
+    "image-02.png": "c6c862a58befc5fa26d0ff1781dd86db3e43eb908ac163a0b2d09154a4497e54",
+    "image-03.png": "c662cf3f6fe720ed34d11da7373d046cd6b97e5dad84babb78369ca67e042491",
+    "image-04.png": "b99147deb89a9811a9e4c1a09926a301f6286391968fb4b5ed649accd44cfb8c",
+    "image-05.png": "9908654dd6cf0087adc54a1bc015529a1ba5c9a3f9199136c7a8dbca556ab973",
+    "image-06.png": "bde2048c633dce69f7e307effd2b90674cb62249a0c99968a49e4c303d9a9849",
+    "image-07.png": "5ed12288520173791b0fadfa91e7d8a5c7eeb5248dc6609faf7c58423eda4dc9",
+    "model-01.glb": "ebb0693b782c211149f3407d1e8bfb868b63c40d275d52dfd8f7c0d94fc0dc11",
+    "model-02.glb": "7aeb5e11a119f2106ba2498eed1b2e8425a52efd8186ea319d1159968c77e4ea",
+    "summary.json": "acd1b174860f19a83046f050e5d0f3318170ae2a79a185063a70d760b1719f6d"
+  },
+  "schema_version": 1
+}

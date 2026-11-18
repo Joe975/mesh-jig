@@ -1,0 +1,35 @@
+{
+  "completed": false,
+  "cost": {
+    "amount_usd": 0,
+    "kind": "reported"
+  },
+  "driver": "mesh-jig API agent through local llama-server",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": 55,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "qwen3.8-27b-local",
+  "notes": [
+    "Static only: rigging produced no script, build or animation. The first rig-writing request timed out after three 30-minute attempts while still thinking (90 minutes total). Zero rig submissions; IK was not reached. Selected a02 retains a rear mouth membrane, weak surface detail and simplified hands/feet.",
+    "Selected static a02 scored 0.6091; numeric leader a05 scored 0.6353. No model repair or altered gates.",
+    "54 completed model/selection calls report 2088232 input, 1803378 cached input and 670887 completion tokens including thinking. Three timed-out rig streams have no final usage; all-stage token totals remain unknown.",
+    "Local Qwen3.8-27B Q4_K_XL; requested high maps to template xhigh; 120000 reply-token ceiling. Hosted API charge zero; electricity/hardware costs unestimated."
+  ],
+  "result": {
+    "gates_passed": 3,
+    "gates_total": 3,
+    "numeric_score": 0.6091
+  },
+  "schema_version": 1,
+  "scope": "Five reviewed static evaluations; visual choice a02; first rig-writing request failed after three 30-minute stream timeouts. No rig submissions, animation or IK.",
+  "title": "Local Qwen3.8 high: static huge head; rigging timed out"
+}
