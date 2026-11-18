@@ -1,0 +1,34 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex native subscription",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "gpt-6.2-sol",
+  "notes": [
+    "The selected 58,114-triangle model scored 0.6934. Three of nineteen checks missed their regional colour thresholds: face, left eye patch and right eye. The green eye still projects from the cheek and the paw digits are simplified.",
+    "Idle, walk, run and jump pass the frozen native rig contract at 30 and 60 Hz sampling. The walk has up to 0.12 m/s of contact slide in the harness diagnostic. The run and jump show localized joint compression. Model-01 is animated and model-02 is the static source.",
+    "The older comparison used a separate blind reviewer for every measured build. This run used separate blind reviews for the last two builds and builder reviews for the first three. The jig ledger measured 1,196.6 seconds of active modeling commands and 24.0 seconds for the rig build. End-to-end wall time, native tokens and subscription cost were unavailable."
+  ],
+  "result": {
+    "gates_passed": 16,
+    "gates_total": 19,
+    "numeric_score": 0.6934
+  },
+  "schema_version": 1,
+  "scope": "Five measured models from six submissions and one passing native rig. The older comparison is labeled GPT-6 Sol high. Its exact Sol version is unverified.",
+  "title": "Pirate cat, GPT-6.2 Sol high"
+}

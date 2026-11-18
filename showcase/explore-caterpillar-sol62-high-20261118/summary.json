@@ -1,0 +1,34 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex native subscription",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "gpt-6.2-sol",
+  "notes": [
+    "The 31,744-triangle selection scored 0.5213. Resemblance was 0.3531 against 0.40 required. The frontal fronds bunch together and some feather surfaces show backface gaps. One earlier build exceeded the triangle cap.",
+    "Idle, crawl and gentle turn hold the numeric rig limits. Sampled poses show staggered crawl, with residual proleg contact gaps and sliding during the turn. Model-01 is animated and model-02 is the static source.",
+    "Some full modeling diagnostics and close-ups were read after the next revision began. The jig command ledger measured 686.7 seconds active at the model stage and 243.5 seconds at the rig stage. Subscription cost, native tokens and end-to-end wall time were unavailable."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 1,
+    "numeric_score": 0.5213
+  },
+  "schema_version": 1,
+  "scope": "Fresh high-effort run on the original Sol 6.1 caterpillar contracts. Five completed model evaluations from six submissions and three passing native rig builds from three submissions.",
+  "title": "Three-eyed caterpillar, GPT-6.2 Sol high"
+}

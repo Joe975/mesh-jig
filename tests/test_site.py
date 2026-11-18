@@ -283,3 +283,33 @@ def test_original_astra62_cyborg_is_withdrawn_and_video_version_remains():
     assert not (ROOT / 'site/terrain/cyborg-astra62.release.json').exists()
     assert 'subject=cyborg&amp;model=gpt-6-2-astra-high-codex#cyborg' not in page
     assert 'was withdrawn from the live gallery' in (ROOT / video / 'README.md').read_text()
+
+
+def test_sol62_comparisons_keep_prior_models_and_matching_native_clips():
+    import html
+    import json
+    import struct
+    page = PAGE.read_text(encoding='utf-8')
+    cases = {
+        'ninja': 'showcase/explore-ninja-sol-high-20261112/model-01.glb',
+        'mech': 'showcase/explore-mech-sol-high-20261111/model-01.glb',
+        'caterpillar': 'showcase/explore-caterpillar/model-06.glb',
+        'sky-whale': 'showcase/explore-sky-whale/model-06.glb',
+        'horse': 'showcase/explore-horse-openai-20261112/model-02.glb',
+        'octopus': 'showcase/explore-octopus-sol-high-20261114/model-01.glb',
+        'cat': 'showcase/explore-cat-sol-high-20261112/model-01.glb',
+    }
+    for subject, old_src in cases.items():
+        section = page.split(f'<section id="{subject}"', 1)[1].split('</section>', 1)[0]
+        picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section).group(1)))
+        old = next(p for p in picks if p['src'] == old_src)
+        new = next(p for p in picks if p['src'].startswith(f'showcase/explore-{subject}-sol62-high-20261118/'))
+        assert new['effort'] == 'high' and new['provider'] == 'OpenAI'
+        assert new['model'].startswith('GPT-6.2 Sol high, Codex')
+        def clips(src):
+            raw = (ROOT / src).read_bytes()
+            size = struct.unpack_from('<I', raw, 12)[0]
+            return [a['name'] for a in json.loads(raw[20:20+size]).get('animations', [])]
+        assert new['clipLabels'] == clips(new['src'])
+        assert old['animated'] and set(new['clipLabels']) == set(clips(old_src))
+        assert new['facts']['stages']['rig']['passed']

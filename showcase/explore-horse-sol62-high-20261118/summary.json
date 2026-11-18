@@ -1,0 +1,35 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex subscription",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "GPT-6.2 Sol",
+  "notes": [
+    "The visual selection shows the clearer eyes, rounded muzzle and distinct forelock. The latest and numeric leader each scored 0.8054 to four decimal places. The first static build exceeded 60,000 triangles and was retained privately as a failure.",
+    "The original paint and text-only motion contract was held throughout. The first rig exceeded the stretch limit. Two later rear-up trials put the tail below the floor. The selected rig passes all five native clips.",
+    "The short legs overlap from the side. The reference views differ in width and depth. Collision and engine-specific playback were outside the checks. Native model usage and subscription cost were unavailable.",
+    "The first model file contains the five native clips. The second is the selected static asset."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 0,
+    "numeric_score": 0.8054
+  },
+  "schema_version": 1,
+  "scope": "Five completed model evaluations from six submissions and three native rig passes from six submissions.",
+  "title": "GPT-6.2 Sol high: chunky cartoon horse"
+}
