@@ -556,12 +556,13 @@ def cmd_materials(a) -> int:
 
 def cmd_ready(a) -> int:
     proj = project.load(a.project, getattr(a, "target", None))
-    out = Path(a.attempt)
-    out = out if out.is_dir() else proj.attempts_dir / a.attempt
-    out = out / "out" if (out / "out").is_dir() else out
-    file = out / glb.judged_glb(proj.spec)
+    file = Path(a.attempt)
+    if not (file.is_file() and file.suffix.lower() == ".glb"):
+        out = file if file.is_dir() else proj.attempts_dir / a.attempt
+        out = out / "out" if (out / "out").is_dir() else out
+        file = out / glb.judged_glb(proj.spec)
     if not file.is_file():
-        print(f"no {file.name} under {out}: build the attempt first", file=sys.stderr)
+        print(f"no GLB at {file}: supply a finished GLB or a built attempt", file=sys.stderr)
         return 2
     reading = readiness.measure(file, proj.spec, surface_symmetry=getattr(a, "surface_symmetry", False))
     print(json.dumps(reading, indent=1) if a.json else "\n".join(readiness.lines(reading)))
@@ -1240,7 +1241,7 @@ def parser() -> argparse.ArgumentParser:
 
     s = subs.add_parser("ready", help="what a built attempt costs an engine and what a rig or a texture would find in it")
     s.add_argument("project", type=Path)
-    s.add_argument("attempt", help="an attempt directory, or its name under <project>/attempts/")
+    s.add_argument("attempt", help="a finished GLB path, an attempt directory, or its name under <project>/attempts/")
     s.add_argument("--json", action="store_true", help="the reading as JSON")
     s.add_argument("--surface-symmetry", action="store_true",
                    help="also compare sampled geometry across X=0 (approximate diagnostic)")

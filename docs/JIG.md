@@ -493,5 +493,14 @@ For embedded PNG or JPEG maps, set the channel to true and provide the local
 project file, e.g. `"channels":{"normal_map":true},"maps":{"normal_map":"weave.png"}`.
 Mapped surfaces need UVs. Available channels are roughness, roughness_map,
 normal_map, occlusion_map, emission and emission_map. Optional `emission_rgb`
-sets the linear emissive colour. Run this finish step on the selected build and
-inspect it under matched lighting before handing it to rigging.
+sets the linear emissive colour.
+
+Compare the selected base and finished GLBs at the intended viewing distance
+with the same camera, pose, lights and exposure. For subtle relief, also inspect
+a close-up with an angled light. For emission, compare the same dim view. When
+several channels change and you need to attribute an effect, toggle one at a time
+against the same base. Record which differences are visible at delivery scale.
+
+Run `mesh-jig ready PROJECT FINISHED.glb --json` for the delivered file's cost
+and target checks. Pass the same `--target` if the run used a one-off platform.
+The selected attempt's saved score and costs describe its pre-finish export.

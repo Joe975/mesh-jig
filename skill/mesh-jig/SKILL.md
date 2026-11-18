@@ -159,6 +159,9 @@ building, fill only pending choices with `choose_production` (CLI:
 `choose-production`). Name the hardest marking at the intended scale and the
 reason for the budget. Compare actual exported costs alongside visual quality.
 At final handoff, check the selected surface treatment with `mesh-jig materials`.
+If the finish changed, inspect a matched before/after at delivery scale and
+record the visible difference. Measure the actual handoff GLB with
+`mesh-jig ready PROJECT FINISHED.glb --json`.
 See [production choices](../../docs/JIG.md#production-choices).
 
 ## Textured contracts

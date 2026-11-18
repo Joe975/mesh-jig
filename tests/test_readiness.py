@@ -189,6 +189,21 @@ def test_an_evaluation_records_the_reading_and_says_it_and_the_command_reads_a_b
     assert cli.main(["brief", str(proj.root), "--target", "console"]) == 2
 
 
+def test_ready_measures_the_delivered_glb_after_materials(tmp_path, capsys):
+    from io import BytesIO
+    from PIL import Image
+
+    proj = make_project(tmp_path)
+    png = BytesIO()
+    Image.new("RGB", (16, 8)).save(png, format="PNG")
+    finished = textured_glb(tmp_path / "finished.glb", png=png.getvalue())
+    assert cli.main(["ready", str(proj.root), str(finished), "--json"]) == 0
+    reading = json.loads(capsys.readouterr().out)
+    assert reading["file"] == finished.name
+    assert reading["cost"]["bytes"] == finished.stat().st_size
+    assert reading["cost"]["image_sizes"] == [[16, 8]]
+
+
 def test_surface_symmetry_is_an_opt_in_glb_reading_and_ready_cli_preserves_default_schema(tmp_path, capsys):
     proj = make_project(tmp_path)
     out = proj.attempts_dir / "a01" / "out"
