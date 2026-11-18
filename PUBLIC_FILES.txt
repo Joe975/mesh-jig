@@ -527,6 +527,11 @@ showcase/explore-huge-head-hydrogen-high-20261114/README.md
 showcase/explore-huge-head-hydrogen-high-20261114/model-01.glb
 showcase/explore-huge-head-hydrogen-high-20261114/release.json
 showcase/explore-huge-head-hydrogen-high-20261114/summary.json
+showcase/explore-huge-head-qwen38-local-high-20261118/README.md
+showcase/explore-huge-head-qwen38-local-high-20261118/image-01.png
+showcase/explore-huge-head-qwen38-local-high-20261118/model-01.glb
+showcase/explore-huge-head-qwen38-local-high-20261118/release.json
+showcase/explore-huge-head-qwen38-local-high-20261118/summary.json
 showcase/explore-huge-head-sol62-high-20261118/README.md
 showcase/explore-huge-head-sol62-high-20261118/image-01.png
 showcase/explore-huge-head-sol62-high-20261118/image-02.png
