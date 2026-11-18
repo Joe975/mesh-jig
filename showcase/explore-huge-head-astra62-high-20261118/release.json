@@ -1,0 +1,11 @@
+{
+  "files": {
+    "README.md": "242bef880da1a0795cd8ebee30c8263fe5e1064ebee1b9548e05042c94007539",
+    "image-01.png": "4107f21d3e04f701767a7a1b9ef015c0535eb8c39feb588d5c0b9ad56166e08b",
+    "image-02.png": "6f6e2b2f032fd0f569e29135c0a4f611fdf9605ec4929978dc99363d9af14eb1",
+    "model-01.glb": "e03a42faef4ca5f02e6d2c7ba3de2abeb87a65571f54b820a64b45cab4b2bb64",
+    "model-02.glb": "6179f83cbce9ecef7b02c630641c6140280f78d56430a9b128c62e0095d5e334",
+    "summary.json": "2e52ff26843b44c68f51b26e115dc85c053ea21c961116ddaf532e1ad4f7e732"
+  },
+  "schema_version": 1
+}

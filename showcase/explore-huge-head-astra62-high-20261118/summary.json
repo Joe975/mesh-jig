@@ -1,0 +1,36 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex desktop subscription",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": 3071.0
+  },
+  "model": "GPT-6.2 Astra",
+  "notes": [
+    "The fifth static candidate was the visual selection and numeric leader at 0.7044. It uses 57,256 triangles and one embedded 2048 by 2048 script-painted colour atlas. All five static candidates received a separate score-blind visual critique.",
+    "Model 01 is the animated export. Model 02 is its static source. The selected rig was submission 4. An earlier weighted eyelid test exceeded the deformation limits and was retained in the submission count.",
+    "The bite opens, lunges and holds one chomp. Its central teeth remain about 31 mm apart at their closest projected height. The yell holds open. The sampled blink covers both eyes, though its closed lids read as solid caps. The grin is restrained and the run briefly clears the ground.",
+    "The nose projects less in profile than the sheet. The mouth corners and eye hoods are flatter, the teeth more regular and the skin less deeply folded. These are native animation and static reference checks. No terrain or gameplay stage was part of this study.",
+    "Elapsed time covers frozen input setup through completion of the last native rig check. The Codex subscription exposes no per-run charge or token counts."
+  ],
+  "result": {
+    "gates_passed": 3,
+    "gates_total": 3,
+    "numeric_score": 0.7044
+  },
+  "schema_version": 1,
+  "scope": "Fresh one-metre head study with five static evaluations and three passing rig candidates from 4 submissions. The selected static mesh supplies the embedded texture and all eight silent native clips.",
+  "title": "Big ugly head with eight silent clips"
+}
