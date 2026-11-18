@@ -2,6 +2,11 @@
 export function defaultAnimation(clips){
   return clips.find(n=>n.toLowerCase()==='run')??clips.find(n=>n.toLowerCase()==='sprint')??clips[0];
 }
+// Older GLBs have anonymous native names; comparisons use their public clip labels.
+export function activeClipLabel(clips, labels, nativeName){
+  const index = clips.indexOf(nativeName);
+  return index >= 0 ? (labels?.[index] ?? nativeName) : nativeName;
+}
 export class AnimationCycle {
   constructor(play) { this.play = play; this.stop(); }
   start(clips) {
