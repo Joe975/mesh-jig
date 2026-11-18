@@ -346,3 +346,29 @@ def test_head62_comparisons_preserve_prior_choices_and_eight_native_clips():
         assert set(stages['clips']) == set(names)
         # Structural failure remains publishable evidence, never inferred away by animation presence.
         assert isinstance(stages['rig']['passed'], bool)
+
+
+def test_motion_reference_media_belong_to_selected_models_and_clips():
+    import html
+    import json
+    from PIL import Image
+    page = PAGE.read_text(encoding='utf-8')
+    for section in page.split('<section id="')[1:]:
+        subject = section.split('"', 1)[0]
+        data = re.search(r'data-explore="([^"]+)"', section)
+        if not data:
+            continue
+        picks = json.loads(html.unescape(data[1]))
+        for pick in picks:
+            refs = pick.get('motionRefs', {})
+            if refs:
+                assert pick['animated']
+            for clip, ref in refs.items():
+                if pick.get('clipLabels'):
+                    assert clip in pick['clipLabels']
+                for key in ('gif', 'poster'):
+                    assert ref[key] in PUBLIC
+                    with Image.open(ROOT / ref[key]) as image:
+                        assert list(image.size) == ref['size']
+                        if key == 'gif':
+                            assert image.is_animated

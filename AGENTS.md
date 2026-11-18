@@ -1,5 +1,7 @@
 # For agents
 
+For gallery models built with video references, publish clip-matched GIFs under the viewer.
+
 Republishing the reference site: follow the shared [reference-site publishing rules](skill/mesh-jig-publish-results/SKILL.md#reference-site-publishing).
 
 Generating or repairing a multi-view reference sheet: read `skill/mesh-jig-reference-sheet/SKILL.md`.

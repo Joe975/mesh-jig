@@ -22,6 +22,8 @@ or repaired scene as the model's result. Keep any necessary harness repair separ
 
 ## Reference-site publishing
 
+For every model listed in the gallery that used video to author an animation, publish a reviewed GIF and still poster under its viewer. Map the selected model and actual clip label to the take used. Reuse a sealed reference across models only when their run records confirm the same input. Manual selection, All animations and each comparison viewer follow their own active clip. Omit the panel for unmapped clips and models outside the gallery. Keep source videos and run records private.
+
 Keep the reference site visual-first and concise: each section heading leads **directly to its sheet**, and the
 explorer is the sheet's **immediate next element**. No introductory blurb, cohort report, score table, warning list
 or other block goes before the sheet or between sheet and viewer. Put aggregate metrics, cohort comparisons and
