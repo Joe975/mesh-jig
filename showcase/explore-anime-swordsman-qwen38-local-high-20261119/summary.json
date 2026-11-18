@@ -1,0 +1,35 @@
+{
+  "completed": false,
+  "cost": {
+    "amount_usd": 0,
+    "kind": "reported"
+  },
+  "driver": "mesh-jig API agent through local llama-server",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": 3302446,
+    "completion_tokens": 1024284,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": 97,
+    "prompt_tokens": 3732153,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "qwen3.8-27b-local",
+  "notes": [
+    "Experimental terrain demo; game qualification failed. Three passing native rigs from five submissions. All three game proposals failed; unchanged a03 has walk slip 0.353845/0.352321/0.351776 m/s in playback/flat/slope against 0.35. Static colour placement, resemblance, vest and facial smoke checks fail. Four body clips only; no sword attacks or facial animation. Independent blend diagnostics also slip up to 1.525 m/s. No accepted game-ready package.",
+    "Visual choice a05 scored 0.4922; numeric leader a03 scored 0.4949. Rig a04 and failed game a03 unchanged. No model, animation or IK repair; no relaxed gates.",
+    "First GLB: four native body clips. Second GLB: selected static model. Four native strips followed by three native game scene diagnostics. No extra sword/combat trial.",
+    "All 97 completed local calls included. High maps to template xhigh; 120000 reply-token ceiling; Q4_K_XL. No hosted API charge; electricity/hardware unestimated."
+  ],
+  "result": {
+    "gates_passed": 3,
+    "gates_total": 7,
+    "numeric_score": 0.4922
+  },
+  "schema_version": 1,
+  "scope": "Five reviewed models; visual a05; three passing rigs in five submissions; three failed game proposals; unchanged a03 experimental runtime.",
+  "title": "Local Qwen3.8 high: swordsman with experimental ground IK"
+}

@@ -128,7 +128,7 @@ def test_terrain_characters_are_lazy_anonymous_and_bound_to_their_public_models(
     registry=json.loads((ROOT/'site/terrain/characters.json').read_text(encoding='utf-8'))
     assert {'horror-v1','horse-astra-v1','horse-fable-v1',
             'cyborg-astra62-high-video-v1','horror-astra62-high-v1'} <= set(registry['characters'])
-    expected_legs = {'cyborg': 2, 'horse': 4, 'horror': 6}
+    expected_legs = {'cyborg': 2, 'horse': 4, 'horror': 6, 'swordsman': 2}
     for key, row in registry['characters'].items():
         raw=(ROOT/'site/terrain'/row['data']).read_bytes();data=json.loads(raw)
         assert data['version']==2
@@ -428,3 +428,25 @@ def test_sol62_swordsman_preserves_native_clips_downloads_and_approved_reference
     page = PAGE.read_text(encoding='utf-8')
     assert 'activeClipLabel(a.availableAnimations,main.current.clipLabels' in page
     assert 'activeClipLabel(b.availableAnimations,other.current.clipLabels' in page
+
+
+def test_local_qwen_swordsman_keeps_native_clips_and_failed_ik_visible():
+    import html,json
+    from html.parser import HTMLParser
+    class Picks(HTMLParser):
+        choices=[]
+        def handle_starttag(self,tag,attrs):
+            attrs=dict(attrs)
+            if 'data-explore' in attrs:self.choices.extend(json.loads(attrs['data-explore']))
+    parser=Picks();parser.feed(PAGE.read_text(encoding='utf-8'))
+    pick=next(p for p in parser.choices if 'anime-swordsman-qwen38' in p['src'])
+    assert pick['clipLabels']==['idle','walk','run','jump']
+    assert pick['facts']['stages']['rig']['passing_candidates']==3
+    assert pick['facts']['stages']['rig']['submissions']==5
+    assert pick['terrain']=='swordsman-qwen38-high-v1'
+    assert 'game qualification failed' in pick['warning'] and '0.353845' in pick['warning']
+    assert '238 mm' in pick['warning'] and 'No accepted game-ready package' in pick['warning']
+    assert 'motionRefs' not in pick
+    summary=json.loads((ROOT/'showcase/explore-anime-swordsman-qwen38-local-high-20261119/summary.json').read_text())
+    assert summary['completed'] is False
+    assert summary['metrics']['model_calls']==97 and summary['cost']['amount_usd']==0
