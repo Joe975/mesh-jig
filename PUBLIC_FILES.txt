@@ -613,6 +613,13 @@ showcase/explore-huge-head-fable-high-20261114/README.md
 showcase/explore-huge-head-fable-high-20261114/model-01.glb
 showcase/explore-huge-head-fable-high-20261114/release.json
 showcase/explore-huge-head-fable-high-20261114/summary.json
+showcase/explore-huge-head-flash-high-20261120/README.md
+showcase/explore-huge-head-flash-high-20261120/image-01.png
+showcase/explore-huge-head-flash-high-20261120/image-02.png
+showcase/explore-huge-head-flash-high-20261120/model-01.glb
+showcase/explore-huge-head-flash-high-20261120/model-02.glb
+showcase/explore-huge-head-flash-high-20261120/release.json
+showcase/explore-huge-head-flash-high-20261120/summary.json
 showcase/explore-huge-head-hydrogen-high-20261114/README.md
 showcase/explore-huge-head-hydrogen-high-20261114/model-01.glb
 showcase/explore-huge-head-hydrogen-high-20261114/release.json
