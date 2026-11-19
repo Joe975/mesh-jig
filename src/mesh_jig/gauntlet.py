@@ -206,11 +206,15 @@ class Files:
         self.names = {glb.script_name(proj.spec), "atlas_plan.json"}
         self.schemas = [t for t in agent.FILE_TOOLS
                         if t["function"]["name"] in {"read_file", "write_file", "edit_file"}] + [SUBMIT]
+        if "production" in proj.data:
+            self.schemas.append(agent.mcp_schema(agent.mcp_server.choose_production, False))
         if proj.data.get("face_capabilities") is not None:
             self.names.add(face_capability.FILE)
             self.schemas.append(face_capability.BIND_TOOL)
 
     def call(self, name, args):
+        if name == "choose_production" and "production" in self.proj.data:
+            return self.tools.call(name, args)[0]
         if name == "bind_face" and self.proj.data.get("face_capabilities") is not None:
             if args:
                 raise agent.Rejected("bind_face takes no arguments; it seals only this attempt")
@@ -311,6 +315,8 @@ def run(proj: project.Project, chat_fn, *, iterations=10, max_turns=24, model=MO
     def conversation(index, attempt, files, parts):
         """One conversation of a round: the build that passed (or None) and the last build error."""
         implementor = IMPLEMENTOR
+        if "production" in proj.data:
+            implementor += "\nUse choose_production for pending decisions before writing the first script."
         if proj.data.get("face_capabilities") is not None:
             implementor += "\nFor this facial contract, face_bindings.json is also an allowed attempt file. Seal final edits with bind_face before submit."
         messages = [{"role": "system", "content": implementor}, {"role": "user", "content": parts}]

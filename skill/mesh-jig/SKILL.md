@@ -151,6 +151,19 @@ command running, or there is nobody to answer, put the command in the report for
 - Faces outward (`bmesh.ops.recalc_face_normals`), no zero-area faces.
 - `Vector((x, y, z))` takes one sequence. bmesh ops that delete or rebuild geometry invalidate faces you held.
 
+## Production choices
+
+For an open-ended evaluation, start with `init --open-ended`. Keep the reference
+and scoring criteria fixed. Read the production choices in the brief. Before
+building, fill only pending choices with `choose_production` (CLI:
+`choose-production`). Name the hardest marking at the intended scale and the
+reason for the budget. Compare actual exported costs alongside visual quality.
+At final handoff, check the selected surface treatment with `mesh-jig materials`.
+If the finish changed, inspect a matched before/after at delivery scale and
+record the visible difference. Measure the actual handoff GLB with
+`mesh-jig ready PROJECT FINISHED.glb --json`.
+See [production choices](../../docs/JIG.md#production-choices).
+
 ## Textured contracts
 
 A new project's default. When the brief says YOUR SCRIPT PAINTS THE TEXTURE there is no plan and no `--paint`:

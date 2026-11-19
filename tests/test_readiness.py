@@ -38,7 +38,7 @@ def reading(tmp_path, parts, **kw):
 def test_one_closed_sphere_is_one_piece_with_nothing_buried_open_or_lopsided(tmp_path):
     r = reading(tmp_path, [sphere()])
     assert r["cost"] == {"triangles": 720, "vertices": 362, "positions": 362, "mesh_nodes": 1, "primitives": 1,
-                         "materials": 0, "images": 0, "bytes": (tmp_path / "m.glb").stat().st_size}
+                         "materials": 0, "used_materials": 0, "images": 0, "image_sizes": [], "bytes": (tmp_path / "m.glb").stat().st_size}
     assert r["surface"] == {"pieces": 1, "pieces_90": 1, "largest_piece": 1.0, "open_edges": 0.0, "slivers": 0.0,
                             "buried": 0.0, "symmetry": 1.0}
     assert r["uv"] is None and r["rig"] == {"skins": 0, "animations": 0}
@@ -187,6 +187,21 @@ def test_an_evaluation_records_the_reading_and_says_it_and_the_command_reads_a_b
     assert json.loads(capsys.readouterr().out)["cost"] == rec["readiness"]["cost"]
     assert cli.main(["ready", str(proj.root), "a09"]) == 2
     assert cli.main(["brief", str(proj.root), "--target", "console"]) == 2
+
+
+def test_ready_measures_the_delivered_glb_after_materials(tmp_path, capsys):
+    from io import BytesIO
+    from PIL import Image
+
+    proj = make_project(tmp_path)
+    png = BytesIO()
+    Image.new("RGB", (16, 8)).save(png, format="PNG")
+    finished = textured_glb(tmp_path / "finished.glb", png=png.getvalue())
+    assert cli.main(["ready", str(proj.root), str(finished), "--json"]) == 0
+    reading = json.loads(capsys.readouterr().out)
+    assert reading["file"] == finished.name
+    assert reading["cost"]["bytes"] == finished.stat().st_size
+    assert reading["cost"]["image_sizes"] == [[16, 8]]
 
 
 def test_surface_symmetry_is_an_opt_in_glb_reading_and_ready_cli_preserves_default_schema(tmp_path, capsys):

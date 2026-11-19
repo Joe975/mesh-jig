@@ -64,7 +64,9 @@ DROPPED = "(picture dropped to save context; view_image the path above to see it
 PATH_ARGS = {"script", "attempt", "attempt_a", "attempt_b", "paint_plan", "atlas", "plan", "out", "judge_against", "review_file"}
 TEXT_ARGS = {"note", "name", "views", "samples", "visual_attempt", "visual_source", "reason", "before", "through"}
 JUDGE_ARGS = {"judge_against", "samples"}            # evaluate's judge parameters: offered only with judge on
-HIDDEN_ARGS = {"evaluate": {"name"}}
+HIDDEN_ARGS = {"evaluate": {"name", "target"}, "build": {"target"}, "preview": {"target"},
+               "choose_production": {"target"}}
+TEXT_ARGS.update({"colour", "max_triangles"})
 BOUND = "project"
 NOT_OFFERED = {"brief"}                              # its text and pictures open the conversation already
 
@@ -144,10 +146,11 @@ FILE_TOOLS = [
 ]
 
 
-def tool_schemas(judge: bool = False) -> list[dict]:
+def tool_schemas(judge: bool = False, production: bool = False) -> list[dict]:
     """Every tool the model is offered: the MCP tools (judge only when asked for) and the file tools."""
     mcp = [mcp_schema(fn, judge) for fn in mcp_server.TOOLS
-           if fn.__name__ not in NOT_OFFERED and (judge or fn.__name__ != "judge")]
+           if fn.__name__ not in NOT_OFFERED and (judge or fn.__name__ != "judge")
+           and (production or fn.__name__ != "choose_production")]
     return mcp + FILE_TOOLS
 
 
@@ -283,7 +286,7 @@ class Tools:
         self.patience, self.margin = patience, margin    # patience 0: exactly `attempts`; else `attempts` is a ceiling
         self.closing = False                     # the last TURNS_LEFT_NOTE turns: done() is taken whatever is unused
         self.overlaps: dict[str, float] = {}     # measured attempt -> its overlap, for a preview to be held against
-        self.offered = {t["function"]["name"] for t in tool_schemas(judge)}
+        self.offered = {t["function"]["name"] for t in tool_schemas(judge, "production" in project.data)}
         self.lifecycle = agent_state.Lifecycle(self.root, max_previews, require_evaluation)
         prior, _ = streak_mod.attempts(self.root)
         if prior:
@@ -384,6 +387,8 @@ class Tools:
             if why:
                 return "REFUSED: " + why, []
         started = time.time()
+        if self.proj.chosen_target and "target" in params:
+            kw["target"] = self.proj.chosen_target
         reply = mcp_server.guarded(fn)(str(self.root), **kw)
         # the project's own path comes off before the clip, not after: an evaluation names its pictures under a root
         # that can be a hundred characters long, and a text that only the roots pushed past MAX_TOOL_OUTPUT lost its
@@ -787,7 +792,8 @@ def system_prompt(project: project_mod.Project, attempts: int, max_turns: int, j
 
 def opening(project: project_mod.Project, attempts: int = 0, patience: int = 0) -> list[dict]:
     """The brief, the ledger so far, and every reference view: what `brief` returns, plus the agent's memory."""
-    reply = mcp_server.brief(str(project.root))
+    target_args = {"target": project.chosen_target} if project.chosen_target else {}
+    reply = mcp_server.brief(str(project.root), **target_args)
     text = "\n".join(x for x in reply if isinstance(x, str))
     for root in (str(project.root), project.root.as_posix()):       # as Tools.relative: the model passes relative paths
         text = text.replace(root + "\\", "").replace(root + "/", "").replace(root, ".")
@@ -881,7 +887,7 @@ def run(project: project_mod.Project, chat_fn: ChatFn, *, attempts: int = 5, max
                  patience=patience, margin=margin if patience else 0.0)
     tools = Tools(project, rep, attempts=attempts, judge=judge, patience=patience, margin=margin,
                   max_previews=max_previews, require_evaluation=require_evaluation)
-    schemas = tool_schemas(judge)
+    schemas = tool_schemas(judge, "production" in project.data)
     messages: list[dict] = [{"role": "system",
                              "content": system_prompt(project, attempts, max_turns, judge, patience, margin, max_previews, require_evaluation)},
                             {"role": "user", "content": opening(project, attempts, patience)}]

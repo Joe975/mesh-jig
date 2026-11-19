@@ -132,9 +132,12 @@ def template(name: str, length_m: float, sheet_file: str = "", sheet_size: tuple
 
 
 def init(root: str | Path, *, name: str = "", length_m: float = 1.0, sheet: str | Path | None = None,
-         height_m: float | None = None, face_capabilities: dict | None = None) -> list[Path]:
+         height_m: float | None = None, face_capabilities: dict | None = None,
+         open_ended=False, colour=None, max_triangles=None, target=None) -> list[Path]:
     """Write jig.json, brief.md and refs/ into `root` (created). Refuses to overwrite a jig.json. With `sheet`, the
     image is copied in and a `sheet` block with one full-frame box per view is written for you to tighten."""
+    from . import production
+    production.check_values({k: v for k, v in (("colour", colour), ("max_triangles", max_triangles)) if v is not None})
     if face_capabilities is not None:
         from . import face_capability
         face_capabilities = face_capability.contract(face_capabilities)
@@ -155,6 +158,16 @@ def init(root: str | Path, *, name: str = "", length_m: float = 1.0, sheet: str 
         size = Image.open(root / sheet_file).size
         written.append(root / sheet_file)
     data = template(name, length_m, sheet_file, size, height_m)
+    if open_ended or any(v is not None for v in (colour, max_triangles, target)):
+        model = data["model"]
+        for key in (*PAINTED, "max_triangles", "min_triangles"):
+            model.pop(key, None)
+        data["production"] = {"colour": colour} if colour else {}
+        if max_triangles is not None:
+            model["max_triangles"] = max_triangles
+        if target:
+            data["target"] = target
+    data["material_review"] = []
     if face_capabilities is not None:
         data["face_capabilities"] = face_capabilities
     jig.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")

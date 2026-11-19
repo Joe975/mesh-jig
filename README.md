@@ -110,6 +110,10 @@ cutting references. Freeze them before comparing attempts. Initialization defaul
 characters need their own contract. The [reference-sheet skill](skill/mesh-jig-reference-sheet/SKILL.md)
 helps prepare consistent views; [JIG.md](docs/JIG.md) defines the fields.
 
+Use `mesh-jig init MODEL --open-ended` to let the builder choose base colour and triangle budget.
+For a platform-specific build, add `--target quest` or `--target pcvr`. Pin individual choices with
+`--max-triangles` and `--colour`. See [production choices](docs/JIG.md#production-choices).
+
 The [modelling skill](skill/mesh-jig/SKILL.md) covers script creation, build/contract checks,
 evaluation, fresh visual critique and revision. Preserve each evaluated attempt. Evaluations save
 GLBs in `attempts/<name>/out/`, comparison images, silhouette overlays and a ledger. Browse them with:

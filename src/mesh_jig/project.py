@@ -69,6 +69,9 @@ class Project:
         spec = dict(self.stated.get("model") or {})
         spec.setdefault("script", "model.py")
         spec.setdefault("glb", f"{self.name}_{{variant}}.glb" if spec.get("variants") else f"{self.name}.glb")
+        if "production" in self.data:
+            from . import production
+            return production.effective(self, spec, self.target)
         return target_mod.apply(spec, self.target)
 
     @property
@@ -165,7 +168,16 @@ class Project:
         model = self.data.get("model")
         if not isinstance(model, dict):
             return [f"{JIG_FILE} needs a `model` block (see mesh_jig.glb for its fields)"]
-        spec = self.spec
+        if "material_review" in self.data and self.data["material_review"] != []:
+            from . import material_review
+            try:
+                material_review.validate(self.data["material_review"])
+            except ValueError as error:
+                out.append(f"material_review: {error}")
+        try:
+            spec = self.spec
+        except ValueError as error:
+            return out + [str(error)]
         out += criteria.fold(self.data)[1]
         out += target_mod.problems(self.data, self.chosen_target)
         if len(glb.variant_names(spec)) > 1 and "{variant}" not in spec["glb"]:

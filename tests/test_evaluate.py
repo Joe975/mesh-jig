@@ -110,6 +110,21 @@ def test_the_known_answer_measures_as_a_match_and_everything_is_written(tmp_path
     assert "YOUR MODEL AGAINST THE REFERENCE OUTLINES" in text
 
 
+def test_open_evaluation_records_choices_and_actual_cost_separately(tmp_path):
+    from mesh_jig import production
+    proj = make_project(tmp_path)
+    proj.data["production"] = {}
+    pending = run(proj, tmp_path, build_fn=fake_build())
+    assert not pending["ok"] and pending["stage"] == "project"
+    production.choose(proj, "Hard edges on the slab", "vertex", 400)
+    result = run(proj, tmp_path, "a02", build_fn=fake_build())
+    saved = json.loads((proj.attempts_dir / "a02" / "eval.json").read_text())
+    assert result["ok"] and saved["production"]["choices"]["max_triangles"] == {"value": 400, "source": "agent"}
+    assert 0 < saved["readiness"]["cost"]["triangles"] < 400
+    assert saved["readiness"]["cost"]["image_sizes"] == []
+    assert saved["numeric"]["ortho_iou"] > 0.97
+
+
 def test_the_feedback_says_which_views_the_score_is_taken_on():
     views = dict.fromkeys(("front", "hero", "rear", "side", "top"), {"iou": 0.5, "missing": 0.1, "extra": 0.1})
     assert evaluate.scored_views_lines(views) == [

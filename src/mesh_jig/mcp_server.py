@@ -61,19 +61,32 @@ def _attempt(script: str) -> Path:
     return Path(script).resolve().parent
 
 
-def brief(project: str) -> list:
+def choose_production(project: str, reason: str, colour: str | None = None,
+                      max_triangles: int | None = None, target: str | None = None) -> list:
+    """Set only pending choices. Explain the hardest marking at delivery scale.
+    Choose vertex, texture (script-painted), atlas (plan), or multiply (vertex times atlas)."""
+    from . import production
+    job = project_mod.load(project, target)
+    spec = production.choose(job, reason, colour, max_triangles)
+    facts = brief_mod.model_facts(spec)
+    if job.palette and spec.get("vertex_colors"):
+        facts += "\n" + brief_mod.linear_palette(job.palette)
+    return [facts]
+
+
+def brief(project: str, target: str | None = None) -> list:
     """Read a project before writing anything: what the model must show, how a script is built and what the contract
     checks, the reference's outlines and colour zones as numbers, and the reference views themselves.
 
     project: the project directory (the one holding jig.json)."""
-    proj = project_mod.load(project)
+    proj = project_mod.load(project, target)
     issues = proj.problems()
     head = ("PROJECT PROBLEMS:\n" + "\n".join(f"- {i}" for i in issues) + "\n\n") if issues else ""
     return [head + brief_mod.text(proj)] + _pictures(proj.references, "reference")
 
 
 def evaluate(project: str, script: str, note: str = "", name: str = "", paint_plan: str = "", atlas: str = "",
-             judge_against: str = "", samples: int = 16) -> list:
+             judge_against: str = "", samples: int = 16, target: str | None = None) -> list:
     """Build a model script in Blender, hold it to the contract, render it and measure it against the reference views;
     append one line to the project's ledger. Returns the numbers, where the outline is off, and each view beside its
     reference. Deterministic and free unless judge_against is given.
@@ -82,7 +95,7 @@ def evaluate(project: str, script: str, note: str = "", name: str = "", paint_pl
     (<project>/attempts/<name>/model.py). note: what this attempt changed, for the ledger. paint_plan / atlas: a
     textured contract's atlas plan (JSON) or a ready PNG. judge_against: another attempt directory to also ask the
     pairwise judge about (a paid model call; leave empty unless paid pairwise judging is authorized)."""
-    proj = project_mod.load(project)
+    proj = project_mod.load(project, target)
     issues = proj.problems()
     if issues:
         return ["PROJECT PROBLEMS:\n" + "\n".join(f"- {i}" for i in issues)]
@@ -113,12 +126,12 @@ def evaluate(project: str, script: str, note: str = "", name: str = "", paint_pl
     return replies
 
 
-def build(project: str, script: str, paint_plan: str = "", atlas: str = "") -> list:
+def build(project: str, script: str, paint_plan: str = "", atlas: str = "", target: str | None = None) -> list:
     """Build a model script and run the contract check only: a quick answer to "does it build and fit the contract"
     with no render and no ledger line.
 
     project: the project directory. script: the model script in its attempt directory."""
-    proj = project_mod.load(project)
+    proj = project_mod.load(project, target)
     out = _attempt(script) / "out"
     bound = Path(atlas).resolve() if atlas else None
     if paint_plan:
@@ -136,14 +149,14 @@ def build(project: str, script: str, paint_plan: str = "", atlas: str = "") -> l
     return ["\n".join(lines + [f"built and in contract -> {out}"])]
 
 
-def preview(project: str, attempt: str, views: list[str] | None = None) -> list:
+def preview(project: str, attempt: str, views: list[str] | None = None, target: str | None = None) -> list:
     """Render and measure what an attempt has already built, beside the reference: a free look. It gives the numbers
     an evaluation of this build would give (overlap, colour zones, resemblance, the numeric score) and how the
     colours read, with no outline table and no gates. Nothing is added to the ledger and it is not an attempt.
 
     project: the project directory. attempt: the attempt directory (its out/ holds the GLBs). views: camera names,
     default all; leave it out to get a score."""
-    proj = project_mod.load(project)
+    proj = project_mod.load(project, target)
     rec = evaluate_mod.preview(proj, attempt, views)
     text = evaluate_mod.preview_text(proj, attempt, rec)
     if not rec["ok"]:
@@ -204,7 +217,7 @@ def checkpoint(project: str, name: str, visual_attempt: str = "", visual_source:
             Picture(str(directory / "comparison.png"), "selection checkpoint; numeric fit and visual choice are separate")]
 
 
-TOOLS = (brief, evaluate, build, preview, paint, judge, checkpoint)
+TOOLS = (brief, evaluate, build, preview, paint, judge, checkpoint, choose_production)
 
 
 def guarded(fn):
