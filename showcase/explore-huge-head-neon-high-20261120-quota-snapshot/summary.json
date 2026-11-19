@@ -1,0 +1,34 @@
+{
+  "completed": false,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Antigravity subscription CLI",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "gemini-4-neon-high",
+  "notes": [
+    "Five measured sculpt attempts under the 60,000 triangle cap. Visual pick a05 scored 0.6874. Numerical best 0.6879. Base colour uses a script-painted texture. Finish adds normal map, roughness map.",
+    "2 of 4 rig submissions passed. Rig r04 carries eight 30 fps clips guided by the matched H3 references.",
+    "Antigravity quota paused the trial after two of four rigs passed, with three passes required by the run contract. This snapshot shows the latest passing rig, r04. The pale skin and simplified brow and lip folds soften the likeness. The heavy upper lids sit visibly proud of the eyes."
+  ],
+  "result": {
+    "gates_passed": 3,
+    "gates_total": 3,
+    "numeric_score": 0.6874
+  },
+  "schema_version": 1,
+  "scope": "Five modelling evaluations. 2 of 4 rig submissions passed.",
+  "title": "Gemini 4 Neon High: Huge Ugly Head"
+}

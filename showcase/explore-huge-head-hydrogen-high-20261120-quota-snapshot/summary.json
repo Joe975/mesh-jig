@@ -1,0 +1,34 @@
+{
+  "completed": false,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Antigravity subscription CLI",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "gemini-4-hydrogen-high",
+  "notes": [
+    "Five measured sculpt attempts under the 60,000 triangle cap. Visual pick a05 scored 0.6625. Numerical best 0.6668. Base colour uses a script-painted texture. Finish adds normal map, occlusion map, roughness map.",
+    "2 of 4 rig submissions passed. Rig r04 carries eight 30 fps clips guided by the matched H3 references.",
+    "Antigravity quota paused the trial after two of four rigs passed, with three passes required by the run contract. This snapshot shows the latest passing rig, r04. The lips and cheek folds are smoother than the reference. The upper lids and brows still read as separate shells, and the nostril recesses are shallow."
+  ],
+  "result": {
+    "gates_passed": 3,
+    "gates_total": 3,
+    "numeric_score": 0.6625
+  },
+  "schema_version": 1,
+  "scope": "Five modelling evaluations. 2 of 4 rig submissions passed.",
+  "title": "Gemini 4 Hydrogen High: Huge Ugly Head"
+}
