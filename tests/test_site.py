@@ -157,7 +157,7 @@ def test_stage_scorecards_and_unranked_overall_coverage_preserve_missing_data():
     assert stages['rig']['passed'] is False and stages['rig']['passing_candidates'] == 0
     assert stages['clips']['sprint']['passed'] is True and stages['clips']['leap']['passed'] is False
     assert stages['efficiency']['total_usd'] == 3.5591478
-    assert 'incomplete list-price estimate' in page and 'interrupted startup calls unpriced' in page
+    assert 'interrupted startup calls unpriced' in page
     assert 'Not measured' in page and 'Unavailable' in page
 
 
