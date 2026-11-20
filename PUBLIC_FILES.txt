@@ -370,6 +370,14 @@ showcase/explore-horror-astra62-high-20261118/model-01.glb
 showcase/explore-horror-astra62-high-20261118/model-02.glb
 showcase/explore-horror-astra62-high-20261118/release.json
 showcase/explore-horror-astra62-high-20261118/summary.json
+showcase/explore-horror-astra62-high-timebox-20261120/README.md
+showcase/explore-horror-astra62-high-timebox-20261120/image-01.png
+showcase/explore-horror-astra62-high-timebox-20261120/image-02.png
+showcase/explore-horror-astra62-high-timebox-20261120/image-03.png
+showcase/explore-horror-astra62-high-timebox-20261120/model-01.glb
+showcase/explore-horror-astra62-high-timebox-20261120/model-02.glb
+showcase/explore-horror-astra62-high-timebox-20261120/release.json
+showcase/explore-horror-astra62-high-timebox-20261120/summary.json
 showcase/explore-horror-carbon-high-20261117/README.md
 showcase/explore-horror-carbon-high-20261117/image-01.png
 showcase/explore-horror-carbon-high-20261117/image-02.png

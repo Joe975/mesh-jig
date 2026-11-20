@@ -127,7 +127,7 @@ def test_terrain_characters_are_lazy_anonymous_and_bound_to_their_public_models(
     assert '<script type="module" src="terrain/viewer.js"' not in page
     registry=json.loads((ROOT/'site/terrain/characters.json').read_text(encoding='utf-8'))
     assert {'horror-v1','horse-astra-v1','horse-fable-v1',
-            'cyborg-astra62-high-video-v1','horror-astra62-high-v1'} <= set(registry['characters'])
+            'cyborg-astra62-high-video-v1'} <= set(registry['characters'])
     expected_legs = {'cyborg': 2, 'horse': 4, 'horror': 6, 'swordsman': 2}
     for key, row in registry['characters'].items():
         raw=(ROOT/'site/terrain'/row['data']).read_bytes();data=json.loads(raw)
@@ -157,7 +157,7 @@ def test_stage_scorecards_and_unranked_overall_coverage_preserve_missing_data():
     assert stages['rig']['passed'] is False and stages['rig']['passing_candidates'] == 0
     assert stages['clips']['sprint']['passed'] is True and stages['clips']['leap']['passed'] is False
     assert stages['efficiency']['total_usd'] == 3.5591478
-    assert 'incomplete list-price estimate' in page and 'interrupted startup calls unpriced' in page
+    assert 'interrupted startup calls unpriced' in page
     assert 'Not measured' in page and 'Unavailable' in page
 
 
@@ -276,7 +276,6 @@ def test_original_astra62_cyborg_is_withdrawn_and_video_version_remains():
     assert not any(p['src'].startswith(old + '/') for p in picks)
     assert not (ROOT / old).exists()
     assert any(p['src'].startswith(video + '/') for p in picks)
-    assert any(p['src'].startswith('showcase/explore-horror-astra62-high-20261118/') for p in picks)
     registry = json.loads((ROOT / 'site/terrain/characters.json').read_text())['characters']
     assert 'cyborg-astra62-high-v1' not in registry
     assert 'cyborg-astra62-high-video-v1' in registry
@@ -284,6 +283,26 @@ def test_original_astra62_cyborg_is_withdrawn_and_video_version_remains():
     assert not (ROOT / 'site/terrain/cyborg-astra62.release.json').exists()
     assert 'subject=cyborg&amp;model=gpt-6-2-astra-high-codex#cyborg' not in page
     assert 'was withdrawn from the live gallery' in (ROOT / video / 'README.md').read_text()
+
+
+def test_astra_horror_replacement_and_fable_keep_their_estimated_costs():
+    import html
+    import json
+    page = PAGE.read_text(encoding='utf-8')
+    picks = [p for block in re.findall(r'data-explore="([^"]+)"', page)
+             for p in json.loads(html.unescape(block))]
+    old = 'showcase/explore-horror-astra62-high-20261118'
+    replacement = 'showcase/explore-horror-astra62-high-timebox-20261120'
+    astra, = (p for p in picks if p['src'].startswith(replacement + '/'))
+    fable, = (p for p in picks if p['src'].startswith('showcase/explore-horror-fable-api-20261110/'))
+    assert 'US$11.60 estimated (subscription equivalent)' == astra['facts']['cost']
+    assert 'US$17.46 estimated (incomplete, one call unpriced)' == fable['facts']['cost']
+    assert (astra['score'], astra['builds']) == (0.5485, 10)
+    assert not any(p['src'].startswith(old + '/') for p in picks)
+    assert not (ROOT / old).exists()
+    assert 'horror-astra62-high-v1' not in json.loads((ROOT / 'site/terrain/characters.json').read_text())['characters']
+    for name in ('horror-astra62.json', 'horror-astra62.release.json'):
+        assert not (ROOT / 'site/terrain' / name).exists()
 
 
 def test_sol62_comparisons_keep_prior_models_and_matching_native_clips():

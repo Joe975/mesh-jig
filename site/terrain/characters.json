@@ -55,12 +55,6 @@
       "sha256": "6b67036a762727061daa7deb5228375a027d800311b0acca993d5d0ba59b6f2c",
       "glb_sha256": "8295063ffba8396e84619a4d6e0a7de039439ac3d5526a004437fc2d737f5160"
     },
-    "horror-astra62-high-v1": {
-      "data": "horror-astra62.json",
-      "model": "showcase/explore-horror-astra62-high-20261118/model-01.glb",
-      "sha256": "b51af3b15c096ab6bcb0630c604ee2ee4946a05d568ff0d907840b57a7400041",
-      "glb_sha256": "1596008d3e1e7b0de0d201ea4d0c3e9401018579468cdaf960531454c09adae7"
-    },
     "horror-sol62-high-v1": {
       "data": "horror-sol62-high-20261118.json",
       "model": "showcase/explore-horror-sol62-high-20261118/model-02.glb",
