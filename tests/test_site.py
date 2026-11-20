@@ -296,7 +296,7 @@ def test_astra_horror_replacement_and_fable_keep_their_estimated_costs():
     astra, = (p for p in picks if p['src'].startswith(replacement + '/'))
     fable, = (p for p in picks if p['src'].startswith('showcase/explore-horror-fable-api-20261110/'))
     assert 'US$11.60 estimated (subscription equivalent)' == astra['facts']['cost']
-    assert 'US$17.46' in fable['facts']['cost'] and 'incomplete' in fable['facts']['cost']
+    assert 'US$17.46 estimated (incomplete, one call unpriced)' == fable['facts']['cost']
     assert (astra['score'], astra['builds']) == (0.5485, 10)
     assert not any(p['src'].startswith(old + '/') for p in picks)
     assert not (ROOT / old).exists()
