@@ -305,6 +305,23 @@ def test_astra_horror_replacement_and_fable_keep_their_estimated_costs():
         assert not (ROOT / 'site/terrain' / name).exists()
 
 
+def test_neon_horror_replacement_keeps_alias_and_metered_cost():
+    import html
+    import json
+    old = 'showcase/explore-horror-neon-high-20261119'
+    new = 'showcase/explore-horror-neon-high-timebox-20261120'
+    page = PAGE.read_text(encoding='utf-8')
+    picks = [p for block in re.findall(r'data-explore="([^"]+)"', page)
+             for p in json.loads(html.unescape(block))]
+    neon, = (p for p in picks if p['src'] == new + '/model-01.glb')
+    assert neon['linkAliases'] == ['gemini-4-neon-high-antigravity-19-nov']
+    assert neon['facts']['cost'] == 'US$17.82 estimated (subscription equivalent)'
+    assert (neon['score'], neon['builds']) == (0.5486, 8)
+    assert neon['facts']['passed'] is True
+    assert not any(p['src'].startswith(old + '/') for p in picks)
+    assert not (ROOT / old).exists()
+
+
 def test_sol62_comparisons_keep_prior_models_and_matching_native_clips():
     import html
     import json
