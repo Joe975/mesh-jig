@@ -78,6 +78,12 @@
       "model": "showcase/explore-anime-swordsman-qwen38-local-high-20261119/model-01.glb",
       "sha256": "8c652b7a67c0777dc6f93a0dd49485169b3493b1c5db5b34b5e54b9762d6c3e2",
       "glb_sha256": "97aeef437288652d28dc837588263d8b6bf456c6a4d60f14f9472211805d9d51"
+    },
+    "cat-fable52-high-open-v1": {
+      "data": "cat-fable52-high-open.json",
+      "model": "showcase/explore-cat-fable52-high-open-20261120/model-01.glb",
+      "sha256": "a72bf7405cba06fd885b49771345062a4134015054ec931af19a2418a0814bb6",
+      "glb_sha256": "ca2c77ee32328463bc6cd24b1ebd41c8963552ffab2feb3913fc56c51f4d6e1a"
     }
   }
 }

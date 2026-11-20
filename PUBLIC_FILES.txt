@@ -1032,6 +1032,8 @@ site/gif-core.js
 site/gif-export.js
 site/gif-worker.js
 site/index.html
+site/terrain/cat-fable52-high-open.json
+site/terrain/cat-fable52-high-open.release.json
 site/terrain/characters.json
 site/terrain/cyborg-astra62-video.json
 site/terrain/cyborg-astra62-video.release.json

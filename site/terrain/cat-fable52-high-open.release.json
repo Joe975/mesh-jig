@@ -1,0 +1,8 @@
+{
+  "format": "mesh-jig terrain release",
+  "version": 1,
+  "files": {
+    "cat-fable52-high-open.json": "a72bf7405cba06fd885b49771345062a4134015054ec931af19a2418a0814bb6"
+  },
+  "glb_sha256": "ca2c77ee32328463bc6cd24b1ebd41c8963552ffab2feb3913fc56c51f4d6e1a"
+}
