@@ -128,7 +128,7 @@ def test_terrain_characters_are_lazy_anonymous_and_bound_to_their_public_models(
     registry=json.loads((ROOT/'site/terrain/characters.json').read_text(encoding='utf-8'))
     assert {'horror-v1','horse-astra-v1','horse-fable-v1',
             'cyborg-astra62-high-video-v1'} <= set(registry['characters'])
-    expected_legs = {'cyborg': 2, 'horse': 4, 'horror': 6, 'swordsman': 2}
+    expected_legs = {'cyborg': 2, 'horse': 4, 'horror': 6, 'swordsman': 2, 'cat': 2}
     for key, row in registry['characters'].items():
         raw=(ROOT/'site/terrain'/row['data']).read_bytes();data=json.loads(raw)
         assert data['version']==2
@@ -469,3 +469,28 @@ def test_local_qwen_swordsman_keeps_native_clips_and_failed_ik_visible():
     summary=json.loads((ROOT/'showcase/explore-anime-swordsman-qwen38-local-high-20261119/summary.json').read_text())
     assert summary['completed'] is False
     assert summary['metrics']['model_calls']==97 and summary['cost']['amount_usd']==0
+
+
+def test_fable52_open_cat_shows_native_clips_and_bound_terrain():
+    import json
+    from html.parser import HTMLParser
+    class Picks(HTMLParser):
+        choices=[]
+        def handle_starttag(self,tag,attrs):
+            attrs=dict(attrs)
+            if 'data-explore' in attrs:self.choices.extend(json.loads(attrs['data-explore']))
+    parser=Picks();parser.feed(PAGE.read_text(encoding='utf-8'))
+    slug='explore-cat-fable52-high-open-20261120'
+    pick=next(p for p in parser.choices if slug in p['src'])
+    assert pick['clipLabels']==['idle','walk','run','jump']
+    assert pick['facts']['stages']['rig']['passing_candidates']==5
+    assert pick['facts']['stages']['rig']['submissions']==13
+    assert pick['terrain']=='cat-fable52-high-open-v1'
+    assert 'colour gates missed' in pick['warning'] and 'stairs and ridges are not qualified' in pick['warning']
+    assert 'a sole sinks up to 14 mm in the run and 8 mm in the walk' in pick['warning']
+    assert 'motionRefs' not in pick
+    registry=json.loads((ROOT/'site/terrain/characters.json').read_text(encoding='utf-8'))['characters']
+    assert registry['cat-fable52-high-open-v1']['model']==f'showcase/{slug}/model-01.glb'
+    summary=json.loads((ROOT/f'showcase/{slug}/summary.json').read_text())
+    assert summary['completed'] is True and summary['cost']['kind']=='unavailable'
+    assert summary['result']=={'gates_passed':16,'gates_total':19,'numeric_score':.7133}
