@@ -438,6 +438,10 @@ showcase/explore-horror-inkling-2-mini-high-20261122/image-01.png
 showcase/explore-horror-inkling-2-mini-high-20261122/model-01.glb
 showcase/explore-horror-inkling-2-mini-high-20261122/release.json
 showcase/explore-horror-inkling-2-mini-high-20261122/summary.json
+showcase/explore-horror-inkling-2-mini-high-assisted-animation-20261123/README.md
+showcase/explore-horror-inkling-2-mini-high-assisted-animation-20261123/model-01.glb
+showcase/explore-horror-inkling-2-mini-high-assisted-animation-20261123/release.json
+showcase/explore-horror-inkling-2-mini-high-assisted-animation-20261123/summary.json
 showcase/explore-horror-kimi-k31-pro-high-20261114/README.md
 showcase/explore-horror-kimi-k31-pro-high-20261114/image-01.png
 showcase/explore-horror-kimi-k31-pro-high-20261114/image-02.png
