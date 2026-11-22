@@ -433,6 +433,11 @@ showcase/explore-horror-hydrogen-high-20261113/image-01.png
 showcase/explore-horror-hydrogen-high-20261113/model-01.glb
 showcase/explore-horror-hydrogen-high-20261113/release.json
 showcase/explore-horror-hydrogen-high-20261113/summary.json
+showcase/explore-horror-inkling-2-mini-high-20261122/README.md
+showcase/explore-horror-inkling-2-mini-high-20261122/image-01.png
+showcase/explore-horror-inkling-2-mini-high-20261122/model-01.glb
+showcase/explore-horror-inkling-2-mini-high-20261122/release.json
+showcase/explore-horror-inkling-2-mini-high-20261122/summary.json
 showcase/explore-horror-kimi-k31-pro-high-20261114/README.md
 showcase/explore-horror-kimi-k31-pro-high-20261114/image-01.png
 showcase/explore-horror-kimi-k31-pro-high-20261114/image-02.png
@@ -806,6 +811,14 @@ showcase/explore-octopus-sol62-high-20261118/image-01.png
 showcase/explore-octopus-sol62-high-20261118/model-01.glb
 showcase/explore-octopus-sol62-high-20261118/release.json
 showcase/explore-octopus-sol62-high-20261118/summary.json
+showcase/explore-pirate-cat-inkling-2-mini-high-20261122/README.md
+showcase/explore-pirate-cat-inkling-2-mini-high-20261122/image-01.png
+showcase/explore-pirate-cat-inkling-2-mini-high-20261122/image-02.png
+showcase/explore-pirate-cat-inkling-2-mini-high-20261122/image-03.png
+showcase/explore-pirate-cat-inkling-2-mini-high-20261122/model-01.glb
+showcase/explore-pirate-cat-inkling-2-mini-high-20261122/model-02.glb
+showcase/explore-pirate-cat-inkling-2-mini-high-20261122/release.json
+showcase/explore-pirate-cat-inkling-2-mini-high-20261122/summary.json
 showcase/explore-sky-whale-hydrogen-high-20261115/README.md
 showcase/explore-sky-whale-hydrogen-high-20261115/image-01.png
 showcase/explore-sky-whale-hydrogen-high-20261115/model-01.glb
