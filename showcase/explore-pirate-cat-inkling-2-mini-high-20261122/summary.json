@@ -1,0 +1,34 @@
+{
+  "completed": false,
+  "cost": {
+    "amount_usd": 0.6243114750000001,
+    "kind": "reported"
+  },
+  "driver": "Mesh Jig API agent via OpenRouter",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": 3694720,
+    "completion_tokens": 1495531,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": 5297805,
+    "reasoning_tokens": 1275460,
+    "runtime_seconds": 9466.7
+  },
+  "model": "thinkingmachines/inkling-2-mini",
+  "notes": [
+    "Experimental animation only: 0 of 12 rigs passed. This candidate exceeded the 3x edge-stretch limit in walk (3.54x) and run (4.82x). Selected static mesh passed 14/19 checks; no game-ready scene was produced.",
+    "The first GLB contains four native diagnostic clips. The second is the frozen static mesh.",
+    "One failed request did not return a usage receipt; the reported cost is a lower bound."
+  ],
+  "result": {
+    "gates_passed": 14,
+    "gates_total": 19,
+    "numeric_score": 0.5263
+  },
+  "schema_version": 1,
+  "scope": "One OpenRouter run via Prime Intellect. Five static meshes; no rig passed.",
+  "title": "Inkling 2 Mini High: pirate cat"
+}
