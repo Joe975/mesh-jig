@@ -1,0 +1,35 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": 19.479844,
+    "kind": "estimated"
+  },
+  "driver": "Mesh Jig API agent (visual modelling and rig workflows) via the Anthropic API",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": 267808,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": 3530921,
+    "reasoning_tokens": null,
+    "runtime_seconds": 3885.6
+  },
+  "model": "claude-opus-5-5",
+  "notes": [
+    "Approximate, written from a text brief. The hand plant lands ahead of the shoulder at a slant and reads as a long-armed lean, not a flat palm. Planted spikes move back unevenly through the catch pause, so a game moving the root would see slight slide. Small stray weights remain at finger joints and the chest. The static build has no acceptance gates and resemblance 0.4179. Sampled checks do not certify continuous collision clearance or game-engine readiness.",
+    "Approximate, written from a text brief. A bound, not a diagonal gait: left and right move almost together. The shoulders sit barely below the hips, spike tips slide a little at touchdown and lift-off, and 0.29% of the surface folds on the inside of bends at 0.5 s. Small stray hand weights remain. The static build has no acceptance gates and resemblance 0.4179. Sampled checks do not certify game-engine readiness.",
+    "Walk and idle: 7 rig submissions, 4 in contract, a07 delivered. Sprint: 9 submissions, 4 in contract, a09 delivered.",
+    "The numeric checks do not establish polished or game-ready motion. No terrain rig was produced."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 0,
+    "numeric_score": 0.3716
+  },
+  "schema_version": 1,
+  "scope": "One five-build static run and two rig runs on the chosen mesh. Cost sums the model run and both rig runs at list price; the score refers to the static visual pick a05.",
+  "title": "Opus 5.5 high: Skeletal Steve with walk, idle and sprint"
+}
