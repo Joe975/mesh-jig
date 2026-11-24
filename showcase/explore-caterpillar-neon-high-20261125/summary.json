@@ -1,0 +1,34 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": 12.62,
+    "kind": "estimated"
+  },
+  "driver": "Antigravity subscription CLI",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": 14522466,
+    "completion_tokens": 444014,
+    "driver_turns": null,
+    "evaluations": 10,
+    "model_calls": null,
+    "prompt_tokens": 15782756,
+    "reasoning_tokens": 163980,
+    "runtime_seconds": 5617.638229
+  },
+  "model": "gemini-4-neon",
+  "notes": [
+    "Different contract from the other caterpillar entries: a 60,000-triangle cap (they had 32,000), an open rig contract and inch-worm clips instead of idle, crawl and turn, so do not compare them like for like. Neon picked a09 (0.6065) over the numeric best a10 (0.6123), whose frond tips hooked down. The arch is low: mid-stride the back dips between two humps instead of rising in one tall hump. The rig was written against AI-generated H3 videos; no gate measures the motion against them.",
+    "The first GLB carries the inchworm (2.5 s loop) and inchworm_travel (5 s) clips. The second is the frozen mesh.",
+    "The cost values the logged Antigravity tokens at Google Standard Gemini API rates."
+  ],
+  "result": {
+    "gates_passed": 1,
+    "gates_total": 1,
+    "numeric_score": 0.6065
+  },
+  "schema_version": 1,
+  "scope": "One standalone run under a 60,000-triangle cap and an open rig contract. 10 evaluated meshes and 3 passing native rigs.",
+  "title": "Gemini 4 Neon High: caterpillar with inch-worm clips"
+}
