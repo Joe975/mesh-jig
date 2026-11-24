@@ -58,11 +58,23 @@ def selection_title(subject, label, model, current):
     return mesh + ': ' + label
 
 
+def model_content(model):
+    """Camera framing and the derived texture caption do not publish a model."""
+    content = dict(model)
+    content.pop('framing', None)
+    facts = dict(content.pop('facts', None) or {})
+    facts.pop('texture', None)
+    if facts:
+        content['facts'] = facts
+    return content
+
+
 def content_links(before, after, current):
     """Link changed selections only when they still exist in today's gallery."""
     links = []
     for (subject, label), model in after.models.items():
-        if before.models.get((subject, label)) == model:
+        previous = before.models.get((subject, label))
+        if previous is not None and model_content(previous) == model_content(model):
             continue
         if (subject, label) not in current.models:
             continue

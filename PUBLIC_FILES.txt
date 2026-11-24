@@ -233,6 +233,13 @@ showcase/explore-caterpillar-hydrogen-high-20261115/image-01.png
 showcase/explore-caterpillar-hydrogen-high-20261115/model-01.glb
 showcase/explore-caterpillar-hydrogen-high-20261115/release.json
 showcase/explore-caterpillar-hydrogen-high-20261115/summary.json
+showcase/explore-caterpillar-neon-high-20261125/README.md
+showcase/explore-caterpillar-neon-high-20261125/image-01.png
+showcase/explore-caterpillar-neon-high-20261125/image-02.png
+showcase/explore-caterpillar-neon-high-20261125/model-01.glb
+showcase/explore-caterpillar-neon-high-20261125/model-02.glb
+showcase/explore-caterpillar-neon-high-20261125/release.json
+showcase/explore-caterpillar-neon-high-20261125/summary.json
 showcase/explore-caterpillar-sol62-high-20261118/README.md
 showcase/explore-caterpillar-sol62-high-20261118/image-01.png
 showcase/explore-caterpillar-sol62-high-20261118/image-02.png
@@ -929,6 +936,11 @@ showcase/reference-cat/model-04.glb
 showcase/reference-cat/model-05.glb
 showcase/reference-cat/release.json
 showcase/reference-cat/summary.json
+showcase/reference-caterpillar-inchworm-20261125/README.md
+showcase/reference-caterpillar-inchworm-20261125/animation-01.gif
+showcase/reference-caterpillar-inchworm-20261125/image-01.png
+showcase/reference-caterpillar-inchworm-20261125/release.json
+showcase/reference-caterpillar-inchworm-20261125/summary.json
 showcase/reference-caterpillar/README.md
 showcase/reference-caterpillar/image-01.png
 showcase/reference-caterpillar/image-02.png
