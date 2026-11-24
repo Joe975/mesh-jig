@@ -936,6 +936,11 @@ showcase/reference-cat/model-04.glb
 showcase/reference-cat/model-05.glb
 showcase/reference-cat/release.json
 showcase/reference-cat/summary.json
+showcase/reference-caterpillar-inchworm-20261125/README.md
+showcase/reference-caterpillar-inchworm-20261125/animation-01.gif
+showcase/reference-caterpillar-inchworm-20261125/image-01.png
+showcase/reference-caterpillar-inchworm-20261125/release.json
+showcase/reference-caterpillar-inchworm-20261125/summary.json
 showcase/reference-caterpillar/README.md
 showcase/reference-caterpillar/image-01.png
 showcase/reference-caterpillar/image-02.png

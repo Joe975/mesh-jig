@@ -1,0 +1,32 @@
+{
+  "completed": null,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "MiniMax H3 video model",
+  "effort": null,
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": null,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "MiniMax H3 motion reference",
+  "notes": [
+    "AI-generated inch-worm reference \u00b7 MiniMax H3 \u00b7 The side take the Neon rig was written against (it also saw a hero-view take). 5.1 seconds, two strides."
+  ],
+  "result": {
+    "gates_passed": null,
+    "gates_total": null,
+    "numeric_score": null
+  },
+  "schema_version": 1,
+  "scope": "The approved AI-generated side take, 5.1 s, as a reviewed GIF and still poster.",
+  "title": "Caterpillar inch-worm motion reference"
+}
