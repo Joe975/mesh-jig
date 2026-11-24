@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # Already-public GitHub-generated commits. Pin their full identities rather than
 # permitting private author/committer emails on new commits. See the source publication record.
 REVIEWED_PUBLIC_MERGES = frozenset({
+    'a922d6b4bbc1810a60f42dbca6d413a42aa3fb9e',  # PR #25, Skeletal Steve, 23 Nov 2026 (Joe approved, 25 Nov)
     '65698d7815880d7983000db9c93d03d137f8e82d',
     '3add64f8e6b51ee53f257d3b0328069f5ff3b366',
     'e316b2604a9737245c2e755febe041b9010b1991',
