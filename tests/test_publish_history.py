@@ -78,6 +78,20 @@ def test_selection_labels_include_mesh_effort_and_recorded_harness():
     assert history.content_links(history.Gallery(''), current, history.Gallery('')) == []
 
 
+def test_camera_and_texture_caption_updates_do_not_publish_a_model():
+    before = history.Gallery(gallery(['Example']))
+    after = history.Gallery(gallery(['Example']))
+    model = after.models['cat', 'Example']
+    model['framing'] = {'orbit': '215deg 75deg auto'}
+    model['facts'] = {'texture': 'UV texture'}
+    assert history.content_links(before, after, after) == []
+
+    model['src'] = 'new-model.glb'
+    assert history.content_links(before, after, after) == [
+        ('Pirate cat: Example', '?subject=cat&model=example#cat'),
+    ]
+
+
 def test_missing_marker_fails_without_changing_page(tmp_path):
     page = tmp_path / 'index.html'
     page.write_text('unchanged', encoding='utf-8')
