@@ -58,7 +58,16 @@ function setup(root) {
   const explore = root.closest('.explore');
   const roots = () => explore.querySelector('.compare').hidden ? [root] : [...explore.querySelectorAll(':scope > .main-panel, :scope > .compare')];
   let objectURL;
+  // While exporting, the button itself says how far it has got.
+  // One spinner per viewer: an update changes only the text, so the spin runs on without restarting.
+  const spinner = document.createElement('span'); spinner.className = 'gif-spinner'; spinner.setAttribute('aria-hidden', 'true');
+  const percent = document.createTextNode('');
+  const progress = fraction => {
+    if (!button.classList.contains('busy')) { button.classList.add('busy'); button.replaceChildren(spinner, percent); }
+    percent.data = `Please wait… ${Math.floor(fraction * 100)}%`;
+  };
   const refresh = () => {
+    if (active && button.classList.contains('busy')) return;
     const views = roots().map(p => p.querySelector('model-viewer'));
     button.textContent = views.length === 2 ? 'Export comparison GIF' : 'Export GIF';
     button.disabled = !!active || views.some(v => !v.loaded) || !views.some(v => v.availableAnimations.length);
@@ -123,6 +132,8 @@ function setup(root) {
       explore.dataset.gifExporting = 'true';
       disabled.forEach(([el]) => { el.disabled = true; });
       cancel.hidden = false; cancel.disabled = false;
+      status.textContent = '';
+      progress(0);
       cancel.onclick = () => stop('Export cancelled.');
       document.dispatchEvent(new Event('gif-busy'));
       // model-viewer shares a renderer. Pause other playing scenes while stepping this one,
@@ -165,7 +176,7 @@ function setup(root) {
       await send({type: 'init', width: canvas.width, height: canvas.height});
       for (let i = 0; i < plan.count; i++) {
         changed(); signal.throwIfAborted();
-        status.textContent = `Exporting GIF... ${i + 1} / ${plan.count}`;
+        progress(i / plan.count * .95);
         for (const item of participants) item.viewer.currentTime = combined
           ? comparisonTime(item.clip, i / plan.count * plan.seconds) : frameTime(plan, i);
         for (const [j, item] of participants.entries()) {
@@ -184,6 +195,7 @@ function setup(root) {
         const {data} = ctx.getImageData(0, 0, canvas.width, canvas.height);
         await send({type: 'frame', buffer: data.buffer, delay: frameDelay(plan, i)}, [data.buffer]);
       }
+      progress(.97);
       const result = await send({type: 'finish'});
       changed(); signal.throwIfAborted();
       objectURL = URL.createObjectURL(new Blob([result.buffer], {type: 'image/gif'}));
@@ -191,7 +203,6 @@ function setup(root) {
       const name = `${participants.map(p => p.viewer.alt || 'mesh-jig').join('-vs-')}-${participants[0].state.clip || 'animation'}`.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       download.download = `${name}.gif`;
       download.hidden = false;
-      status.textContent = `${(plan.centiseconds / 100).toFixed(2)} s GIF ready. ${plan.cycles ? 'Ends on a complete cycle; non-looping clips may still jump.' : 'Three-second excerpt; the clips do not share a complete cycle and may jump when repeated.'}`;
       download.click();
     } catch (error) {
       status.textContent = error.name === 'AbortError' ? error.message : `Could not export GIF: ${error.message}`;
@@ -220,6 +231,7 @@ function setup(root) {
       disabled.forEach(([el, was]) => { el.disabled = was; });
       cancel.hidden = true;
       active = null;
+      button.classList.remove('busy');
       document.dispatchEvent(new Event('gif-busy'));
     }
   };

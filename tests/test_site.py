@@ -141,13 +141,13 @@ def test_terrain_characters_are_lazy_anonymous_and_bound_to_their_public_models(
     assert all('site/'+p.relative_to(ROOT/'site').as_posix() in PUBLIC for p in (ROOT/'site/terrain').rglob('*') if p.is_file())
 
 
-def test_stage_scorecards_and_unranked_overall_coverage_preserve_missing_data():
+def test_stage_scorecards_and_the_leaderboard_preserve_missing_data():
     import html
     import json
     page = PAGE.read_text(encoding='utf-8')
-    assert page.index('</nav>') < page.index('class="coverage-board"') < page.index('<main')
-    assert 'Coverage only' in page and 'unranked' in page
-    assert 'missing stages are not zero' in page
+    assert page.index('</nav>') < page.index('class="leaderboards"') < page.index('<main')
+    board = page[page.index('class="leaderboards"'):page.index('</aside>', page.index('class="leaderboards"'))]
+    assert board.count('<li>') == 6, 'three for quality, three for price/quality'
     assert page.count('class="stage-scorecard"') == page.count('<model-viewer')
     picks = [p for data in re.findall(r'data-explore="([^"]+)"',page) for p in json.loads(html.unescape(data))]
     kimi = next(p for p in picks if p['model']=='Kimi K3.1 Pro High, OpenRouter')
