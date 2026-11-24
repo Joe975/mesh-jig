@@ -409,6 +409,23 @@ def test_motion_reference_media_belong_to_selected_models_and_clips():
                             assert image.is_animated
 
 
+def test_neon_caterpillar_uses_its_approved_reference_for_both_native_clips():
+    import html
+    import json
+    page = PAGE.read_text(encoding='utf-8')
+    section = page.split('<section id="caterpillar">', 1)[1].split('</section>', 1)[0]
+    picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section)[1]))
+    entry, = [pick for pick in picks if pick['model'] == 'Gemini 4 Neon High, Antigravity, 25 Nov']
+    clips = ['inchworm', 'inchworm_travel']
+    assert entry['clipLabels'] == clips
+    assert set(entry['motionRefs']) == set(clips)
+    for ref in entry['motionRefs'].values():
+        assert ref['gif'] == 'showcase/reference-caterpillar-inchworm-20261125/animation-01.gif'
+        assert ref['poster'] == 'showcase/reference-caterpillar-inchworm-20261125/image-01.png'
+    assert all(not pick.get('motionRefs') for pick in picks if pick != entry)
+    assert picks[int(re.search(r'data-start="(\d+)"', section)[1])]['model'] == 'Gemini 4 Argon'
+
+
 def test_removed_sections_and_download_rows_stay_off_the_page():
     """Joe, 24-25 Nov: no gunship or sky-whale section (their packages stay published), no download-link rows."""
     page = PAGE.read_text(encoding='utf-8')
