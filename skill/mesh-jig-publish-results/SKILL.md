@@ -31,6 +31,11 @@ section provenance in closed-by-default **Scores and build context** below the v
 and model-specific warnings visible in the caption; preserve every example and its limitations. The page intro
 stays under 35 words. Adding results is not a reason to add another visible explanation.
 
+Keep Joe's page decisions listed in the private guide's "Page rules from Joe's notes" (`docs/REFERENCE_SITE.md`):
+the two top-three leaderboards, best-result and three-quarter defaults, the Contract and Cost lines, one-line
+stage cards, the GIF button in the viewer bar, linked honorable mentions, and no gunship, sky-whale, static
+motion strips or download rows. Regenerate from the generator; do not restore removed blocks.
+
 Start from the latest authoritative source and fetched public commit. Check leases and concurrent work; use isolated
 worktrees and preserve all current selections, GLBs, framing, clip labels, links, comparison and GIF controls.
 Change the generator and regenerate the page: a shortened data note, CSS hiding rule or generated-HTML-only edit
@@ -80,6 +85,9 @@ absolute paths for that machine:
 ```
 
 `--image`, `--glb` and `--note` may repeat. Without visual arguments it produces a metrics-only package.
+With `--evaluation`, the package also carries that build's front outline overlap as `outline-front.png`
+(eval.json `overlays.front`: grey both, red only the reference, blue only the model). `--outline` names a different
+front overlap PNG. Packages sealed before 24 Nov 2026 have none and are not redone.
 `--animation` selects a short animated GIF. It is rebuilt from RGB frames without comments or source metadata,
 limited to 10 MB, 180 frames, 15 seconds and 1280 pixels per side. Review its visible content before sealing.
 The output directory must be new. Output filenames are generic, not the source filenames.

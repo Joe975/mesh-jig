@@ -678,3 +678,31 @@ def test_parent_traversal_is_rejected_before_path_resolution(batch_checkout, mon
         curator.install_many([("first", ambiguous if location == "package" else package)],
                              ambiguous if location == "repo" else repo)
     assert not (repo / "showcase").exists()
+
+
+def test_a_package_from_an_evaluation_carries_its_front_outline_overlap(tmp_path):
+    """Joe, 24 Nov: each published build carries one outline image, the front view's silhouette overlap, cleaned like
+    any picture. It comes from the evaluation's own overlays; --outline names another; no front view, no image."""
+    source = tmp_path / "raw-report.json"
+    source.write_text(json.dumps(report()))
+    attempt = tmp_path / "attempts" / "a03"
+    (attempt / "compare").mkdir(parents=True)
+    (attempt / "compare" / "sil_front.png").write_bytes(png(private=True))
+    evaluation = {"ok": True, "numeric": {"numeric_score": .5}, "gates": [],
+                  "overlays": {"front": "compare/sil_front.png", "side": "compare/sil_side.png"}}
+    (attempt / "eval.json").write_text(json.dumps(evaluation))
+    files = curator.prepare(source, tmp_path / "with", evaluation_path=attempt / "eval.json", **metadata())
+    assert files["outline-front.png"] == curator.image_bytes(png(private=True)) and b"private" not in files["outline-front.png"]
+    assert f"![{curator.OUTLINE_ALT}](outline-front.png)".encode() in files["README.md"]
+    curator.seal(tmp_path / "with")
+    assert curator.validate_files(curator.package_files(tmp_path / "with"))
+
+    other = tmp_path / "other.png"
+    Image.new("RGB", (4, 4), (200, 0, 0)).save(other)
+    files = curator.prepare(source, tmp_path / "named", evaluation_path=attempt / "eval.json", outline=other, **metadata())
+    assert files["outline-front.png"] == curator.image_bytes(other.read_bytes())
+
+    (attempt / "eval.json").write_text(json.dumps(dict(evaluation, overlays={"side": "compare/sil_side.png"})))
+    assert "outline-front.png" not in curator.prepare(source, tmp_path / "none", evaluation_path=attempt / "eval.json",
+                                                      **metadata())
+    assert "outline-front.png" not in curator.prepare(source, tmp_path / "plain", **metadata())

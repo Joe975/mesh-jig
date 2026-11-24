@@ -20,7 +20,10 @@ import zlib
 from PIL import Image
 
 SCHEMA = 1
-MEDIA = re.compile(r"(?:image-[0-9]{2}\.png|animation-[0-9]{2}\.gif|model-[0-9]{2}\.glb)\Z")
+MEDIA = re.compile(r"(?:image-[0-9]{2}\.png|animation-[0-9]{2}\.gif|model-[0-9]{2}\.glb|outline-front\.png)\Z")
+# The selected build's silhouette against the reference, front view (silhouette.overlay's colours).
+OUTLINE = "outline-front.png"
+OUTLINE_ALT = "Outline against the reference, front view: grey both, red only the reference, blue only the model"
 SLUG = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 PRIVATE = re.compile(
     r"[A-Za-z]:[\\/]|/(?:home|Users)/|/(?:mnt/)?[a-z]/Users/|"
@@ -341,11 +344,22 @@ def readme(doc, media):
     output += ["", "Token counts use the report's provider conventions. Reasoning is included in completion tokens; cache counters are not extra prompt tokens. Estimated cost is not an invoiced charge.", ""]
     output += [note + "\n" for note in doc["notes"]]
     for name in sorted(media):
-        output += [(f"![Selected output]({name})" if name.endswith((".png",".gif")) else f"[Download selected model]({name})"), ""]
+        output += [(f"![{OUTLINE_ALT}]({name})" if name == OUTLINE else
+                    f"![Selected output]({name})" if name.endswith((".png",".gif")) else f"[Download selected model]({name})"), ""]
     return ("\n".join(output).rstrip() + "\n").encode()
 
 
-def prepare(report_path, destination, *, images=(), models=(), animations=(), evaluation_path=None, **metadata):
+def outline_of(evaluation_path, evaluation):
+    """The evaluation's front outline overlap image (eval.json `overlays.front`, relative to its attempt), or None."""
+    stored = ((evaluation or {}).get("overlays") or {}).get("front")
+    if not stored:
+        return None
+    path = Path(stored) if Path(stored).is_absolute() else evaluation_path.parent / stored
+    return path if path.is_file() else None
+
+
+def prepare(report_path, destination, *, images=(), models=(), animations=(), evaluation_path=None, outline=None,
+            **metadata):
     if destination.exists():
         raise ValueError("destination already exists; choose a fresh draft")
     report = json.loads(report_path.read_text(encoding="utf-8"))
@@ -357,6 +371,9 @@ def prepare(report_path, destination, *, images=(), models=(), animations=(), ev
             raise ValueError("too many selected assets")
         for index, path in enumerate(paths, 1):
             files[f"{kind}-{index:02d}.{suffix}"] = normalize(path.read_bytes())
+    outline = outline or (outline_of(evaluation_path, evaluation) if evaluation_path else None)
+    if outline:
+        files[OUTLINE] = image_bytes(Path(outline).read_bytes())
     files["README.md"] = readme(doc, set(files) - {"summary.json"})
     validate_files(files, sealed=False)
     destination.mkdir(parents=True)
@@ -627,7 +644,8 @@ def main(argv=None):
     make.add_argument("--cost-kind", choices=("reported", "estimated", "unavailable"), required=True)
     make.add_argument("--effort")
     make.add_argument("--note", action="append", default=[])
-    make.add_argument("--evaluation", type=Path)
+    make.add_argument("--evaluation", type=Path, help="selected eval.json; its front outline overlap is included")
+    make.add_argument("--outline", type=Path, help="front outline overlap PNG, when not the evaluation's own")
     make.add_argument("--image", type=Path, action="append", default=[])
     make.add_argument("--glb", type=Path, action="append", default=[])
     make.add_argument('--animation',type=Path,action='append',default=[],help='Selected short animated GIF (metadata removed)')
@@ -651,7 +669,8 @@ def main(argv=None):
     try:
         if args.command == "prepare":
             prepare(args.report, args.out, title=args.title, driver=args.driver, scope=args.scope, cost_kind=args.cost_kind,
-                    effort=args.effort, notes=args.note, evaluation_path=args.evaluation, images=args.image, models=args.glb,animations=args.animation)
+                    effort=args.effort, notes=args.note, evaluation_path=args.evaluation, images=args.image, models=args.glb,animations=args.animation,
+                    outline=args.outline)
             print("Prepared selected metrics and assets. Review visible content before sealing.")
         elif args.command == "seal":
             seal(args.package)

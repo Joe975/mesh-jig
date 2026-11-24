@@ -114,7 +114,6 @@ def test_swordsman_preserves_selected_clips_and_unknown_static_score():
         raw = (ROOT / pick['src']).read_bytes()
         size = struct.unpack_from('<I', raw, 12)[0]
         assert len(json.loads(raw[20:20+size])['animations']) == count
-    assert 'Full character and facial clips' in section
     assert 'compact reach' in section and 'subscription' in section
 
 
@@ -141,13 +140,13 @@ def test_terrain_characters_are_lazy_anonymous_and_bound_to_their_public_models(
     assert all('site/'+p.relative_to(ROOT/'site').as_posix() in PUBLIC for p in (ROOT/'site/terrain').rglob('*') if p.is_file())
 
 
-def test_stage_scorecards_and_unranked_overall_coverage_preserve_missing_data():
+def test_stage_scorecards_and_the_leaderboard_preserve_missing_data():
     import html
     import json
     page = PAGE.read_text(encoding='utf-8')
-    assert page.index('</nav>') < page.index('class="coverage-board"') < page.index('<main')
-    assert 'Coverage only' in page and 'unranked' in page
-    assert 'missing stages are not zero' in page
+    assert page.index('</nav>') < page.index('class="leaderboards"') < page.index('<main')
+    board = page[page.index('class="leaderboards"'):page.index('</aside>', page.index('class="leaderboards"'))]
+    assert board.count('<li>') == 6, 'three for quality, three for price/quality'
     assert page.count('class="stage-scorecard"') == page.count('<model-viewer')
     picks = [p for data in re.findall(r'data-explore="([^"]+)"',page) for p in json.loads(html.unescape(data))]
     kimi = next(p for p in picks if p['model']=='Kimi K3.1 Pro High, OpenRouter')
@@ -209,12 +208,13 @@ def test_every_file_the_page_names_is_published_and_deployed():
         assert (ROOT / repo_path).is_file(), name
 
 
-def test_every_viewer_starts_on_the_front_loads_lazily_and_takes_touch_drags():
-    """mesh-jig models face Blender +Y, which is glTF -Z; model-viewer's default camera looks at +Z, the back.
-    With touch-action pan-y a vertical swipe scrolled the page instead of turning the model."""
+def test_every_viewer_starts_front_three_quarter_loads_lazily_and_takes_touch_drags():
+    """mesh-jig models face Blender +Y, which is glTF -Z: 180deg faces them, and the page opens at 215deg, a front
+    three-quarter view (Joe, 25 Nov). With touch-action pan-y a vertical swipe scrolled the page instead of turning
+    the model."""
     viewers = re.findall(r"<model-viewer[^>]*>", PAGE.read_text(encoding="utf-8"))
     assert viewers
-    assert all('camera-orbit="180deg' in v and 'loading="lazy"' in v and 'touch-action="none"' in v for v in viewers)
+    assert all('camera-orbit="215deg' in v and 'loading="lazy"' in v and 'touch-action="none"' in v for v in viewers)
 
 
 def _shown_bytes(page, root):
@@ -331,7 +331,6 @@ def test_sol62_comparisons_keep_prior_models_and_matching_native_clips():
         'ninja': 'showcase/explore-ninja-sol-high-20261112/model-01.glb',
         'mech': 'showcase/explore-mech-sol-high-20261111/model-01.glb',
         'caterpillar': 'showcase/explore-caterpillar/model-06.glb',
-        'sky-whale': 'showcase/explore-sky-whale/model-06.glb',
         'horse': 'showcase/explore-horse-openai-20261112/model-02.glb',
         'octopus': 'showcase/explore-octopus-sol-high-20261114/model-01.glb',
         'cat': 'showcase/explore-cat-sol-high-20261112/model-01.glb',
@@ -372,7 +371,6 @@ def test_head62_comparisons_preserve_prior_choices_and_eight_native_clips():
         assert new['builds'] == 5
         assert new['src'].startswith(f'showcase/explore-huge-head-{family.lower()}62-high-20261118/')
         assert new['src'] in PUBLIC
-        assert f'href="{new["src"]}"' in section
         raw = (ROOT / new['src']).read_bytes()
         size = struct.unpack_from('<I', raw, 12)[0]
         native = [a['name'] for a in json.loads(raw[20:20+size]).get('animations', [])]
@@ -411,30 +409,15 @@ def test_motion_reference_media_belong_to_selected_models_and_clips():
                             assert image.is_animated
 
 
-def test_sol62_gunship_retains_native_mechanics_and_effect_clips():
-    import html
-    import json
-    import struct
-    section = PAGE.read_text(encoding='utf-8').split('<section id="cannon-gunship"', 1)[1].split('</section>', 1)[0]
-    picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section)[1]))
-    paths = {pick['src'] for pick in picks}
-    assert 'showcase/explore-cannon-gunship-astra-high-20261113/model-01.glb' in paths
-    assert 'showcase/explore-cannon-gunship-hydrogen-high-20261115/model-01.glb' in paths
-    new = next(pick for pick in picks if pick['src'].startswith('showcase/explore-cannon-gunship-sol62-high-20261118/'))
-    assert new['provider'] == 'OpenAI' and new['effort'] == 'high' and new['animated']
-    assert new['builds'] == 5 and new['src'] in PUBLIC
-    assert f'href="{new["src"]}"' in section
-    raw = (ROOT / new['src']).read_bytes()
-    size = struct.unpack_from('<I', raw, 12)[0]
-    native = [animation['name'] for animation in json.loads(raw[20:20 + size]).get('animations', [])]
-    expected = {'idle', 'bank_turn', 'aim', 'fire', 'burst', 'thrust', 'shutdown'}
-    assert len(native) == 7 and set(native) == expected and native == new['clipLabels']
-    assert new['facts']['stages']['model']['triangle_limit'] == 60000
-    assert set(new['facts']['stages']['clips']) == expected
-    assert isinstance(new['facts']['stages']['rig']['passed'], bool)
+def test_removed_sections_and_download_rows_stay_off_the_page():
+    """Joe, 24-25 Nov: no gunship or sky-whale section (their packages stay published), no download-link rows."""
+    page = PAGE.read_text(encoding='utf-8')
+    assert '<section id="cannon-gunship"' not in page and '<section id="sky-whale"' not in page
+    assert 'showcase/explore-cannon-gunship-sol62-high-20261118/model-01.glb' in PUBLIC
+    assert 'class="model-downloads"' not in page
 
 
-def test_sol62_swordsman_preserves_native_clips_downloads_and_approved_reference_bindings():
+def test_sol62_swordsman_preserves_native_clips_packages_and_approved_reference_bindings():
     import html
     import json
     import struct
@@ -451,7 +434,7 @@ def test_sol62_swordsman_preserves_native_clips_downloads_and_approved_reference
         assert all(old['motionRefs'][key] == new['motionRefs'][key] for key in expected)
     for number, count in [(1, 5), (2, 12), (3, 13), (4, 0)]:
         path = f'showcase/explore-anime-swordsman-sol62-high-20261118/model-{number:02d}.glb'
-        assert path in PUBLIC and f'href="{path}"' in section
+        assert path in PUBLIC
         raw = (ROOT / path).read_bytes()
         size = struct.unpack_from('<I', raw, 12)[0]
         doc = json.loads(raw[20:20+size])
