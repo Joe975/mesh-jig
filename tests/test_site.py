@@ -534,8 +534,13 @@ def test_swallowtail_gallery_maps_each_clip_in_native_order():
         assert set(native) == set(clips) == set(pick['motionRefs'])
         for index, name in enumerate(clips):
             ref = pick['motionRefs'][name]
-            assert ref['gif'].endswith(f'/animation-{index+1:02d}.gif')
-            assert ref['poster'].endswith(f'/image-{index+3:02d}.png')
+            if name == 'fly':
+                prefix = 'showcase/reference-swallowtail-orchard-fly-loop/'
+                assert ref['gif'] == prefix + 'animation-01.gif'
+                assert ref['poster'] == prefix + 'image-01.png'
+            else:
+                assert ref['gif'].endswith(f'/animation-{index+1:02d}.gif')
+                assert ref['poster'].endswith(f'/image-{index+3:02d}.png')
     hydrogen, = [pick for pick in picks if 'Hydrogen' in pick['model']]
     assert 'Full-gape cavity continuity remains unverified' in hydrogen['warning']
     neon, = [pick for pick in picks if 'Neon' in pick['model']]
@@ -543,3 +548,43 @@ def test_swallowtail_gallery_maps_each_clip_in_native_order():
     terra, = [pick for pick in picks if 'Terra' in pick['model']]
     assert 'Incomplete prototype' in terra['warning']
     assert 'Full-gape cavity attachment' in terra['warning']
+
+
+def test_swallowtail_fly_loop_closes_and_preserves_the_other_clips():
+    import numpy as np
+    from PIL import Image
+    from mesh_jig import glb
+
+    reference = ROOT / 'showcase/reference-swallowtail-orchard-fly-loop/animation-01.gif'
+    with Image.open(reference) as gif:
+        assert gif.n_frames == 72 and gif.info['loop'] == 0
+        intervals = []
+        for i in range(gif.n_frames):
+            gif.seek(i)
+            intervals.append(gif.info['duration'])
+        assert set(intervals) == {40, 50} and sum(intervals) == 3000
+    packages = list((ROOT / 'showcase').glob('explore-swallowtail-orchard-*-fly-loop'))
+    assert len(packages) == 6
+    for fixed in packages:
+        legacy = fixed.with_name(fixed.name.removesuffix('-fly-loop'))
+        a, a_bin = glb.read_glb(legacy / 'model-01.glb')
+        b, b_bin = glb.read_glb(fixed / 'model-01.glb')
+        for key in ('meshes', 'materials', 'nodes', 'skins'):
+            assert a[key] == b[key]
+        for i, (original, revised) in enumerate(zip(a['animations'], b['animations'], strict=True)):
+            assert original['name'] == revised['name']
+            if revised['name'] == 'fly':
+                for channel in revised['channels']:
+                    s = revised['samplers'][channel['sampler']]
+                    times = glb.accessor(b, b_bin, s['input']).ravel()
+                    values = glb.accessor(b, b_bin, s['output']).reshape(len(times), -1)
+                    left, right = values[0], values[-1]
+                    if channel['target']['path'] == 'rotation' and left @ right < 0:
+                        right = -right
+                    np.testing.assert_allclose(left, right, rtol=0, atol=6e-7)
+                continue
+            assert original == revised, i
+            for s in original['samplers']:
+                for field in ('input', 'output'):
+                    np.testing.assert_array_equal(glb.accessor(a, a_bin, s[field]),
+                                                  glb.accessor(b, b_bin, s[field]))
