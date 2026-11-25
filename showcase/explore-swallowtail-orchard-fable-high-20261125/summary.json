@@ -1,0 +1,32 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Claude Code subscription (claude -p)",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": 4260.0
+  },
+  "model": "Fable 5.2 high, Claude Code",
+  "notes": [
+    "From an exact side view the open mouth shows through to the far wing, and the wings follow the front, rear and top paintings rather than the side painting. Feed lining depth was 97% of rest at full gape and stayed attached in sampled poses. Eye aim stops 13 degrees short of the lens."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 0,
+    "numeric_score": 0.7166
+  },
+  "schema_version": 1,
+  "scope": "One model, rig and animations, with a 60,000-triangle cap and at most ten evaluated models.",
+  "title": "Fable 5.2 high, Claude Code \u00b7 Swallowtail Orchard"
+}
