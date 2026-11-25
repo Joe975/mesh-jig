@@ -9,22 +9,27 @@ header { position: absolute; inset: max(20px, env(safe-area-inset-top)) auto aut
 h1, p { margin: 0; }
 h1 { font: 400 clamp(2rem, 5vw, 3.6rem)/0.98 Georgia, serif; letter-spacing: -0.06em; }
 .follow { margin-top: 0.60rem; padding: 7px 11px; background: #282239e8; border: 1px solid #eed4ce42; border-radius: 12px; text-shadow: none; color: #ead8ee; font-size: 0.72rem; }
-.follow select { width: 100%; min-height: 32px; pointer-events: auto; color: #fff1ec; background: transparent; border: 0; margin-bottom: 2px; font: 600 0.84rem system-ui, sans-serif; cursor: pointer; }
+.follow-row { display: flex; align-items: center; gap: 7px; }
+.follow select { flex: 1; min-width: 0; min-height: 40px; pointer-events: auto; color: #fff1ec; background: transparent; border: 0; font: 600 0.84rem system-ui, sans-serif; cursor: pointer; }
+.follow #copy-link { pointer-events: auto; font-size: 0.74rem; padding-inline: 5px; white-space: nowrap; }
 .follow option { background: #282239; }
 footer { position: absolute; width: min(calc(100% - 24px), 500px); left: 50%; bottom: max(12px, env(safe-area-inset-bottom)); transform: translateX(-50%); padding: 12px 14px 8px; background: #282239eb; border: 1px solid #eed4ce42; border-radius: 20px; }
 .stops { display: grid; grid-template-columns: 0.66fr 1.02fr 1.28fr 0.64fr 1.15fr; gap: 4px; }
 button { border: 1px solid transparent; border-radius: 11px; min-height: 44px; padding: 6px 11px; background: transparent; color: inherit; font: inherit; font-size: 0.84rem; cursor: pointer; }
 .stops button:disabled { opacity: 0.35; cursor: default; }
 .stops button { padding-inline: 4px; }
-.stops button:hover, #motion:hover { background: #f5cab229; }
+.stops button:hover, #motion:hover, #copy-link:hover { background: #f5cab229; }
 .stops button[aria-pressed='true'] { color: #302132; background: #ffd6ad; }
 .route { display: flex; align-items: center; gap: 11px; margin-top: 2px; font-size: 0.76rem; }
 .route span { white-space: nowrap; }
 .route input { min-height: 36px; margin: 0; min-width: 0; width: 100%; accent-color: #fbb995; cursor: pointer; }
 .guide { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: #ead8ee; font-size: 0.74rem; }
+.resolution { white-space: nowrap; }
+.resolution select { min-height: 32px; padding: 2px; font: inherit; color: #fff1ec; background: #302941; border: 1px solid #eed4ce42; border-radius: 6px; cursor: pointer; }
 #motion { margin-right: -8px; white-space: nowrap; }
 :focus-visible { outline: 2px solid #ffe0a7; outline-offset: 3px; }
 #status { position: absolute; top: 42%; left: 50%; transform: translate(-50%, -50%); width: max-content; max-width: calc(100% - 32px); padding: 10px 15px; border-radius: 12px; color: #fff6f0; background: #252037ed; text-align: center; }
 [hidden] { display: none !important; }
 @media (max-height: 500px) { footer { width: min(calc(100% - 24px), 410px); padding: 7px 10px 2px; } .route input { min-height: 32px; } }
-@media (max-width: 410px) { .stops button { font-size: 0.73rem; } }
+@media (max-width: 500px) { .guide { flex-wrap: wrap; row-gap: 0; } .guide > span { order: 1; flex-basis: 100%; padding-bottom: 6px; } }
+@media (max-width: 410px) { .stops button { font-size: 0.73rem; } .follow select { max-width: 210px; } }

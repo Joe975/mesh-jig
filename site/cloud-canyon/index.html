@@ -6,9 +6,9 @@
   <meta name="theme-color" content="#222038">
   <title>Cloud Canyon</title>
   <script defer src="https://cloud.umami.is/script.js" data-website-id="da692f83-7631-4220-b52d-099a687c2d9d" data-domains="joe975.github.io"></script>
-  <link rel="stylesheet" href="view.css?v=7">
+  <link rel="stylesheet" href="view.css?v=9">
   <script type="importmap">{"imports":{"three":"../terrain/vendor/three.module.js"}}</script>
-  <script type="module" src="view.js?v=8"></script>
+  <script type="module" src="view.js?v=9"></script>
 </head>
 <body>
   <main>
@@ -16,7 +16,10 @@
     <header>
       <h1>Cloud Canyon</h1>
       <div class="follow" hidden>
-        <select id="follow" aria-label="Follow whale"></select>
+        <div class="follow-row">
+          <select id="follow" aria-label="Follow whale"></select>
+          <button id="copy-link" type="button" aria-label="Copy link to selected whale">Copy link</button>
+        </div>
         <div><span id="build-cost" aria-live="polite" title="Estimated API-equivalent build cost in US dollars">Estimated build cost</span><span aria-hidden="true"> · </span><span id="current-clip">Flying</span></div>
       </div>
     </header>
@@ -30,7 +33,13 @@
         <button type="button" data-clip="smile-wink" aria-pressed="false">Smile &amp; wink</button>
       </div>
       <label class="route" for="route"><span>Flight loop</span><input id="route" type="range" min="0" max="1000" value="0" step="1"></label>
-      <div class="guide"><span>Tap a whale to follow · Drag to orbit</span><button id="motion" type="button" aria-pressed="true">Pause loop</button></div>
+      <div class="guide">
+        <span>Tap a whale to follow · Drag to orbit</span>
+        <label class="resolution">Resolution <select id="resolution">
+          <option value="fast">Fast</option><option value="balanced" selected>Balanced</option><option value="sharp">Sharp</option>
+        </select></label>
+        <button id="motion" type="button" aria-pressed="true">Pause loop</button>
+      </div>
     </footer>
   </main>
 </body>
