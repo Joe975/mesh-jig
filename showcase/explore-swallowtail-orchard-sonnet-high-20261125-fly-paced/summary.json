@@ -1,0 +1,32 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Claude Code subscription (claude -p)",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 4,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": 3714.0
+  },
+  "model": "Sonnet 5.5 high, Claude Code",
+  "notes": [
+    "A light model of 21,351 triangles. The feed lining stayed attached in sampled poses, but the cheek lining stretches strongly at full gape. Eyes sit on the cheek silhouette so gaze and wink read weakly head-on, and the garden crown is blockier than the painting. Fly pacing at the loop boundary was manually adjusted after the run."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 0,
+    "numeric_score": 0.6673
+  },
+  "schema_version": 1,
+  "scope": "Manual pacing revision of the Fly export. The native benchmark result remains archived.",
+  "title": "Sonnet 5.5 high, Claude Code \u00b7 Fly pacing correction"
+}

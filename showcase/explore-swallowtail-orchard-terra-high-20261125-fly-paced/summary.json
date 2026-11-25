@@ -1,0 +1,32 @@
+{
+  "completed": false,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex subscription",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 10,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": 1296.0
+  },
+  "model": "GPT-6.1 Terra High, Codex",
+  "notes": [
+    "Incomplete prototype. The fork and tail pieces visibly separate, the fins move rigidly, and the wink is approximate. Full-gape cavity attachment and the approved belly swell remain unverified. The displayed model score is from the selected static attempt before rig-stage edits. Fly pacing at the loop boundary was manually adjusted after the run."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 0,
+    "numeric_score": 0.4801
+  },
+  "schema_version": 1,
+  "scope": "Manual pacing revision of the Fly export. The native benchmark result remains archived.",
+  "title": "GPT-6.1 Terra High, Codex \u00b7 Fly pacing correction"
+}
