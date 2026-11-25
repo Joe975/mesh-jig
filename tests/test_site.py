@@ -523,7 +523,7 @@ def test_swallowtail_gallery_maps_each_clip_in_native_order():
     assert re.search(r'<img class="sheet"[^>]+>\s*<div class="explore"', section)
     picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section)[1]))
     clips = ('fly', 'barrel-roll', 'loop-the-loop', 'feed', 'smile-wink')
-    assert len(picks) >= 4
+    assert len(picks) >= 6
     for pick in picks:
         path = pick['src']
         assert path in PUBLIC
@@ -538,3 +538,8 @@ def test_swallowtail_gallery_maps_each_clip_in_native_order():
             assert ref['poster'].endswith(f'/image-{index+3:02d}.png')
     hydrogen, = [pick for pick in picks if 'Hydrogen' in pick['model']]
     assert 'Full-gape cavity continuity remains unverified' in hydrogen['warning']
+    neon, = [pick for pick in picks if 'Neon' in pick['model']]
+    assert 'Feed still stretches 6.93%' in neon['warning']
+    terra, = [pick for pick in picks if 'Terra' in pick['model']]
+    assert 'Incomplete prototype' in terra['warning']
+    assert 'Full-gape cavity attachment' in terra['warning']
