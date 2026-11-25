@@ -538,7 +538,7 @@ def test_swallowtail_gallery_maps_each_clip_in_native_order():
                 continue
             ref = pick['motionRefs'][name]
             if name == 'fly':
-                prefix = 'showcase/reference-swallowtail-orchard-fly-loop/'
+                prefix = 'showcase/reference-swallowtail-orchard-fly-pacing-20261126/'
                 assert ref['gif'] == prefix + 'animation-01.gif'
                 assert ref['poster'] == prefix + 'image-01.png'
             else:
@@ -598,3 +598,41 @@ def test_swallowtail_fly_loop_closes_and_preserves_the_other_clips():
                 for field in ('input', 'output'):
                     np.testing.assert_array_equal(glb.accessor(a, a_bin, s[field]),
                                                   glb.accessor(b, b_bin, s[field]))
+
+
+def test_swallowtail_fly_pacing_keeps_its_duration_and_other_tracks():
+    import numpy as np
+    from PIL import Image
+    from mesh_jig import glb
+
+    ref = ROOT / 'showcase/reference-swallowtail-orchard-fly-pacing-20261126/animation-01.gif'
+    with Image.open(ref) as image:
+        assert image.n_frames == 64 and image.info['loop'] == 0
+        durations = []
+        for index in range(image.n_frames):
+            image.seek(index)
+            durations.append(image.info['duration'])
+        assert sum(durations) == 3000 and set(durations) == {40, 50}
+
+    models = list((ROOT / 'showcase').glob('explore-swallowtail-orchard-*-fly-paced'))
+    assert len(models) >= 10
+    for output in models:
+        frozen = output.with_name(output.name.removesuffix('-fly-paced'))
+        before, original = glb.read_glb(frozen / 'model-01.glb')
+        after, revised = glb.read_glb(output / 'model-01.glb')
+        for key in ('meshes', 'materials', 'nodes', 'skins'):
+            assert before.get(key) == after.get(key)
+        for a, b in zip(before['animations'], after['animations'], strict=True):
+            assert a['name'] == b['name']
+            if b['name'] == 'fly':
+                stop_a = max(glb.accessor(before, original, s['input']).max() for s in a['samplers'])
+                stop_b = max(glb.accessor(after, revised, s['input']).max() for s in b['samplers'])
+                assert stop_a == stop_b
+                for sampler in b['samplers']:
+                    assert np.all(np.diff(glb.accessor(after, revised, sampler['input']).ravel()) > 0)
+                continue
+            assert a == b
+            for sampler in a['samplers']:
+                for key in ('input', 'output'):
+                    np.testing.assert_array_equal(glb.accessor(before, original, sampler[key]),
+                                                  glb.accessor(after, revised, sampler[key]))
