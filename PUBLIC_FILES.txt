@@ -1512,3 +1512,4 @@ site/cloud-canyon/tour-motion.js
 site/cloud-canyon/view.css
 site/cloud-canyon/view.js
 site/cloud-canyon/volume.js
+site/cloud-canyon/view-settings.js

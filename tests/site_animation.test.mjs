@@ -9,7 +9,24 @@ import {sha256} from '../site/terrain/hash.js';
 import {createHash} from 'node:crypto';
 import {Locomotion,landingTime} from '../site/terrain/locomotion.js';
 import {readTerrainLink,writeTerrainLink,playbackSpeed} from '../site/viewer-link.js';
+import {renderSize, whaleUrl} from '../site/cloud-canyon/view-settings.js';
 const data=()=>JSON.parse(fs.readFileSync(new URL('../site/terrain/horror.json',import.meta.url)));
+
+test('a new whale share link preserves other query parameters and the fragment', () => {
+  const url = whaleUrl('https://example.com/mesh-jig/cloud-canyon/?whale=fable&source=gallery#view', 'neon');
+  assert.equal(url.searchParams.get('whale'), 'neon');
+  assert.equal(url.searchParams.get('source'), 'gallery');
+  assert.equal(url.hash, '#view');
+  assert.equal(url.pathname, '/mesh-jig/cloud-canyon/');
+});
+
+test('Cloud Canyon sharp rendering doubles sampling and respects the portrait budget', () => {
+  assert.deepEqual(renderSize(880, 620, 'fast'), [880, 620]);
+  assert.deepEqual(renderSize(880, 620, 'balanced'), [1100, 775]);
+  assert.deepEqual(renderSize(880, 620, 'sharp'), [1760, 1240]);
+  assert.deepEqual(renderSize(820, 1100, 'sharp'), [1044, 1400]);
+  assert.deepEqual(renderSize(880, 620, 'unknown'), renderSize(880, 620, 'balanced'));
+});
 
 test('comparison resolves native animation names through public labels without confusing All clips',()=>{
   assert.equal(activeClipLabel(['animation_0','animation_1'],['guard','overhead_chop'],'animation_1'),'overhead_chop');

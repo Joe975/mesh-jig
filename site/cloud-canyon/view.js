@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from '../terrain/vendor/addons/loaders/GLTFLoader.js';
 import { fragmentShader, vertexShader } from './volume.js?v=6';
 import { cloudPassAmount, cuePose, flockCues, routePoint, wrap } from './tour-motion.js?v=7';
+import { renderSize, whaleUrl } from './view-settings.js';
 
 const canvas = document.querySelector('#view');
 const status = document.querySelector('#status');
@@ -10,6 +11,8 @@ const motion = document.querySelector('#motion');
 const chapters = [...document.querySelectorAll('[data-clip]')];
 const currentClip = document.querySelector('#current-clip');
 const follow = document.querySelector('#follow');
+const copyLink = document.querySelector('#copy-link');
+const resolution = document.querySelector('#resolution');
 const buildCost = document.querySelector('#build-cost');
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const clamp = THREE.MathUtils.clamp;
@@ -235,11 +238,12 @@ async function openCanyon() {
     followPose();
   }
 
-  function selectWhale(id) {
+  function selectWhale(id, updateUrl = true) {
     const member = byId.get(id);
     if (!member) return;
     selected = member;
     follow.value = member.id;
+    if (updateUrl) history.replaceState(history.state, '', whaleUrl(location.href, member.id));
     buildCost.textContent = `Est. build ${member.cost}`;
     for (const chapter of chapters) chapter.disabled = !member.clips.has(chapter.dataset.clip);
     followPose();
@@ -274,9 +278,7 @@ async function openCanyon() {
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;
     if (!width || !height) return;
-    const ratio = Math.min(1, 880/width, 680/height);
-    const pixelsWide = Math.round(width*ratio);
-    const pixelsHigh = Math.round(height*ratio);
+    const [pixelsWide, pixelsHigh] = renderSize(width, height, resolution.value);
     renderer.setSize(pixelsWide, pixelsHigh, false);
     target.setSize(pixelsWide, pixelsHigh);
     camera.aspect = width/height;
@@ -358,6 +360,25 @@ async function openCanyon() {
   });
   routeInput.addEventListener('input', () => setTourTime(Number(routeInput.value)/1000*tour.duration, false));
   follow.addEventListener('change', () => selectWhale(follow.value));
+  copyLink.addEventListener('click', async () => {
+    const url = whaleUrl(location.href, selected.id).href;
+    try {
+      await navigator.clipboard.writeText(url);
+      copyLink.textContent = 'Copied';
+      setTimeout(() => { copyLink.textContent = 'Copy link'; }, 1800);
+    } catch {
+      window.prompt('Copy the selected whale link', url);
+    }
+  });
+  const qualityKey = 'cloud-canyon-resolution';
+  try {
+    const saved = localStorage.getItem(qualityKey);
+    if ([...resolution.options].some(({ value }) => value === saved)) resolution.value = saved;
+  } catch { /* storage is optional */ }
+  resolution.addEventListener('change', () => {
+    try { localStorage.setItem(qualityKey, resolution.value); } catch { /* keep the setting for this visit */ }
+    resize();
+  });
   for (const button of chapters) {
     button.addEventListener('click', () => {
       const name = button.dataset.clip;
@@ -370,13 +391,14 @@ async function openCanyon() {
 
   updateMotionButton();
   setTourTime(0);
-  selectWhale(flock[0].id);
+  const shared = new URL(location.href).searchParams.get('whale');
+  selectWhale(byId.has(shared) ? shared : flock[0].id, false);
   resize();
   previousFrame = performance.now();
   draw(previousFrame);
   canvas.setAttribute('data-ready', '');
   status.hidden = true;
-  follow.parentElement.hidden = false;
+  follow.closest('.follow').hidden = false;
 }
 
 openCanyon().catch((error) => {
