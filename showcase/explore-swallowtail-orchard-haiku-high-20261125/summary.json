@@ -1,0 +1,32 @@
+{
+  "completed": false,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Claude Code subscription (claude -p)",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 6,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": 1452.0
+  },
+  "model": "Haiku 5.5 high, Claude Code",
+  "notes": [
+    "Experimental diagnostic. The model has no mouth, so there is no feed clip and the smile-and-wink clip has no smile. A later mouth attempt had a belly winding defect and was not selected. Four clips are delivered."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 0,
+    "numeric_score": 0.5432
+  },
+  "schema_version": 1,
+  "scope": "One model, rig and animations, with a 60,000-triangle cap and at most ten evaluated models.",
+  "title": "Haiku 5.5 high, Claude Code \u00b7 Swallowtail Orchard"
+}

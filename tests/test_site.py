@@ -523,7 +523,7 @@ def test_swallowtail_gallery_maps_each_clip_in_native_order():
     assert re.search(r'<img class="sheet"[^>]+>\s*<div class="explore"', section)
     picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section)[1]))
     clips = ('fly', 'barrel-roll', 'loop-the-loop', 'feed', 'smile-wink')
-    assert len(picks) >= 6
+    assert len(picks) >= 10
     for pick in picks:
         path = pick['src']
         assert path in PUBLIC
@@ -531,8 +531,11 @@ def test_swallowtail_gallery_maps_each_clip_in_native_order():
         size = struct.unpack_from('<I', raw, 12)[0]
         native = [animation['name'] for animation in json.loads(raw[20:20+size])['animations']]
         assert pick['clipLabels'] == native
-        assert set(native) == set(clips) == set(pick['motionRefs'])
+        expected = set(clips) - ({'feed'} if 'Haiku' in pick['model'] else set())
+        assert set(native) == expected == set(pick['motionRefs'])
         for index, name in enumerate(clips):
+            if name not in pick['motionRefs']:
+                continue
             ref = pick['motionRefs'][name]
             if name == 'fly':
                 prefix = 'showcase/reference-swallowtail-orchard-fly-loop/'
@@ -548,6 +551,13 @@ def test_swallowtail_gallery_maps_each_clip_in_native_order():
     terra, = [pick for pick in picks if 'Terra' in pick['model']]
     assert 'Incomplete prototype' in terra['warning']
     assert 'Full-gape cavity attachment' in terra['warning']
+    haiku, = [pick for pick in picks if 'Haiku' in pick['model']]
+    assert 'Experimental diagnostic' in haiku['warning'] and 'no feed clip' in haiku['warning']
+    for name in ('Fable', 'Opus', 'Sonnet'):
+        built, = [pick for pick in picks if name in pick['model']]
+        assert built['clipLabels'] == list(clips)
+    sonnet, = [pick for pick in picks if 'Sonnet' in pick['model']]
+    assert sonnet['facts']['triangles'] == 21351
 
 
 def test_swallowtail_fly_loop_closes_and_preserves_the_other_clips():
