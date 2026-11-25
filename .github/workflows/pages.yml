@@ -7,6 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
   pages: write
   id-token: write
@@ -34,7 +35,25 @@ jobs:
           .venv/bin/python tools/build_publish_history.py --repo "$GITHUB_WORKSPACE" --page "$GITHUB_WORKSPACE/_site/index.html"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
+        id: upload
         with:
           path: _site
+      - name: Wait for the uploaded Pages artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact_id }}
+        run: |
+          test -n "$ARTIFACT_ID"
+          # Upload finalization can precede visibility to the deploy action.
+          for delay in 20 5 5 5 5 5; do
+            sleep "$delay"
+            if gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" \
+              --jq ".artifacts[] | select(.id == $ARTIFACT_ID and .expired == false) | .id" \
+              | grep -Fxq "$ARTIFACT_ID"; then
+              exit 0
+            fi
+          done
+          echo "The Pages artifact did not become visible within 45 seconds." >&2
+          exit 1
       - id: deployment
         uses: actions/deploy-pages@v4
