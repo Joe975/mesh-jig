@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#222038">
+  <title>Cloud Canyon</title>
+  <script defer src="https://cloud.umami.is/script.js" data-website-id="da692f83-7631-4220-b52d-099a687c2d9d" data-domains="joe975.github.io"></script>
+  <link rel="stylesheet" href="view.css?v=7">
+  <script type="importmap">{"imports":{"three":"../terrain/vendor/three.module.js"}}</script>
+  <script type="module" src="view.js?v=8"></script>
+</head>
+<body>
+  <main>
+    <canvas id="view" tabindex="0" aria-label="Interactive Cloud Canyon. Tap a whale to follow it. Drag or use arrow keys to orbit. Pinch or scroll to zoom."></canvas>
+    <header>
+      <h1>Cloud Canyon</h1>
+      <div class="follow" hidden>
+        <select id="follow" aria-label="Follow whale"></select>
+        <div><span id="build-cost" aria-live="polite" title="Estimated API-equivalent build cost in US dollars">Estimated build cost</span><span aria-hidden="true"> · </span><span id="current-clip">Flying</span></div>
+      </div>
+    </header>
+    <div id="status" role="status">Opening the canyon…</div>
+    <footer aria-label="Viewer controls">
+      <div class="stops">
+        <button type="button" data-clip="fly" aria-pressed="true">Fly</button>
+        <button type="button" data-clip="barrel-roll" aria-pressed="false">Barrel roll</button>
+        <button type="button" data-clip="loop-the-loop" aria-pressed="false">Loop-the-loop</button>
+        <button type="button" data-clip="feed" aria-pressed="false">Feed</button>
+        <button type="button" data-clip="smile-wink" aria-pressed="false">Smile &amp; wink</button>
+      </div>
+      <label class="route" for="route"><span>Flight loop</span><input id="route" type="range" min="0" max="1000" value="0" step="1"></label>
+      <div class="guide"><span>Tap a whale to follow · Drag to orbit</span><button id="motion" type="button" aria-pressed="true">Pause loop</button></div>
+    </footer>
+  </main>
+</body>
+</html>
