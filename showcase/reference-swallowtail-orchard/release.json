@@ -1,0 +1,19 @@
+{
+  "files": {
+    "README.md": "7e93b2d96627f96d220875dfc1d1eaaa2aba6a631f9ecb10506376a9076a4d87",
+    "animation-01.gif": "f7419983eef7377b081390e7eac15bb2896648b60183896542a19b7aacd3ad1b",
+    "animation-02.gif": "4ebf5f46f888cb17a8dfd2f11ca6ee1bf4c083fbd75192d4c19fa9392a91b45c",
+    "animation-03.gif": "8234e6af6b8ca6f9591f037bb1edabae716054863f079f559adb013bffa3836d",
+    "animation-04.gif": "96e04d31139bfae8e41b59df0141c0ed4df7a12d1c5b6cc918bb21dfc1e05aa2",
+    "animation-05.gif": "4b0e1f99a84dd744f83578a449f7cd08cfc4bdacbcb75171600a73d048797a94",
+    "image-01.png": "bfe159423eb9708f531f33f2d9d8084ec485a62757e709a70e19cd6d3dbb28e8",
+    "image-02.png": "f41919ee4dd07fb9f8209d2429478e62809c710b7c4d16c956e56ecad422e955",
+    "image-03.png": "4d6b2afb2354c0fac2ee0ba583a813a508da17e7a52748350bafade5904b5e50",
+    "image-04.png": "b2a9b943675c1fcb4fa350e1c40c5bdfc1a2998bd09597c4d74d3d6eb8889bcc",
+    "image-05.png": "652afae724f575199e3afbc1ba7786117be8d6e894bb831651fafb684e8527d0",
+    "image-06.png": "6acfa8b173dd44cbfe516cfe5d5cc299d2c5c7585cb965c62f1d4620f2304e27",
+    "image-07.png": "8045d993473efd4cfcf2572a80b2b7d988a919df2a5bc8ddea43cca7488f8258",
+    "summary.json": "22144b260cddbd2229be1a05ab7a8e71a70a93d77fb1a20f126e9d045c11148d"
+  },
+  "schema_version": 1
+}

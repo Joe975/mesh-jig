@@ -1,0 +1,32 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex subscription",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 10,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": 2923.553929
+  },
+  "model": "GPT-6 Luna High, Codex",
+  "notes": [
+    "Fin and streamer tips stretch or separate slightly in extreme roll and loop poses. A thin lining seam is visible in the front smile-and-wink view."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 0,
+    "numeric_score": 0.419
+  },
+  "schema_version": 1,
+  "scope": "One fresh model, rig and five animations under a 60,000-triangle cap. 10 evaluated models.",
+  "title": "GPT-6 Luna High, Codex \u00b7 Swallowtail Orchard"
+}

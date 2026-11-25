@@ -511,3 +511,30 @@ def test_fable52_open_cat_shows_native_clips_and_bound_terrain():
     summary=json.loads((ROOT/f'showcase/{slug}/summary.json').read_text())
     assert summary['completed'] is True and summary['cost']['kind']=='unavailable'
     assert summary['result']=={'gates_passed':16,'gates_total':19,'numeric_score':.7133}
+
+
+def test_swallowtail_gallery_maps_each_clip_in_native_order():
+    import html
+    import json
+    import struct
+
+    page = PAGE.read_text(encoding='utf-8')
+    section = page.split('<section id="swallowtail-orchard">', 1)[1].split('</section>', 1)[0]
+    assert re.search(r'<img class="sheet"[^>]+>\s*<div class="explore"', section)
+    picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section)[1]))
+    clips = ('fly', 'barrel-roll', 'loop-the-loop', 'feed', 'smile-wink')
+    assert len(picks) >= 4
+    for pick in picks:
+        path = pick['src']
+        assert path in PUBLIC
+        raw = (ROOT / path).read_bytes()
+        size = struct.unpack_from('<I', raw, 12)[0]
+        native = [animation['name'] for animation in json.loads(raw[20:20+size])['animations']]
+        assert pick['clipLabels'] == native
+        assert set(native) == set(clips) == set(pick['motionRefs'])
+        for index, name in enumerate(clips):
+            ref = pick['motionRefs'][name]
+            assert ref['gif'].endswith(f'/animation-{index+1:02d}.gif')
+            assert ref['poster'].endswith(f'/image-{index+3:02d}.png')
+    hydrogen, = [pick for pick in picks if 'Hydrogen' in pick['model']]
+    assert 'Full-gape cavity continuity remains unverified' in hydrogen['warning']

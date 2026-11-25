@@ -1,0 +1,32 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex subscription",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 6,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": 2552.79872
+  },
+  "model": "GPT-6.2 Astra High, Codex",
+  "notes": [
+    "The feed lining stayed attached in all 73 checked poses and the back wall reached 162 mm behind the jaw hinge at full gape. The neutral wing outline differs from the painted sheet."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 0,
+    "numeric_score": 0.5726
+  },
+  "schema_version": 1,
+  "scope": "One fresh model, rig and five animations under a 60,000-triangle cap. 6 evaluated models.",
+  "title": "GPT-6.2 Astra High, Codex \u00b7 Swallowtail Orchard"
+}

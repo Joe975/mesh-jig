@@ -1,0 +1,32 @@
+{
+  "completed": false,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Antigravity subscription CLI",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 8,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "Gemini 4 Hydrogen High, Antigravity",
+  "notes": [
+    "Diagnostic animation export. The five clips passed the native structural checks. Full-gape cavity continuity remains unverified and the feed pose shows local stretch. The web export uses core glTF materials."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 0,
+    "numeric_score": 0.615
+  },
+  "schema_version": 1,
+  "scope": "One fresh model, rig and five animations under a 60,000-triangle cap. 8 evaluated models.",
+  "title": "Gemini 4 Hydrogen High, Antigravity \u00b7 Swallowtail Orchard"
+}
