@@ -1,0 +1,32 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex subscription",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": 39404672,
+    "completion_tokens": 125825,
+    "driver_turns": null,
+    "evaluations": null,
+    "model_calls": null,
+    "prompt_tokens": 39802102,
+    "reasoning_tokens": 63464,
+    "runtime_seconds": 4539.7
+  },
+  "model": "gpt-6.2-sol",
+  "notes": [
+    "The chop's low catch is about 0.08 s late. The sprint heel dips 6.9 mm between keys, within the 15 mm limit. Wrist and elbow angles remain visible in the chop and spin."
+  ],
+  "result": {
+    "gates_passed": null,
+    "gates_total": null,
+    "numeric_score": null
+  },
+  "schema_version": 1,
+  "scope": "Motion trial on a shared mesh. Five checked clips from four motion candidates.",
+  "title": "Anime swordsman \u00b7 GPT-6.2 Sol high, Codex"
+}

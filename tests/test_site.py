@@ -121,26 +121,37 @@ def test_qwen4_horror_retains_failed_game_status_and_unpriced_cost_scope():
     assert efficiency['total_usd'] == 1.570083 and 'unpriced' in efficiency['kind']
 
 
-def test_swordsman_preserves_selected_clips_and_unknown_static_score():
+def test_swordsman_only_offers_the_current_shared_contract():
     import html
     import json
     import struct
     page = PAGE.read_text(encoding='utf-8')
     section = page.split('<section id="anime-swordsman">', 1)[1].split('</section>', 1)[0]
-    picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section).group(1)))
-    picks = [pick for pick in picks if pick['src'].startswith('showcase/explore-anime-swordsman-astra-high-20261116/')]
-    assert len(picks) == 2
-    assert picks[0]['score'] is None and picks[0]['best'] is None
-    assert picks[0]['facts']['triangles'] == 23592
-    assert picks[0]['facts']['stages']['rig']['passed'] is True
-    assert picks[0]['clipLabels'] == ['guard', 'overhead_chop', 'horizontal_slash']
-    assert all(picks[0]['facts']['stages']['clips'][name]['passed'] for name in picks[0]['clipLabels'])
-    assert picks[1]['clipLabels'] == ['guard_talk', 'slash_yell_gaze']
-    for pick, count in zip(picks, [3, 2]):
+    picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section)[1]))
+    assert [pick['model'] for pick in picks] == ['GPT-6.2 Sol high, Codex', 'GPT-6.2 Astra high, Codex']
+    names = ['guard', 'overhead_chop', 'spinning_horizontal_slash', 'taunt', 'attack_run']
+    for pick in picks:
+        assert pick['clipLabels'] == names
+        assert pick['score'] is None and pick['best'] is None and pick['builds'] is None
+        assert pick['facts']['stages']['rig']['passed'] is True
+        clips = pick['facts']['stages']['clips']
+        assert set(clips) == set(names) and all(clip['passed'] for clip in clips.values())
+        assert [clips[name]['metrics']['seconds'] for name in names] == [2, 3, 2.3, 4.4, 2]
+        assert [name for name in names if clips[name]['metrics']['loop']] == ['guard', 'attack_run']
+        assert 'terrain' not in pick and 'motionRefs' not in pick
+        assert pick['src'] in PUBLIC
         raw = (ROOT / pick['src']).read_bytes()
-        size = struct.unpack_from('<I', raw, 12)[0]
-        assert len(json.loads(raw[20:20+size])['animations']) == count
-    assert 'compact reach' in section and 'subscription' in section
+        length = struct.unpack_from('<I', raw, 12)[0]
+        assert len(json.loads(raw[20:20+length])['animations']) == len(names)
+    assert 'heel dips 6.9 mm' in picks[0]['warning'] and 'crossguard intersections' in picks[1]['warning']
+    for slug in ('explore-anime-swordsman-astra-high-20261116',
+                 'explore-anime-swordsman-sol62-high-20261118',
+                 'explore-anime-swordsman-qwen38-local-high-20261119',
+                 'reference-anime-swordsman-motion'):
+        assert slug not in section and not (ROOT / 'showcase' / slug).exists()
+    assert not (ROOT / 'site/terrain/swordsman-qwen38.json').exists()
+    registry = json.loads((ROOT / 'site/terrain/characters.json').read_text(encoding='utf-8'))
+    assert 'swordsman-qwen38-high-v1' not in registry['characters']
 
 
 def test_terrain_characters_are_lazy_anonymous_and_bound_to_their_public_models():
@@ -460,60 +471,6 @@ def test_removed_sections_and_download_rows_stay_off_the_page():
     assert '<section id="cannon-gunship"' not in page and '<section id="sky-whale"' not in page
     assert 'showcase/explore-cannon-gunship-sol62-high-20261118/model-01.glb' in PUBLIC
     assert 'class="model-downloads"' not in page
-
-
-def test_sol62_swordsman_preserves_native_clips_packages_and_approved_reference_bindings():
-    import html
-    import json
-    import struct
-    section = PAGE.read_text(encoding='utf-8').split('<section id="anime-swordsman"', 1)[1].split('</section>', 1)[0]
-    picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section)[1]))
-    new = next(p for p in picks if p['model'] == 'GPT-6.2 Sol high, Codex')
-    assert new['effort'] == 'high' and new['builds'] == 5
-    assert new['clipLabels'] == ['guard', 'overhead_chop', 'horizontal_slash', 'guard_talk', 'slash_yell_gaze']
-    assert set(new['motionRefs']) == {'overhead_chop', 'horizontal_slash', 'slash_yell_gaze'}
-    assert new['motionRefs']['horizontal_slash'] == new['motionRefs']['slash_yell_gaze']
-    for name, expected in [('GPT-6 Astra high · sword attacks', {'overhead_chop', 'horizontal_slash'}), ('GPT-6 Astra high · facial composition', {'slash_yell_gaze'})]:
-        old = next(p for p in picks if p['model'] == name)
-        assert set(old['motionRefs']) == expected
-        assert all(old['motionRefs'][key] == new['motionRefs'][key] for key in expected)
-    for number, count in [(1, 5), (2, 12), (3, 13), (4, 0)]:
-        path = f'showcase/explore-anime-swordsman-sol62-high-20261118/model-{number:02d}.glb'
-        assert path in PUBLIC
-        raw = (ROOT / path).read_bytes()
-        size = struct.unpack_from('<I', raw, 12)[0]
-        doc = json.loads(raw[20:20+size])
-        assert len(doc.get('animations', [])) == count
-        if number == 1:
-            assert [a['name'] for a in doc['animations']] == new['clipLabels']
-        if number == 3:
-            assert {'idle', 'walk', 'run', 'jump', 'look_at', 'talk', 'smile', 'anger', 'sadness', 'confusion', 'yell'} <= {a['name'] for a in doc['animations']}
-    assert 'missed colour placement, resemblance and vest colour gates' in new['warning']
-    page = PAGE.read_text(encoding='utf-8')
-    assert 'activeClipLabel(a.availableAnimations,main.current.clipLabels' in page
-    assert 'activeClipLabel(b.availableAnimations,other.current.clipLabels' in page
-
-
-def test_local_qwen_swordsman_keeps_native_clips_and_failed_ik_visible():
-    import html,json
-    from html.parser import HTMLParser
-    class Picks(HTMLParser):
-        choices=[]
-        def handle_starttag(self,tag,attrs):
-            attrs=dict(attrs)
-            if 'data-explore' in attrs:self.choices.extend(json.loads(attrs['data-explore']))
-    parser=Picks();parser.feed(PAGE.read_text(encoding='utf-8'))
-    pick=next(p for p in parser.choices if 'anime-swordsman-qwen38' in p['src'])
-    assert pick['clipLabels']==['idle','walk','run','jump']
-    assert pick['facts']['stages']['rig']['passing_candidates']==3
-    assert pick['facts']['stages']['rig']['submissions']==5
-    assert pick['terrain']=='swordsman-qwen38-high-v1'
-    assert 'game qualification failed' in pick['warning'] and '0.353845' in pick['warning']
-    assert '238 mm' in pick['warning'] and 'No accepted game-ready package' in pick['warning']
-    assert 'motionRefs' not in pick
-    summary=json.loads((ROOT/'showcase/explore-anime-swordsman-qwen38-local-high-20261119/summary.json').read_text())
-    assert summary['completed'] is False
-    assert summary['metrics']['model_calls']==97 and summary['cost']['amount_usd']==0
 
 
 def test_fable52_open_cat_shows_native_clips_and_bound_terrain():
