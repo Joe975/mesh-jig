@@ -1,0 +1,32 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Antigravity subscription CLI",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 10,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": null
+  },
+  "model": "Gemini 4 Neon High, Antigravity",
+  "notes": [
+    "The second rig passed the structural checks. Sampled reference views show the feed cavity staying open with the lining attached. Feed still stretches 6.93% of the measured surface. The web export uses core glTF materials."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 0,
+    "numeric_score": 0.6922
+  },
+  "schema_version": 1,
+  "scope": "One model, native rig and five animations, with a 60,000-triangle cap and ten evaluated models.",
+  "title": "Gemini 4 Neon High, Antigravity \u00b7 Swallowtail Orchard"
+}

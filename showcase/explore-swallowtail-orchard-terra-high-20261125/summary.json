@@ -1,0 +1,32 @@
+{
+  "completed": false,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex subscription",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": null,
+    "driver_turns": null,
+    "evaluations": 10,
+    "model_calls": null,
+    "prompt_tokens": null,
+    "reasoning_tokens": null,
+    "runtime_seconds": 1295.86224
+  },
+  "model": "GPT-6.1 Terra High, Codex",
+  "notes": [
+    "Incomplete prototype. The fork and tail pieces visibly separate, the fins move rigidly, and the wink is approximate. Full-gape cavity attachment and the approved belly swell remain unverified. The displayed model score is from the selected static attempt before rig-stage edits."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 0,
+    "numeric_score": 0.4801
+  },
+  "schema_version": 1,
+  "scope": "One model, native rig and five animations, with a 60,000-triangle cap and ten evaluated models.",
+  "title": "GPT-6.1 Terra High, Codex \u00b7 Swallowtail Orchard"
+}
