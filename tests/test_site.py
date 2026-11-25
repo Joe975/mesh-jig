@@ -7,6 +7,32 @@ PAGE = ROOT / "site" / "index.html"
 PUBLIC = set((ROOT / "PUBLIC_FILES.txt").read_text(encoding="utf-8").split())
 
 
+def test_cloud_canyon_reuses_gallery_glbs_and_umami_property():
+    import base64
+    import gzip
+    import html
+    import json
+    import math
+
+    page = PAGE.read_text(encoding='utf-8')
+    section = page.split('<section id="swallowtail-orchard">')[1].split('</section>')[0]
+    assert section.count('href="cloud-canyon/" data-umami-event="cloud-canyon-open"') == 1
+    picks = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section)[1]))
+    scene = ROOT / 'site/cloud-canyon'
+    tracker = re.search(r'<script defer src="https://cloud\.umami\.is/script\.js"[^>]+></script>', page)[0]
+    assert (scene / 'index.html').read_text(encoding='utf-8').count(tracker) == 1
+    roster = json.loads((scene / 'flock.json').read_text(encoding='utf-8'))
+    assert len(roster) == 10
+    assert {member['src'] for member in roster} == {'../' + pick['src'] for pick in picks}
+    assert all((ROOT / member['src'][3:]).is_file() for member in roster)
+    cloud_data = json.loads((scene / 'clouds.json').read_text(encoding='utf-8'))
+    grid = gzip.decompress(base64.b64decode(cloud_data['gzip'], validate=True))
+    layout = json.loads((scene / 'scene.json').read_text(encoding='utf-8'))
+    assert len(grid) == 2*math.prod(layout['cells'])
+    assert (scene / 'clouds.json').stat().st_size < 1_000_000
+    assert all(path.relative_to(ROOT).as_posix() in PUBLIC for path in scene.iterdir() if path.is_file())
+
+
 def test_swordsman_card_uses_a_square_reference_thumbnail():
     from PIL import Image
     page = PAGE.read_text(encoding='utf-8')
@@ -203,6 +229,8 @@ def test_every_file_the_page_names_is_published_and_deployed():
     deployed = ("showcase/reference-", "showcase/explore-")      # what .github/workflows/pages.yml copies
     for name in names:
         repo_path = name if name.startswith("showcase/") else "site/" + name
+        if repo_path.endswith('/'):
+            repo_path += 'index.html'
         assert not name.startswith("showcase/") or name.startswith(deployed), f"{name} is not deployed"
         assert repo_path in PUBLIC, f"the page names {name}, which is not published"
         assert (ROOT / repo_path).is_file(), name

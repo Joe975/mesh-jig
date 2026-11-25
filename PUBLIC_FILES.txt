@@ -1503,3 +1503,12 @@ tools/build_publish_history.py
 tools/check_publication.py
 tools/scrub_home_paths.py
 tools/terrain_schema.py
+site/cloud-canyon/clouds.json
+site/cloud-canyon/flock.json
+site/cloud-canyon/index.html
+site/cloud-canyon/pillar-tour.json
+site/cloud-canyon/scene.json
+site/cloud-canyon/tour-motion.js
+site/cloud-canyon/view.css
+site/cloud-canyon/view.js
+site/cloud-canyon/volume.js
