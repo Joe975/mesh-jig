@@ -1,0 +1,34 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": 17.66,
+    "kind": "estimated"
+  },
+  "driver": "Antigravity subscription CLI",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": 24559782,
+    "completion_tokens": 672112,
+    "driver_turns": null,
+    "evaluations": 10,
+    "model_calls": null,
+    "prompt_tokens": 25856512,
+    "reasoning_tokens": 218149,
+    "runtime_seconds": 9553.009857
+  },
+  "model": "gemini-4-neon",
+  "notes": [
+    "Ten of eleven submissions scored (a03 failed to build); Neon picked its numeric best, a11. The feet are pale with long toes rather than orange paws. Seven of ten rigs exceeded the 3x edge-stretch limit in run or jump; r07, r09 and r10 passed and Neon picked r10. Walk and run are short in-place gaits. The last turn took the estimate to US$17.66, past the US$17.46 stop.",
+    "The first GLB carries idle (2 s loop), walk (1 s loop), run (0.6 s loop) and jump (1.2 s). The second is the frozen mesh.",
+    "The cost values the logged Antigravity tokens at Google Standard Gemini API rates."
+  ],
+  "result": {
+    "gates_passed": 19,
+    "gates_total": 19,
+    "numeric_score": 0.7422
+  },
+  "schema_version": 1,
+  "scope": "One run on the frozen pirate-cat contract: 60,000-triangle cap, script-painted 1024 px texture, the four-clip rig contract. 10 scored meshes in 11 submissions and 3 passing native rigs in 10 submissions.",
+  "title": "Gemini 4 Neon High: pirate cat with four clips"
+}
