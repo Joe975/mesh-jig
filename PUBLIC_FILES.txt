@@ -92,6 +92,10 @@ showcase/explore-anime-swordsman-astra-high-20261116/model-02.glb
 showcase/explore-anime-swordsman-astra-high-20261116/model-03.glb
 showcase/explore-anime-swordsman-astra-high-20261116/release.json
 showcase/explore-anime-swordsman-astra-high-20261116/summary.json
+showcase/explore-anime-swordsman-astra-high-20261126/README.md
+showcase/explore-anime-swordsman-astra-high-20261126/model-01.glb
+showcase/explore-anime-swordsman-astra-high-20261126/release.json
+showcase/explore-anime-swordsman-astra-high-20261126/summary.json
 showcase/explore-anime-swordsman-qwen38-local-high-20261119/README.md
 showcase/explore-anime-swordsman-qwen38-local-high-20261119/image-01.png
 showcase/explore-anime-swordsman-qwen38-local-high-20261119/image-02.png
@@ -104,6 +108,10 @@ showcase/explore-anime-swordsman-qwen38-local-high-20261119/model-01.glb
 showcase/explore-anime-swordsman-qwen38-local-high-20261119/model-02.glb
 showcase/explore-anime-swordsman-qwen38-local-high-20261119/release.json
 showcase/explore-anime-swordsman-qwen38-local-high-20261119/summary.json
+showcase/explore-anime-swordsman-sol-high-20261126/README.md
+showcase/explore-anime-swordsman-sol-high-20261126/model-01.glb
+showcase/explore-anime-swordsman-sol-high-20261126/release.json
+showcase/explore-anime-swordsman-sol-high-20261126/summary.json
 showcase/explore-anime-swordsman-sol62-high-20261118/README.md
 showcase/explore-anime-swordsman-sol62-high-20261118/image-01.png
 showcase/explore-anime-swordsman-sol62-high-20261118/image-02.png

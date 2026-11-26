@@ -1,0 +1,32 @@
+{
+  "completed": true,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Codex subscription",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": 31286912,
+    "completion_tokens": 102337,
+    "driver_turns": null,
+    "evaluations": null,
+    "model_calls": null,
+    "prompt_tokens": 31531178,
+    "reasoning_tokens": 41802,
+    "runtime_seconds": 4404.7
+  },
+  "model": "gpt-6.2-astra",
+  "notes": [
+    "Pommel or crossguard intersections remain in the chop, spin, taunt and sprint. Spin and sprint show foot slide. Sampled blade clearance passed."
+  ],
+  "result": {
+    "gates_passed": null,
+    "gates_total": null,
+    "numeric_score": null
+  },
+  "schema_version": 1,
+  "scope": "Motion trial on a shared mesh. Five checked clips from four motion candidates.",
+  "title": "Anime swordsman \u00b7 GPT-6.2 Astra high, Codex"
+}
