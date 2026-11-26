@@ -1,0 +1,34 @@
+{
+  "completed": false,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Mesh Jig local agent via stock llama.cpp on RTX 4090",
+  "effort": "medium",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": null,
+    "completion_tokens": 367254,
+    "driver_turns": 106,
+    "evaluations": 2,
+    "model_calls": 108,
+    "prompt_tokens": 3533802,
+    "reasoning_tokens": null,
+    "runtime_seconds": 5466.4
+  },
+  "model": "bonsai-2.5-27b-q2_0",
+  "notes": [
+    "Two of five modeling evaluations finished. The selected mesh scored 0.3209 and missed its resemblance gate. Bonsai's five standalone rig submissions failed. Bonsai supplied the skeleton and motion controls for this version. Codex repaired the skin weights and foot placement. The repaired sprint and leap pass the rig contract. Gaps in the chest and detached details remain from the static mesh.",
+    "The 1-second sprint loops in place. The 1.5-second leap travels 0.90 m and reaches 286 mm of full-mesh clearance.",
+    "Static run timing and tokens cover the bounded modeling run. Local inference incurred no hosted API charges. Electricity and hardware costs are unmeasured."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 1,
+    "numeric_score": 0.3209
+  },
+  "schema_version": 1,
+  "scope": "Static run: two of five evaluations across fourteen submissions. The published animation is a separate assisted follow-up.",
+  "title": "Six-limbed horror \u00b7 Bonsai 2.5 27B, local, assisted rig"
+}
