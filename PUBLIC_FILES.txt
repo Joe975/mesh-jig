@@ -199,6 +199,14 @@ showcase/explore-cat-muse-ember-high-20261117/model-01.glb
 showcase/explore-cat-muse-ember-high-20261117/model-02.glb
 showcase/explore-cat-muse-ember-high-20261117/release.json
 showcase/explore-cat-muse-ember-high-20261117/summary.json
+showcase/explore-cat-neon-high-20261126/README.md
+showcase/explore-cat-neon-high-20261126/image-01.png
+showcase/explore-cat-neon-high-20261126/image-02.png
+showcase/explore-cat-neon-high-20261126/model-01.glb
+showcase/explore-cat-neon-high-20261126/model-02.glb
+showcase/explore-cat-neon-high-20261126/outline-front.png
+showcase/explore-cat-neon-high-20261126/release.json
+showcase/explore-cat-neon-high-20261126/summary.json
 showcase/explore-cat-sol-high-20261112/README.md
 showcase/explore-cat-sol-high-20261112/image-01.png
 showcase/explore-cat-sol-high-20261112/model-01.glb
