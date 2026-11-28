@@ -584,6 +584,12 @@ showcase/explore-horror/model-09.glb
 showcase/explore-horror/model-10.glb
 showcase/explore-horror/release.json
 showcase/explore-horror/summary.json
+showcase/explore-horse-carbon-high-20261128/README.md
+showcase/explore-horse-carbon-high-20261128/image-01.png
+showcase/explore-horse-carbon-high-20261128/model-01.glb
+showcase/explore-horse-carbon-high-20261128/outline-front.png
+showcase/explore-horse-carbon-high-20261128/release.json
+showcase/explore-horse-carbon-high-20261128/summary.json
 showcase/explore-horse-deepseek-1017-20261116/README.md
 showcase/explore-horse-deepseek-1017-20261116/image-01.png
 showcase/explore-horse-deepseek-1017-20261116/image-02.png
@@ -610,6 +616,14 @@ showcase/explore-horse-hydrogen-high-20261114/README.md
 showcase/explore-horse-hydrogen-high-20261114/model-01.glb
 showcase/explore-horse-hydrogen-high-20261114/release.json
 showcase/explore-horse-hydrogen-high-20261114/summary.json
+showcase/explore-horse-neon-high-20261128/README.md
+showcase/explore-horse-neon-high-20261128/image-01.png
+showcase/explore-horse-neon-high-20261128/image-02.png
+showcase/explore-horse-neon-high-20261128/model-01.glb
+showcase/explore-horse-neon-high-20261128/model-02.glb
+showcase/explore-horse-neon-high-20261128/outline-front.png
+showcase/explore-horse-neon-high-20261128/release.json
+showcase/explore-horse-neon-high-20261128/summary.json
 showcase/explore-horse-openai-20261112/README.md
 showcase/explore-horse-openai-20261112/image-01.png
 showcase/explore-horse-openai-20261112/image-02.png
