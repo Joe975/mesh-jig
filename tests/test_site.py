@@ -43,6 +43,27 @@ def test_swordsman_card_uses_a_square_reference_thumbnail():
     assert card != 'showcase/reference-anime-swordsman/image-02.png'
 
 
+def test_horse_reference_library_uses_two_reviewed_gallops():
+    import html
+    import json
+
+    page = PAGE.read_text(encoding='utf-8')
+    section = page.split('<section id="horse">', 1)[1].split('</section>', 1)[0]
+    assert re.search(r'<img class="sheet"[^>]+>\s*<div class="explore"', section)
+    assert section.index('id="horse-reference-animations"') > section.rindex('</figure></div></div>')
+    assert section.index('id="horse-reference-animations"') < section.index('Scores and build context')
+    refs = [json.loads(html.unescape(value)) for value in re.findall(r'data-reference-preview="([^"]+)"', section)]
+    assert len(refs) == 2
+    assert 'Six-view gallop' in refs[0]['caption'] and 'Side-view gallop' in refs[1]['caption']
+    for ref in refs:
+        assert 'AI-generated with MiniMax H3' in ref['caption']
+        assert all(ref[key] in PUBLIC and (ROOT / ref[key]).is_file() for key in ('gif', 'poster'))
+    models = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section)[1]))
+    assert sum('motionRefs' in model for model in models) == 2
+    assert all('reference-horse-gallop-20261115/' in model['motionRefs']['run']['gif']
+               for model in models if 'motionRefs' in model)
+
+
 def test_changelog_has_three_recent_and_twenty_collapsed_publishes():
     page = PAGE.read_text(encoding='utf-8')
     recent = page.split('<ol class="publish-recent"', 1)[1].split('</ol>', 1)[0]
