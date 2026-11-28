@@ -1,0 +1,32 @@
+{
+  "completed": false,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Antigravity subscription CLI",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": 7416327,
+    "completion_tokens": 219055,
+    "driver_turns": 6,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": 8008912,
+    "reasoning_tokens": 130995,
+    "runtime_seconds": 4061.582392
+  },
+  "model": "gemini-4-carbon-high",
+  "notes": [
+    "The run produced a static model. No native rig was available. 0 of 1 rig submissions passed. The square-edged mane has a visible gap above the neck. The first rig script failed Python syntax validation before export. The worker stopped before it could revise the rig."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 0,
+    "numeric_score": 0.8334
+  },
+  "schema_version": 1,
+  "scope": "One independent Antigravity High subscription run, with 5 scored models in 5 static submissions under the frozen 60,000-triangle horse contract. Runtime and recorded tokens cover the retry only.",
+  "title": "Gemini 4 Carbon High horse"
+}

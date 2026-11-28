@@ -1,0 +1,32 @@
+{
+  "completed": false,
+  "cost": {
+    "amount_usd": null,
+    "kind": "unavailable"
+  },
+  "driver": "Antigravity subscription CLI",
+  "effort": "high",
+  "metrics": {
+    "cache_write_tokens": null,
+    "cached_prompt_tokens": 9138616,
+    "completion_tokens": 350468,
+    "driver_turns": 10,
+    "evaluations": 5,
+    "model_calls": null,
+    "prompt_tokens": 9848445,
+    "reasoning_tokens": 185800,
+    "runtime_seconds": 5332.434459
+  },
+  "model": "gemini-4-neon-high",
+  "notes": [
+    "The selected rig passed the native five-clip contract. 1 of 4 rig submissions passed. The walk takes short in-place steps. The run has a visible suspension phase, and the jump and rear are distinct. The worker stopped after this passing rig, before the planned revisions and final selection."
+  ],
+  "result": {
+    "gates_passed": 0,
+    "gates_total": 0,
+    "numeric_score": 0.8237
+  },
+  "schema_version": 1,
+  "scope": "One independent Antigravity High subscription run, with 5 scored models in 5 static submissions under the frozen 60,000-triangle horse contract.",
+  "title": "Gemini 4 Neon High horse"
+}
