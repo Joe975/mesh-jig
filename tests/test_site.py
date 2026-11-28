@@ -59,9 +59,14 @@ def test_horse_reference_library_uses_two_reviewed_gallops():
         assert 'AI-generated with MiniMax H3' in ref['caption']
         assert all(ref[key] in PUBLIC and (ROOT / ref[key]).is_file() for key in ('gif', 'poster'))
     models = json.loads(html.unescape(re.search(r'data-explore="([^"]+)"', section)[1]))
-    assert sum('motionRefs' in model for model in models) == 2
+    assert sum('motionRefs' in model for model in models) == 4
     assert all('reference-horse-gallop-20261115/' in model['motionRefs']['run']['gif']
                for model in models if 'motionRefs' in model)
+    for key, count, score, best in (('astra', 17, .8377, .8393), ('sol', 14, .8357, .8365)):
+        path = f'showcase/explore-horse-{key}-62-high-ideation-20261128/model-01.glb'
+        model = next(p for p in models if p['src'] == path)
+        assert (model['builds'], model['score'], model['best']) == (count, score, best)
+        assert set(model['motionRefs']) == {'run'} and model['facts']['stages']['rig']['passed']
 
 
 def test_changelog_has_three_recent_and_twenty_collapsed_publishes():
