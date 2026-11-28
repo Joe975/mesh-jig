@@ -1168,6 +1168,11 @@ showcase/reference-horse-gallop-20261115/animation-01.gif
 showcase/reference-horse-gallop-20261115/image-01.png
 showcase/reference-horse-gallop-20261115/release.json
 showcase/reference-horse-gallop-20261115/summary.json
+showcase/reference-horse-gallop-side-20261128/README.md
+showcase/reference-horse-gallop-side-20261128/animation-01.gif
+showcase/reference-horse-gallop-side-20261128/image-01.png
+showcase/reference-horse-gallop-side-20261128/release.json
+showcase/reference-horse-gallop-side-20261128/summary.json
 showcase/reference-horse/README.md
 showcase/reference-horse/image-01.png
 showcase/reference-horse/image-02.png
